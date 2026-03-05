@@ -106,7 +106,7 @@
       {#if activeTab === 'chat'}
         <ChatPanel
           messages={chat.messages}
-          {isStreaming}={chat.isStreaming}
+          isStreaming={chat.isStreaming}
           currentStream={chat.currentStream}
           onsend={handleSend}
         />

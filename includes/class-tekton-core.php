@@ -106,7 +106,7 @@ final class Tekton_Core {
 
 		if ( file_exists( $manifest ) ) {
 			$manifest_data = json_decode( (string) file_get_contents( $manifest ), true );
-			$entry         = $manifest_data['src/main.js'] ?? null;
+			$entry         = $manifest_data['admin/src/main.js'] ?? $manifest_data['src/main.js'] ?? null;
 
 			if ( $entry ) {
 				if ( ! empty( $entry['css'] ) ) {
