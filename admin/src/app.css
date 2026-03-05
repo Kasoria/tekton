@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+@theme {
+  --color-background: #1a1816;
+  --color-foreground: #ede8e3;
+  --color-card: #1e1c19;
+  --color-card-hover: #242220;
+  --color-border: #2a2725;
+  --color-border-subtle: #2a272540;
+  --color-copper: #c97d3c;
+  --color-gold: #c9a43c;
+  --color-green: #7dab6e;
+  --color-slate: #6b7d8a;
+  --color-muted: #5c5753;
+  --color-muted-foreground: #8a847d;
+  --color-dim: #3a3835;
+  --font-heading: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+/*
+ * WordPress admin style overrides.
+ * WP's common.css sets aggressive defaults on headings, paragraphs, links,
+ * inputs, and buttons. We must use high-specificity selectors to override.
+ */
+#tekton-app {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+#tekton-app *,
+#tekton-app *::before,
+#tekton-app *::after {
+  box-sizing: border-box;
+}
+
+/* Headings — WP sets color:#1d2327, font-size:1.3em, margin:1em 0, font-weight:600 */
+#tekton-app h1,
+#tekton-app h2,
+#tekton-app h3,
+#tekton-app h4,
+#tekton-app h5,
+#tekton-app h6 {
+  color: var(--color-foreground);
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+}
+
+/* Paragraphs, labels */
+#tekton-app p,
+#tekton-app label {
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  margin: 0;
+  line-height: inherit;
+}
+
+/* Links — WP sets color:#2271b1, text-decoration:underline */
+#tekton-app a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Buttons — WP sets all sorts of button styles */
+#tekton-app button {
+  font-family: var(--font-body);
+  color: inherit;
+  line-height: inherit;
+}
+
+/* Inputs — WP sets background, border, box-shadow, color */
+#tekton-app input,
+#tekton-app textarea,
+#tekton-app select {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+#tekton-app input:focus,
+#tekton-app textarea:focus,
+#tekton-app select:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+/* Scrollbars */
+#tekton-app ::-webkit-scrollbar { width: 5px; }
+#tekton-app ::-webkit-scrollbar-track { background: transparent; }
+#tekton-app ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }

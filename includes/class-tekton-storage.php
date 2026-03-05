@@ -268,6 +268,100 @@ class Tekton_Storage {
 		);
 	}
 
+	// ─── Field Groups ──────────────────────────────────────────────────
+
+	public function list_field_groups(): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			"SELECT id, title, slug, fields, location_rules, source, created_at, updated_at
+			 FROM {$wpdb->prefix}tekton_field_groups
+			 WHERE is_active = 1
+			 ORDER BY menu_order ASC, title ASC",
+			ARRAY_A
+		);
+
+		if ( ! $rows ) {
+			return [];
+		}
+
+		foreach ( $rows as &$row ) {
+			$row['fields']         = json_decode( $row['fields'], true ) ?? [];
+			$row['location_rules'] = json_decode( $row['location_rules'], true ) ?? [];
+			$row['field_count']    = count( $row['fields'] );
+		}
+
+		return $rows;
+	}
+
+	// ─── Post Types ────────────────────────────────────────────────────
+
+	public function list_post_types(): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			"SELECT id, slug, config, taxonomies, source, created_at, updated_at
+			 FROM {$wpdb->prefix}tekton_post_types
+			 ORDER BY slug ASC",
+			ARRAY_A
+		);
+
+		if ( ! $rows ) {
+			return [];
+		}
+
+		foreach ( $rows as &$row ) {
+			$row['config']     = json_decode( $row['config'], true ) ?? [];
+			$row['taxonomies'] = json_decode( $row['taxonomies'] ?? '[]', true ) ?? [];
+		}
+
+		return $rows;
+	}
+
+	// ─── Activity ──────────────────────────────────────────────────────
+
+	/**
+	 * Get recent activity across all tables.
+	 */
+	public function get_recent_activity( int $limit = 10 ): array {
+		global $wpdb;
+
+		$activity = [];
+
+		// Recent structure changes from versions table.
+		$versions = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT v.change_type, v.change_summary, v.created_at, s.template_key, s.title
+				 FROM {$wpdb->prefix}tekton_versions v
+				 JOIN {$wpdb->prefix}tekton_structures s ON v.structure_id = s.id
+				 ORDER BY v.created_at DESC
+				 LIMIT %d",
+				$limit
+			),
+			ARRAY_A
+		);
+
+		foreach ( $versions ?: [] as $v ) {
+			$action = match ( $v['change_type'] ) {
+				'ai_generate' => 'Generated',
+				'rollback'    => 'Rolled back',
+				'manual'      => 'Updated',
+				default       => 'Modified',
+			};
+			$activity[] = [
+				'action' => $action,
+				'target' => $v['title'] ?: $v['template_key'],
+				'time'   => $v['created_at'],
+				'kind'   => 'template',
+			];
+		}
+
+		// Sort by time descending and limit.
+		usort( $activity, fn( $a, $b ) => strtotime( $b['time'] ) - strtotime( $a['time'] ) );
+
+		return array_slice( $activity, 0, $limit );
+	}
+
 	private function create_version( int $structure_id, array $data ): void {
 		global $wpdb;
 

@@ -92,6 +92,8 @@ final class Tekton_Core {
 	}
 
 	public function render_admin_page(): void {
+		echo '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />';
+		echo '<style>#wpcontent { padding-left: 0; } #wpbody-content { padding-bottom: 0; } .wrap { margin: 0; max-width: none; } .notice, .updated, .update-nag, .error { display: none; }</style>';
 		echo '<div id="tekton-app"></div>';
 	}
 

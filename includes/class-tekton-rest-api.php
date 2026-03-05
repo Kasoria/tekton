@@ -113,6 +113,34 @@ class Tekton_REST_API {
 			],
 		] );
 
+		// Dashboard.
+		register_rest_route( $ns, '/dashboard', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'handle_get_dashboard' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
+		// Field Groups.
+		register_rest_route( $ns, '/field-groups', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'handle_list_field_groups' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
+		// Post Types.
+		register_rest_route( $ns, '/post-types', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'handle_list_post_types' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
+		// Activity.
+		register_rest_route( $ns, '/activity', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'handle_get_activity' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
 		// Preview.
 		register_rest_route( $ns, '/preview', [
 			'methods'             => 'POST',
@@ -348,9 +376,17 @@ class Tekton_REST_API {
 			'tekton_ai_provider',
 			'tekton_ai_model',
 			'tekton_ai_max_tokens',
+			'tekton_context_token_budget',
 			'tekton_override_theme',
+			'tekton_fallback_behavior',
 			'tekton_cache_enabled',
 			'tekton_cache_ttl',
+			'tekton_minify_output',
+			'tekton_inline_editing',
+			'tekton_max_versions',
+			'tekton_disable_gutenberg',
+			'tekton_acf_compat',
+			'tekton_plugin_mode_enabled',
 			'tekton_design_tokens',
 			'tekton_debug_mode',
 		];
@@ -407,6 +443,84 @@ class Tekton_REST_API {
 		$html .= '</body></html>';
 
 		return new \WP_REST_Response( [ 'html' => $html ] );
+	}
+
+	// ─── Dashboard ─────────────────────────────────────────────────────
+
+	public function handle_get_dashboard(): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+
+		$structures   = $storage->list_structures();
+		$field_groups = $storage->list_field_groups();
+		$post_types   = $storage->list_post_types();
+		$activity     = $storage->get_recent_activity( 10 );
+
+		// Count post type entries.
+		foreach ( $post_types as &$cpt ) {
+			$slug  = $cpt['slug'];
+			$count = wp_count_posts( $slug );
+			$cpt['entry_count'] = $count ? (int) $count->publish + (int) $count->draft : 0;
+		}
+
+		// Count generated micro-plugins.
+		$plugins      = get_option( 'active_plugins', [] );
+		$tekton_plugins = array_filter( $plugins, fn( $p ) => str_starts_with( $p, 'tekton-' ) );
+
+		// Add component counts and version info to structures.
+		foreach ( $structures as &$s ) {
+			$full = $storage->get_structure( $s['template_key'] );
+			$s['component_count'] = $full ? count( $full['components'] ?? [] ) : 0;
+			$versions = $full ? $storage->get_versions( (int) $full['id'], 1 ) : [];
+			$s['version']         = ! empty( $versions ) ? (int) $versions[0]['version_number'] : 1;
+		}
+
+		// Format activity times as relative.
+		foreach ( $activity as &$a ) {
+			$a['time'] = human_time_diff( strtotime( $a['time'] ), current_time( 'timestamp' ) ) . ' ago';
+		}
+
+		return new \WP_REST_Response( [
+			'templates'    => $structures,
+			'field_groups' => $field_groups,
+			'post_types'   => $post_types,
+			'activity'     => $activity,
+			'plugins'      => [
+				'count'  => count( $tekton_plugins ),
+				'active' => count( $tekton_plugins ),
+			],
+		] );
+	}
+
+	public function handle_list_field_groups(): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+		return new \WP_REST_Response( $storage->list_field_groups() );
+	}
+
+	public function handle_list_post_types(): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+
+		$post_types = $storage->list_post_types();
+		foreach ( $post_types as &$cpt ) {
+			$count = wp_count_posts( $cpt['slug'] );
+			$cpt['entry_count'] = $count ? (int) $count->publish + (int) $count->draft : 0;
+		}
+
+		return new \WP_REST_Response( $post_types );
+	}
+
+	public function handle_get_activity(): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage  = $this->core->get_module( 'storage' );
+		$activity = $storage->get_recent_activity( 10 );
+
+		foreach ( $activity as &$a ) {
+			$a['time'] = human_time_diff( strtotime( $a['time'] ), current_time( 'timestamp' ) ) . ' ago';
+		}
+
+		return new \WP_REST_Response( $activity );
 	}
 
 	// ─── Helpers ────────────────────────────────────────────────────────
