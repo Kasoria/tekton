@@ -658,17 +658,168 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 
 ---
 
-## 9. Implementation Phases
+## 9. Implementation Status
 
-### Phase 1 — Foundation (MVP)
+### Done
+
+**Plugin scaffold & bootstrap:**
+- [x] `tekton.php` — plugin bootstrap with activation/deactivation hooks
+- [x] `class-tekton-core.php` — singleton orchestrator, module loading, admin menu, asset enqueue
+- [x] `class-tekton-activator.php` — activation hook (DB tables, bridge theme install)
+- [x] DB tables created: `tekton_structures`, `tekton_versions`, `tekton_chat_history`, `tekton_field_groups`, `tekton_post_types`
+
+**Bridge theme:**
+- [x] `bridge-theme/` — minimal theme (style.css, index.php, functions.php)
+- [x] Auto-installed on plugin activation
+
+**Theme bridge & rendering:**
+- [x] `class-tekton-theme-bridge.php` — `template_include` interception, template mapping
+- [x] `class-tekton-renderer.php` — component JSON → HTML rendering (smart container detection: absolute-positioned containers render without layout constraints)
+- [x] `template-canvas.php` — standalone HTML canvas for Tekton-rendered pages
+- [x] `class-tekton-assets.php` — frontend asset loading, design token injection
+- [x] `assets/css/tekton-frontend-reset.css` — CSS reset for rendered pages
+
+**Component schema:**
+- [x] `class-tekton-schema.php` — 16 core component types registered (section, container, div, heading, text, image, button, grid, flex-row, flex-column, link, list, spacer, divider, video, icon)
+- [x] Schema validation (component + structure level)
+- [x] Content source validation (field, post, option, acf, static, computed, menu)
+
+**Storage:**
+- [x] `class-tekton-storage.php` — full CRUD for structures, versioning, chat history
+- [x] Field group listing, post type listing, activity feed
+- [x] Version create/rollback
+
+**AI Engine (multi-provider):**
+- [x] `class-tekton-ai-engine.php` — provider-agnostic orchestrator
+- [x] `interface-tekton-ai-provider.php` — provider interface
+- [x] `class-tekton-provider-anthropic.php` — Anthropic/Claude SSE streaming
+- [x] `class-tekton-provider-openai.php` — OpenAI/GPT SSE streaming
+- [x] `class-tekton-provider-google.php` — Google/Gemini SSE streaming
+- [x] `class-tekton-provider-openrouter.php` — OpenRouter SSE streaming
+- [x] Real-time SSE streaming via PHP Fibers (chunks stream as they arrive)
+- [x] AI response parsing — separates natural language from JSON code fences
+- [x] Current template structure injected into AI context for modification awareness
+
+**AI System Prompts:**
+- [x] `templates/system-prompt-base.md` — core prompt with component schema, content sources, styles, two response modes (full generation + operations)
+- [x] `templates/system-prompt-page.md` — page generation/modification instructions
+- [x] `templates/system-prompt-fullstack.md` — full-stack generation (CPT + fields + template)
+- [x] `templates/system-prompt-plugin.md` — micro-plugin generation
+- [x] `templates/system-prompt-component.md` — single component generation
+- [x] `templates/context-template.md` — site context wrapper with current template awareness
+
+**Operations-based patching:**
+- [x] `class-tekton-structure-patcher.php` — applies granular AI operations to existing component trees
+- [x] 7 operations: `update_styles`, `update_props`, `update_content`, `add_component`, `remove_component`, `replace_component`, `move_component`
+- [x] AI uses operations mode for modifications (token-efficient), full generation only for new pages
+
+**Security:**
+- [x] `class-tekton-security.php` — AES-256-CBC API key encryption, key masking
+- [x] REST API nonce auth + `manage_options` capability check
+
+**Context builder:**
+- [x] `class-tekton-context-builder.php` — site snapshot for AI context
+
+**REST API:**
+- [x] `class-tekton-rest-api.php` — full endpoint set:
+  - AI: `POST /ai/generate` (SSE), `GET /ai/models`
+  - Structures: `GET/POST /structures`, `GET/DELETE /structures/{key}`, `GET /structures/{key}/versions`, `POST /structures/{key}/rollback`
+  - Chat: `GET/DELETE /chat/{key}`
+  - Context: `GET /context`, `POST /context/refresh`
+  - Settings: `GET/POST /settings` (all settings keys, encrypted API keys)
+  - Preview: `POST /preview`
+  - Dashboard: `GET /dashboard`, `GET /field-groups`, `GET /post-types`, `GET /activity`
+- [x] AI response parsing (JSON extraction from raw/fenced responses, operations detection)
+
+**Gutenberg:**
+- [x] Fully disabled (all post types, block library CSS dequeued)
+
+**Design tokens:**
+- [x] `tekton_design_tokens` option, CSS custom property injection via `wp_head`
+
+**Builder UI (Svelte 5 + Vite + Tailwind):**
+- [x] Vite build pipeline with manifest-based PHP enqueue
+- [x] shadcn-svelte component library (Button, Card, Badge, Switch, Dialog, ConfirmDialog) with bits-ui
+- [x] Custom warm stone/copper theme (Bricolage Grotesque, Outfit, Fira Code)
+- [x] WordPress admin CSS overrides (scoped `#tekton-app` selectors)
+- [x] `App.svelte` — dashboard/builder view routing
+- [x] `Dashboard.svelte` — admin landing page with real data (templates, fields, CPTs, activity, settings)
+- [x] `Builder.svelte` — two-zone layout (chat + preview), overlay drawer panels (tree, history, fields, plugins)
+- [x] Chat panel with real-time SSE streaming, message history per template
+- [x] Preview panel with iframe rendering, desktop/tablet/mobile viewports
+- [x] Page selector dropdown with inline new template creation
+- [x] Template deletion with custom confirm dialog (ConfirmDialog component)
+- [x] Click-to-open templates from Dashboard into Builder
+- [x] Component tree (flattened from current structure)
+- [x] Version history with rollback
+- [x] Field groups sidebar
+- [x] Settings panel with live save (all settings + per-provider API key editing)
+- [x] Stores: `chat.svelte.js`, `page.svelte.js`, `settings.svelte.js`, `dashboard.svelte.js`
+- [x] `api.js` — full REST API wrapper with SSE streaming
+
+### Missing — Phase 1 gaps
+
+- [ ] Component library JSON files (`component-library/core/*.json`, `layout/*.json`, etc.) — types are registered in PHP schema but no standalone JSON definitions
+- [ ] Stores listed in PRD but not yet created: `editor.svelte.js`, `versions.svelte.js`, `plugins.svelte.js`
+- [ ] JS helpers listed in PRD: `schema.js`, `diff.js`, `context.js`
+- [ ] Old components still in repo (unused): `ChatPanel.svelte`, `PreviewPanel.svelte`, `PageSelector.svelte`, `SettingsPanel.svelte` — should be cleaned up
+
+### Missing — Phase 2 (Field Engine & Content Sources)
+
+- [ ] **Field Engine core** — `includes/field-engine/` directory entirely missing:
+  - [ ] `class-tekton-field-engine.php` — orchestrator
+  - [ ] `class-tekton-field-registry.php` — field type registry
+  - [ ] `class-tekton-field-group.php` — group definition & CRUD
+  - [ ] `class-tekton-field-renderer.php` — meta box rendering UI
+  - [ ] `class-tekton-field-storage.php` — read/write field values (`wp_postmeta`)
+  - [ ] `class-tekton-cpt-manager.php` — register CPTs and taxonomies from DB
+  - [ ] `class-tekton-options-page.php` — options pages
+  - [ ] `class-tekton-acf-compat.php` — ACF read-only compatibility
+- [ ] **Individual field types** — `includes/field-engine/fields/` (26 types: text, textarea, wysiwyg, number, email, url, password, image, gallery, file, select, checkbox, radio, true_false, date, datetime, time, color, range, repeater, group, flexible_content, relationship, post_object, taxonomy, code)
+- [ ] Content source resolution in renderer (currently renders component types but doesn't resolve `source: "field"` etc.)
+- [ ] Full-stack generation mode (AI generates CPT + fields + template in one shot, backend processes all three)
+- [ ] WordPress-specific components (post-loop, post-title, post-content, post-meta, featured-image, menu, tekton-field, search-form)
+- [ ] REST endpoints for field engine CRUD (field-groups create/update/delete, post-types create/update/delete)
+
+### Missing — Phase 3 (Editing, Versions & Plugin Mode)
+
+- [ ] **Inline editor** — `InlineEditor.svelte`, `tekton-inline-editor.js`, `tekton-preview-bridge.js` (PostMessage bridge for iframe click-to-edit)
+- [ ] **Property panel** — `PropertyPanel.svelte` (side panel for colors/spacing/visibility)
+- [ ] **Component tree drag-and-drop** — tree view exists but is read-only
+- [ ] **Plugin Generator** — `class-tekton-plugin-generator.php` (generate micro-plugins to `wp-content/plugins/tekton-{slug}/`)
+- [ ] **Plugin Mode UI** — `PluginModePanel.svelte`, plugins store
+- [ ] **Design tokens panel** — `GlobalStylesPanel.svelte`
+- [ ] **Slash commands** — `/new`, `/fullstack`, `/undo`, `/redo`, `/version`, `/plugin`, `/admin`, `/fields`, `/context`, `/tokens`, `/export`, `/import`, `/help` (UI has 3 command shortcuts but no backend handling)
+- [ ] Undo/redo in chat
+- [ ] Component bridge system (micro-plugins rendering Tekton components)
+
+### Missing — Phase 4 (Admin Customizer, Polish & Migration)
+
+- [ ] `class-tekton-admin-customizer.php` — admin CSS/menu/dashboard customization
+- [ ] `AdminCustomizer.svelte` — UI for admin customization
+- [ ] WooCommerce components (`woo-product-loop.json`)
+- [ ] ACF migration tool
+- [ ] Image optimization
+- [ ] HTML caching + critical CSS extraction
+- [ ] SEO validation
+- [ ] Import/export
+- [ ] Custom component definitions
+- [ ] Test suite (`tests/php/`, `tests/js/`)
+- [ ] `readme.txt`, `LICENSE`
+
+## 10. Implementation Phases
+
+### Phase 1 — Foundation (MVP) — ~85% complete
 
 Prompt → AI generates page → page renders on frontend.
 
 **Deliverables:** Plugin bootstrap, DB tables, bridge theme (auto-installed on activation), theme bridge, core component schema + renderer (section, container, heading, text, image, button, grid, flex-row, flex-column, link, list, spacer, divider, video, icon), storage (CRUD, basic versioning), multi-provider AI engine with SSE streaming (Anthropic, OpenAI, Google Gemini, OpenRouter), context builder (basic), REST API (generate/stream, structures, preview, settings, models), Svelte 5 builder UI (chat + preview + page selector + settings), design tokens, frontend CSS reset, Gutenberg fully disabled.
 
+**Remaining:** AI system prompt templates, component library JSON files, cleanup unused old components.
+
 **Exit criteria:** User types "Create a landing page with hero, features grid, and CTA" → sees it rendered. "Make the hero dark" → sees update.
 
-### Phase 2 — Field Engine & Content Sources
+### Phase 2 — Field Engine & Content Sources — not started
 
 Full content separation. AI generates data models + templates together.
 
@@ -676,7 +827,7 @@ Full content separation. AI generates data models + templates together.
 
 **Exit criteria:** "Create a team page with name, role, photo, LinkedIn" → creates CPT + fields + archive template. Add team member in wp-admin → appears on frontend.
 
-### Phase 3 — Manual Editing, Versions & Plugin Mode
+### Phase 3 — Manual Editing, Versions & Plugin Mode — not started
 
 Inline editing, version control, server-side code generation.
 
@@ -684,7 +835,7 @@ Inline editing, version control, server-side code generation.
 
 **Exit criteria:** Inline-edit without chat. Rollback versions. "Add a contact form that emails me" → working micro-plugin.
 
-### Phase 4 — Admin Customizer, Polish & Migration
+### Phase 4 — Admin Customizer, Polish & Migration — not started
 
 Admin customization + production hardening.
 
