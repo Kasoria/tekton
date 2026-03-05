@@ -19,6 +19,8 @@
   let versions = $state([]);
   let fieldGroups = $state([]);
   let deleteConfirm = $state({ open: false, key: '' });
+  let newTemplateName = $state('');
+  let showNewTemplate = $state(false);
 
   let messagesEnd;
   let textareaEl;
@@ -118,6 +120,28 @@
       status: 'published',
     });
     page.loadStructures();
+  }
+
+  async function createTemplate() {
+    const name = newTemplateName.trim();
+    if (!name) return;
+    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!key) return;
+
+    await api.saveStructure({
+      template_key: key,
+      title: name,
+      components: [],
+      styles: [],
+      status: 'draft',
+    });
+
+    newTemplateName = '';
+    showNewTemplate = false;
+    await page.loadStructures();
+
+    const created = page.structures.find(s => s.template_key === key);
+    if (created) selectPage(created);
   }
 
   function requestDeleteTemplate(templateKey) {
@@ -288,6 +312,34 @@
                 >×</button>
               </div>
             {/each}
+
+            <!-- New template -->
+            <div class="border-t border-border/30 mt-1 pt-1">
+              {#if showNewTemplate}
+                <div class="flex items-center gap-1 px-1.5">
+                  <input
+                    type="text"
+                    bind:value={newTemplateName}
+                    onkeydown={(e) => { if (e.key === 'Enter') createTemplate(); if (e.key === 'Escape') { showNewTemplate = false; newTemplateName = ''; } }}
+                    placeholder="Template name..."
+                    class="flex-1 px-2 py-[6px] bg-background border border-border/50 rounded-[5px] text-[12px] font-body text-foreground outline-none placeholder:text-dim"
+                    autofocus
+                  />
+                  <button
+                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-background text-[11px] font-medium font-body cursor-pointer"
+                    onclick={createTemplate}
+                  >Add</button>
+                </div>
+              {:else}
+                <button
+                  class="flex items-center gap-[7px] w-full px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[12px] font-body text-muted bg-transparent hover:text-foreground transition-colors"
+                  onclick={() => (showNewTemplate = true)}
+                >
+                  <span class="text-[14px] leading-none">+</span>
+                  <span>New template</span>
+                </button>
+              {/if}
+            </div>
           </div>
         {/if}
       </div>
@@ -451,99 +503,103 @@
       </div>
     </div>
 
-    <!-- RIGHT SIDEBAR (on demand) -->
-    {#if sidebar}
-      <div class="w-[260px] shrink-0 bg-card border-l border-border flex flex-col overflow-hidden">
-        <div class="px-3.5 py-2.5 border-b border-border flex items-center justify-between">
-          <span class="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted">{sidebarLabels[sidebar]}</span>
-          <button
-            class="bg-transparent border-none text-dim cursor-pointer text-[15px] leading-none p-0.5 hover:text-muted"
-            onclick={() => (sidebar = null)}
-          >×</button>
-        </div>
+  </div>
 
-        <div class="flex-1 overflow-auto p-2">
-          <!-- Tree -->
-          {#if sidebar === 'tree'}
-            {#if tree.length === 0}
-              <div class="text-xs text-muted text-center py-4">No components yet.</div>
-            {:else}
-              <div class="flex flex-col gap-px">
-                {#each tree as n}
+  <!-- RIGHT DRAWER (overlay, slides in) -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="tk-drawer-backdrop {sidebar ? 'tk-drawer-open' : ''}"
+    onclick={() => (sidebar = null)}
+  ></div>
+  <div class="tk-drawer {sidebar ? 'tk-drawer-open' : ''}">
+    <div class="px-3.5 py-2.5 border-b border-border flex items-center justify-between shrink-0">
+      <span class="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">{sidebarLabels[sidebar] || ''}</span>
+      <button
+        class="bg-transparent border-none text-dim cursor-pointer text-[15px] leading-none p-0.5 hover:text-muted"
+        onclick={() => (sidebar = null)}
+      >×</button>
+    </div>
+
+    <div class="flex-1 overflow-auto p-2">
+      <!-- Tree -->
+      {#if sidebar === 'tree'}
+        {#if tree.length === 0}
+          <div class="text-xs text-muted text-center py-4">No components yet.</div>
+        {:else}
+          <div class="flex flex-col gap-px">
+            {#each tree as n}
+              <button
+                class="flex items-center gap-[7px] py-1 px-1.5 rounded-[5px] cursor-pointer w-full text-left border {selectedComp === n.id ? 'bg-copper/5 border-copper/10' : 'bg-transparent border-transparent'}"
+                style="padding-left: {6 + n.depth * 16}px;"
+                onclick={() => (selectedComp = n.id)}
+              >
+                <span
+                  class="w-4 h-4 rounded-[3px] shrink-0 text-[8px] font-bold font-mono flex items-center justify-center"
+                  style="background: {(TYPE_MAP[n.type]?.hue || '#5c5753')}15; color: {TYPE_MAP[n.type]?.hue || '#5c5753'};"
+                >{TYPE_MAP[n.type]?.letter || '?'}</span>
+                <span class="text-[11.5px] truncate {selectedComp === n.id ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal'}">{n.label}</span>
+                <span class="ml-auto text-[9px] text-muted font-mono shrink-0">{n.type}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+      <!-- Versions -->
+      {:else if sidebar === 'versions'}
+        {#if versions.length === 0}
+          <div class="text-xs text-muted text-center py-4">No versions yet.</div>
+        {:else}
+          <div class="flex flex-col gap-0.5">
+            {#each versions as v, i}
+              <div class="px-2 py-2 rounded-[5px] {i === 0 ? 'bg-copper/5' : ''}">
+                <div class="flex items-center gap-2 mb-[3px]">
+                  <span class="text-[11px] font-semibold font-mono {i === 0 ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
+                  {#if i === 0}
+                    <span class="text-[9px] text-green font-semibold">CURRENT</span>
+                  {/if}
+                  <span class="ml-auto text-[10px] text-border">{relativeTime(v.created_at)}</span>
+                </div>
+                <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || v.change_type}</div>
+                {#if i !== 0}
                   <button
-                    class="flex items-center gap-[7px] py-1 px-1.5 rounded-[5px] cursor-pointer w-full text-left border {selectedComp === n.id ? 'bg-copper/5 border-copper/10' : 'bg-transparent border-transparent'}"
-                    style="padding-left: {6 + n.depth * 16}px;"
-                    onclick={() => (selectedComp = n.id)}
-                  >
-                    <span
-                      class="w-4 h-4 rounded-[3px] shrink-0 text-[8px] font-bold font-mono flex items-center justify-center"
-                      style="background: {(TYPE_MAP[n.type]?.hue || '#5c5753')}15; color: {TYPE_MAP[n.type]?.hue || '#5c5753'};"
-                    >{TYPE_MAP[n.type]?.letter || '?'}</span>
-                    <span class="text-[11.5px] truncate {selectedComp === n.id ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal'}">{n.label}</span>
-                    <span class="ml-auto text-[9px] text-border font-mono shrink-0">{n.type}</span>
-                  </button>
-                {/each}
+                    class="mt-[5px] px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[10px] font-body hover:border-dim"
+                    onclick={() => handleRollback(v.version_number)}
+                  >Restore</button>
+                {/if}
               </div>
-            {/if}
+            {/each}
+          </div>
+        {/if}
 
-          <!-- Versions -->
-          {:else if sidebar === 'versions'}
-            {#if versions.length === 0}
-              <div class="text-xs text-muted text-center py-4">No versions yet.</div>
-            {:else}
-              <div class="flex flex-col gap-0.5">
-                {#each versions as v, i}
-                  <div class="px-2 py-2 rounded-[5px] {i === 0 ? 'bg-copper/5' : ''}">
-                    <div class="flex items-center gap-2 mb-[3px]">
-                      <span class="text-[11px] font-semibold font-mono {i === 0 ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
-                      {#if i === 0}
-                        <span class="text-[9px] text-green font-semibold">CURRENT</span>
-                      {/if}
-                      <span class="ml-auto text-[10px] text-border">{relativeTime(v.created_at)}</span>
-                    </div>
-                    <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || v.change_type}</div>
-                    {#if i !== 0}
-                      <button
-                        class="mt-[5px] px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[10px] font-body hover:border-dim"
-                        onclick={() => handleRollback(v.version_number)}
-                      >Restore</button>
-                    {/if}
+      <!-- Fields -->
+      {:else if sidebar === 'fields'}
+        {#if fieldGroups.length === 0}
+          <div class="text-xs text-muted text-center py-4">No field groups yet.</div>
+        {:else}
+          <div class="flex flex-col gap-2">
+            {#each fieldGroups as g}
+              <div class="p-2.5 rounded-[7px] border border-border bg-card-hover">
+                <div class="text-xs font-semibold text-foreground mb-0.5">{g.title}</div>
+                <div class="text-[10px] text-dim font-mono mb-2">{g.slug}</div>
+                {#each (g.fields || []) as f}
+                  <div class="text-[11px] text-muted py-px font-mono flex items-center gap-1.5">
+                    <span class="w-[3px] h-[3px] rounded-sm bg-copper/40 shrink-0"></span>
+                    {f.name || f.key || f}
                   </div>
                 {/each}
               </div>
-            {/if}
+            {/each}
+          </div>
+        {/if}
 
-          <!-- Fields -->
-          {:else if sidebar === 'fields'}
-            {#if fieldGroups.length === 0}
-              <div class="text-xs text-muted text-center py-4">No field groups yet.</div>
-            {:else}
-              <div class="flex flex-col gap-2">
-                {#each fieldGroups as g}
-                  <div class="p-2.5 rounded-[7px] border border-border bg-card-hover">
-                    <div class="text-xs font-semibold text-foreground mb-0.5">{g.title}</div>
-                    <div class="text-[10px] text-dim font-mono mb-2">{g.slug}</div>
-                    {#each (g.fields || []) as f}
-                      <div class="text-[11px] text-muted py-px font-mono flex items-center gap-1.5">
-                        <span class="w-[3px] h-[3px] rounded-sm bg-copper/40 shrink-0"></span>
-                        {f.name || f.key || f}
-                      </div>
-                    {/each}
-                  </div>
-                {/each}
-              </div>
-            {/if}
-
-          <!-- Plugins -->
-          {:else if sidebar === 'plugins'}
-            <div class="text-xs text-muted text-center py-4">
-              <div class="mb-2">Generated plugins will appear here.</div>
-              <div class="text-dim">Use <span class="font-mono">/plugin</span> in the chat to generate one.</div>
-            </div>
-          {/if}
+      <!-- Plugins -->
+      {:else if sidebar === 'plugins'}
+        <div class="text-xs text-muted text-center py-4">
+          <div class="mb-2">Generated plugins will appear here.</div>
+          <div class="text-dim">Use <span class="font-mono">/plugin</span> in the chat to generate one.</div>
         </div>
-      </div>
-    {/if}
+      {/if}
+    </div>
   </div>
 
   <ConfirmDialog
@@ -641,5 +697,41 @@
 
   :global(.tk-ember) {
     animation: ember 1.6s ease-in-out infinite;
+  }
+
+  /* Drawer overlay */
+  .tk-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    transition: background 0.25s ease;
+  }
+  .tk-drawer-backdrop.tk-drawer-open {
+    background: rgba(0, 0, 0, 0.35);
+    pointer-events: auto;
+  }
+
+  /* Drawer panel */
+  .tk-drawer {
+    position: fixed;
+    top: 48px; /* below topbar */
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 50;
+    background: var(--color-card);
+    border-left: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0);
+  }
+  .tk-drawer.tk-drawer-open {
+    transform: translateX(0);
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.3);
   }
 </style>
