@@ -16,14 +16,18 @@ export function createChatStore() {
         if (event.type === 'chunk') {
           currentStream += event.content;
         } else if (event.type === 'complete') {
+          // Use the parsed natural language message from the backend,
+          // falling back to extracting it from the stream.
+          const displayMessage = event.message || extractMessage(currentStream);
+
           messages.push({
             role: 'assistant',
-            content: currentStream,
-            structure: event.structure,
+            content: displayMessage,
+            structure: event.structure || null,
             timestamp: Date.now(),
           });
           currentStream = '';
-          return event.structure;
+          return event.structure || null;
         } else if (event.type === 'error') {
           messages.push({
             role: 'assistant',
@@ -44,6 +48,30 @@ export function createChatStore() {
       currentStream = '';
     }
     return null;
+  }
+
+  /**
+   * Extract natural language from a streamed response that may contain JSON.
+   * Strips out ```json code fences and raw JSON objects.
+   */
+  function extractMessage(raw) {
+    if (!raw) return 'Changes applied to the preview.';
+
+    // If it starts with { or [, it's raw JSON — no natural language.
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      return 'Changes applied to the preview.';
+    }
+
+    // Extract text before the first code fence.
+    const fenceIdx = raw.indexOf('```');
+    if (fenceIdx > 0) {
+      const before = raw.substring(0, fenceIdx).trim();
+      if (before) return before;
+    }
+
+    // If no code fence, return as-is (might be a plain text response).
+    return trimmed;
   }
 
   function loadHistory(history) {

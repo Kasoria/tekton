@@ -49,6 +49,7 @@ class Tekton_Renderer {
 		return match ( $type ) {
 			'section'     => $this->render_section( $component, $post_id ),
 			'container'   => $this->render_container( $component, $post_id ),
+			'div'         => $this->render_div( $component, $post_id ),
 			'heading'     => $this->render_heading( $component, $post_id ),
 			'text'        => $this->render_text( $component, $post_id ),
 			'image'       => $this->render_image( $component, $post_id ),
@@ -73,7 +74,16 @@ class Tekton_Renderer {
 	}
 
 	private function render_container( array $c, int $post_id ): string {
-		$attrs    = $this->build_attributes( $c, 'tekton-container' );
+		// If the container has absolute/fixed positioning, use plain div (no max-width constraint).
+		$position = $c['styles']['desktop']['position'] ?? '';
+		$class    = in_array( $position, [ 'absolute', 'fixed' ], true ) ? 'tekton-div' : 'tekton-container';
+		$attrs    = $this->build_attributes( $c, $class );
+		$children = $this->render_children( $c, $post_id );
+		return "<div {$attrs}>\n{$children}</div>\n";
+	}
+
+	private function render_div( array $c, int $post_id ): string {
+		$attrs    = $this->build_attributes( $c, 'tekton-div' );
 		$children = $this->render_children( $c, $post_id );
 		return "<div {$attrs}>\n{$children}</div>\n";
 	}

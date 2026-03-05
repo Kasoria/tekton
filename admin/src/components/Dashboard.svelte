@@ -3,12 +3,15 @@
   import { Card } from '$lib/components/ui/card/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Switch } from '$lib/components/ui/switch/index.js';
+  import { ConfirmDialog } from '$lib/components/ui/dialog/index.js';
   import { createDashboardStore } from '$lib/stores/dashboard.svelte.js';
   import { createSettingsStore } from '$lib/stores/settings.svelte.js';
+  import { api } from '$lib/api.js';
 
-  let { onOpenBuilder } = $props();
+  let { onOpenBuilder, onOpenTemplate } = $props();
 
   let tab = $state('overview');
+  let deleteConfirm = $state({ open: false, key: '' });
 
   const dashboard = createDashboardStore();
   const settingsStore = createSettingsStore();
@@ -98,6 +101,17 @@
       { key: 'tekton_debug_mode', label: 'Debug mode', type: 'bool' },
     ]},
   ]);
+
+  function requestDeleteTemplate(templateKey) {
+    deleteConfirm = { open: true, key: templateKey };
+  }
+
+  async function confirmDeleteTemplate() {
+    const templateKey = deleteConfirm.key;
+    deleteConfirm = { open: false, key: '' };
+    await api.deleteStructure(templateKey);
+    await dashboard.load();
+  }
 
   function getSettingValue(key) {
     return settingsStore.settings[key] ?? '';
@@ -226,7 +240,8 @@
             {:else}
               <Card>
                 {#each dashboard.templates.slice(0, 6) as t, i}
-                  <div class="flex items-center justify-between px-[18px] py-3 cursor-pointer transition-colors hover:bg-card-hover {i < Math.min(dashboard.templates.length, 6) - 1 ? 'border-b border-border-subtle' : ''}">
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div class="flex items-center justify-between px-[18px] py-3 cursor-pointer transition-colors hover:bg-card-hover group {i < Math.min(dashboard.templates.length, 6) - 1 ? 'border-b border-border-subtle' : ''}" onclick={() => onOpenTemplate?.(t.template_key)}>
                     <div class="flex items-center gap-3.5">
                       <div class="w-[3px] h-7 rounded-sm {t.status === 'published' ? 'bg-copper' : 'bg-border'}"></div>
                       <div>
@@ -240,6 +255,11 @@
                       <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
                         {t.status === 'published' ? 'LIVE' : 'DRAFT'}
                       </span>
+                      <button
+                        class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[11px] bg-transparent border-none cursor-pointer transition-opacity"
+                        onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
+                        title="Delete"
+                      >×</button>
                     </div>
                   </div>
                 {/each}
@@ -305,7 +325,14 @@
 
         <div class="grid grid-cols-3 gap-3.5">
           {#each dashboard.templates as t}
-            <Card class="cursor-pointer transition-colors hover:border-dim">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <Card class="cursor-pointer transition-colors hover:border-dim group relative" onclick={() => onOpenTemplate?.(t.template_key)}>
+              <!-- Delete button -->
+              <button
+                class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-background/80 border border-border text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all z-10"
+                onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
+                title="Delete template"
+              >×</button>
               <!-- Skeleton preview -->
               <div class="h-[90px] bg-background m-2.5 rounded-md flex flex-col p-2 gap-1 border border-border-subtle">
                 <div class="h-[5px] w-3/5 bg-border rounded-sm"></div>
@@ -478,6 +505,15 @@
     {/if}
   </div>
 </div>
+
+<ConfirmDialog
+  open={deleteConfirm.open}
+  title="Delete template"
+  description="This will permanently delete &ldquo;{deleteConfirm.key}&rdquo; and all its versions. This cannot be undone."
+  confirmLabel="Delete"
+  onconfirm={confirmDeleteTemplate}
+  oncancel={() => (deleteConfirm = { open: false, key: '' })}
+/>
 
 <style>
   .tk-dashboard {

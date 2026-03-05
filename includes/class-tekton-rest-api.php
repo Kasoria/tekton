@@ -183,6 +183,16 @@ class Tekton_REST_API {
 		$chat_history = $storage->get_chat_history( $template_key );
 		$site_context = $context_builder->build();
 
+		// Include the current template structure so the AI can modify it.
+		$current_structure = $storage->get_structure( $template_key );
+		if ( $current_structure && ! empty( $current_structure['components'] ) ) {
+			$site_context['current_template'] = [
+				'template_key' => $template_key,
+				'components'   => $current_structure['components'],
+				'styles'       => $current_structure['styles'] ?? [],
+			];
+		}
+
 		$storage->add_chat_message( $template_key, 'user', $prompt );
 
 		$full_response = '';
@@ -198,16 +208,30 @@ class Tekton_REST_API {
 				$this->send_sse_event( 'chunk', $chunk );
 			}
 
-			$parsed = $this->parse_ai_response( $full_response, $template_key );
+			// Parse the response into natural language message + structured JSON.
+			$parsed_response = Tekton_AI_Engine::parse_response( $full_response );
+			$message         = $parsed_response['message'];
+			$json_data       = $parsed_response['json'];
 
-			if ( $parsed ) {
-				$storage->save_structure( $template_key, $parsed );
-				$storage->add_chat_message( $template_key, 'assistant', $full_response );
+			// Extract structure from JSON.
+			$structure = null;
+			if ( $json_data ) {
+				$structure = $this->extract_structure( $json_data, $template_key );
+			}
 
-				$this->send_sse_event( 'complete', null, [ 'structure' => $parsed ] );
+			// Store the natural language message in chat history (not the raw JSON).
+			$storage->add_chat_message( $template_key, 'assistant', $message );
+
+			if ( $structure ) {
+				$storage->save_structure( $template_key, $structure );
+				$this->send_sse_event( 'complete', null, [
+					'structure' => $structure,
+					'message'   => $message,
+				] );
 			} else {
-				$storage->add_chat_message( $template_key, 'assistant', $full_response );
-				$this->send_sse_event( 'complete', null, [ 'raw' => $full_response ] );
+				$this->send_sse_event( 'complete', null, [
+					'message' => $message,
+				] );
 			}
 		} catch ( \Throwable $e ) {
 			$this->send_sse_error( $e->getMessage() );
@@ -547,29 +571,33 @@ class Tekton_REST_API {
 		exit;
 	}
 
-	private function parse_ai_response( string $response, string $template_key ): ?array {
-		// Try to extract JSON from the response.
-		$json = null;
+	/**
+	 * Extract a renderable structure from parsed JSON data.
+	 * Supports both full component trees and granular operations.
+	 */
+	private function extract_structure( array $json, string $template_key ): ?array {
+		// Operations mode — apply patches to existing structure.
+		if ( ! empty( $json['operations'] ) ) {
+			/** @var Tekton_Storage $storage */
+			$storage   = $this->core->get_module( 'storage' );
+			$existing  = $storage->get_structure( $template_key );
 
-		// Direct JSON parse.
-		$decoded = json_decode( $response, true );
-		if ( $decoded && is_array( $decoded ) ) {
-			$json = $decoded;
-		}
-
-		// Try extracting from code fences.
-		if ( ! $json && preg_match( '/```(?:json)?\s*\n(.*?)\n```/s', $response, $matches ) ) {
-			$decoded = json_decode( $matches[1], true );
-			if ( $decoded && is_array( $decoded ) ) {
-				$json = $decoded;
+			if ( ! $existing || empty( $existing['components'] ) ) {
+				return null;
 			}
+
+			$patched = Tekton_Structure_Patcher::apply( $existing, $json['operations'] );
+			$patched['template_key'] = $template_key;
+
+			// Allow the AI to update the title via operations.
+			if ( ! empty( $json['title'] ) ) {
+				$patched['title'] = $json['title'];
+			}
+
+			return $patched;
 		}
 
-		if ( ! $json ) {
-			return null;
-		}
-
-		// Normalize: ensure it has template_key and components.
+		// Standard page response — full component tree.
 		if ( ! empty( $json['components'] ) ) {
 			$json['template_key'] = $template_key;
 			return $json;

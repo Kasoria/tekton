@@ -37,75 +37,82 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 			'stream'     => true,
 		] );
 
-		$ch = curl_init( self::API_URL );
-		curl_setopt_array( $ch, [
-			CURLOPT_POST           => true,
-			CURLOPT_POSTFIELDS     => $body,
-			CURLOPT_RETURNTRANSFER => false,
-			CURLOPT_HTTPHEADER     => [
-				'Content-Type: application/json',
-				'x-api-key: ' . $this->api_key,
-				'anthropic-version: 2023-06-01',
-			],
-			CURLOPT_TIMEOUT        => 120,
-		] );
-
+		$queue  = new \SplQueue();
+		$error  = null;
 		$buffer = '';
 
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function ( $ch, string $data ) use ( &$buffer ): int {
-			$buffer .= $data;
-			return strlen( $data );
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer ) {
+			$ch = curl_init( self::API_URL );
+			curl_setopt_array( $ch, [
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => $body,
+				CURLOPT_RETURNTRANSFER => false,
+				CURLOPT_HTTPHEADER     => [
+					'Content-Type: application/json',
+					'x-api-key: ' . $this->api_key,
+					'anthropic-version: 2023-06-01',
+				],
+				CURLOPT_TIMEOUT        => 120,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer ): int {
+					$buffer .= $data;
+					$lines   = explode( "\n", $buffer );
+					$buffer  = array_pop( $lines );
+
+					foreach ( $lines as $line ) {
+						$line = trim( $line );
+						if ( '' === $line || str_starts_with( $line, 'event:' ) ) {
+							continue;
+						}
+						if ( ! str_starts_with( $line, 'data: ' ) ) {
+							continue;
+						}
+
+						$json = json_decode( substr( $line, 6 ), true );
+						if ( ! $json ) {
+							continue;
+						}
+
+						if ( 'content_block_delta' === ( $json['type'] ?? '' ) ) {
+							$text = $json['delta']['text'] ?? '';
+							if ( '' !== $text ) {
+								$queue->enqueue( $text );
+								\Fiber::suspend();
+							}
+						}
+					}
+
+					return strlen( $data );
+				},
+			] );
+
+			curl_exec( $ch );
+
+			$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+			curl_close( $ch );
+
+			if ( $http_code >= 400 ) {
+				$error = "Anthropic API error (HTTP {$http_code})";
+			}
 		} );
 
-		$chunks = [];
-		curl_setopt( $ch, CURLOPT_WRITEFUNCTION, function ( $ch, string $data ) use ( &$chunks ): int {
-			$chunks[] = $data;
-			return strlen( $data );
-		} );
+		$fiber->start();
 
-		curl_exec( $ch );
-
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-
-		if ( $http_code >= 400 ) {
-			$full = implode( '', $chunks );
-			$error = json_decode( $full, true );
-			$message = $error['error']['message'] ?? "Anthropic API error (HTTP {$http_code})";
-			throw new \RuntimeException( $message );
+		while ( ! $fiber->isTerminated() ) {
+			while ( ! $queue->isEmpty() ) {
+				yield $queue->dequeue();
+			}
+			if ( ! $fiber->isTerminated() ) {
+				$fiber->resume();
+			}
 		}
 
-		$buffer = '';
-		foreach ( $chunks as $chunk ) {
-			$buffer .= $chunk;
-			$lines   = explode( "\n", $buffer );
-			$buffer  = array_pop( $lines );
+		// Drain remaining items.
+		while ( ! $queue->isEmpty() ) {
+			yield $queue->dequeue();
+		}
 
-			foreach ( $lines as $line ) {
-				$line = trim( $line );
-				if ( '' === $line || str_starts_with( $line, 'event:' ) ) {
-					continue;
-				}
-				if ( ! str_starts_with( $line, 'data: ' ) ) {
-					continue;
-				}
-
-				$json = json_decode( substr( $line, 6 ), true );
-				if ( ! $json ) {
-					continue;
-				}
-
-				if ( 'message_stop' === ( $json['type'] ?? '' ) ) {
-					return;
-				}
-
-				if ( 'content_block_delta' === ( $json['type'] ?? '' ) ) {
-					$text = $json['delta']['text'] ?? '';
-					if ( '' !== $text ) {
-						yield $text;
-					}
-				}
-			}
+		if ( $error ) {
+			throw new \RuntimeException( $error );
 		}
 	}
 

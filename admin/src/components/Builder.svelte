@@ -1,10 +1,11 @@
 <script>
   import { Button } from '$lib/components/ui/button/index.js';
+  import { ConfirmDialog } from '$lib/components/ui/dialog/index.js';
   import { createChatStore } from '$lib/stores/chat.svelte.js';
   import { createPageStore } from '$lib/stores/page.svelte.js';
   import { api } from '$lib/api.js';
 
-  let { onBack } = $props();
+  let { onBack, initialTemplateKey = null } = $props();
 
   const chat = createChatStore();
   const page = createPageStore();
@@ -17,6 +18,7 @@
   let previewHtml = $state('');
   let versions = $state([]);
   let fieldGroups = $state([]);
+  let deleteConfirm = $state({ open: false, key: '' });
 
   let messagesEnd;
   let textareaEl;
@@ -28,10 +30,13 @@
     page.loadStructures();
   });
 
-  // When structures load, pick the first one
+  // When structures load, pick the requested template or fall back to first
   $effect(() => {
     if (page.structures.length > 0 && !currentPage) {
-      selectPage(page.structures[0]);
+      const target = initialTemplateKey
+        ? page.structures.find(s => s.template_key === initialTemplateKey)
+        : null;
+      selectPage(target || page.structures[0]);
     }
   });
 
@@ -115,6 +120,26 @@
     page.loadStructures();
   }
 
+  function requestDeleteTemplate(templateKey) {
+    deleteConfirm = { open: true, key: templateKey };
+  }
+
+  async function confirmDeleteTemplate() {
+    const templateKey = deleteConfirm.key;
+    deleteConfirm = { open: false, key: '' };
+    await api.deleteStructure(templateKey);
+    await page.loadStructures();
+    if (currentPage?.template_key === templateKey) {
+      currentPage = page.structures[0] || null;
+      if (currentPage) {
+        selectPage(currentPage);
+      } else {
+        previewHtml = '';
+        versions = [];
+      }
+    }
+  }
+
   async function handleRollback(versionNumber) {
     if (!currentPage) return;
     await api.rollback(currentPage.template_key, versionNumber);
@@ -138,6 +163,7 @@
   const TYPE_MAP = {
     section: { letter: 'S', hue: '#c97d3c' },
     container: { letter: 'C', hue: '#8a7d6b' },
+    div: { letter: 'D', hue: '#6b6b6b' },
     heading: { letter: 'H', hue: '#b86e4a' },
     text: { letter: 'T', hue: '#7d8a6b' },
     button: { letter: 'B', hue: '#c9a43c' },
@@ -179,6 +205,16 @@
     fields: 'Field Groups',
     plugins: 'Generated Plugins',
   };
+
+  // Extract just the natural language part from the streaming text (hide JSON).
+  let streamingDisplay = $derived(() => {
+    const raw = chat.currentStream;
+    if (!raw) return '';
+    const fenceIdx = raw.indexOf('```');
+    if (fenceIdx > 0) return raw.substring(0, fenceIdx).trim();
+    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) return 'Building...';
+    return raw;
+  });
 
   function relativeTime(dateStr) {
     if (!dateStr) return '';
@@ -237,15 +273,20 @@
           <div class="fixed inset-0 z-[29]" onclick={() => (showPages = false)}></div>
           <div class="absolute top-[calc(100%+6px)] -left-1 w-[230px] z-30 bg-card-hover border border-dim rounded-[10px] p-[5px] shadow-[0_16px_48px_#00000060]">
             {#each page.structures as p}
-              <button
-                class="flex items-center justify-between w-full px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground {p.template_key === currentPage?.template_key ? 'bg-border/20' : 'bg-transparent'}"
-                onclick={() => selectPage(p)}
-              >
-                <div class="flex items-center gap-[7px]">
+              <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''} group">
+                <button
+                  class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"
+                  onclick={() => selectPage(p)}
+                >
                   <span class="w-[5px] h-[5px] rounded-full {p.status === 'published' ? 'bg-green' : 'bg-gold'}"></span>
                   <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
-                </div>
-              </button>
+                </button>
+                <button
+                  class="opacity-0 group-hover:opacity-100 px-1.5 py-1 border-none bg-transparent text-dim hover:text-gold cursor-pointer text-[11px] transition-opacity"
+                  onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(p.template_key); }}
+                  title="Delete template"
+                >×</button>
+              </div>
             {/each}
           </div>
         {/if}
@@ -330,15 +371,15 @@
           {#if chat.isStreaming}
             <div class="flex flex-col gap-[5px]">
               <span class="text-[10px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">Tekton</span>
-              <div class="px-3.5 py-3 rounded-[10px] bg-card border-l-2 border-copper/20 flex items-center gap-2">
-                <div class="tk-ember w-[7px] h-[7px] rounded-full bg-copper shrink-0"></div>
-                <span class="text-xs text-muted">
-                  {#if chat.currentStream}
-                    {chat.currentStream}
-                  {:else}
-                    Building changes...
-                  {/if}
-                </span>
+              <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 bg-card text-foreground/75 border-l-2 border-copper/20">
+                {#if streamingDisplay()}
+                  <div class="whitespace-pre-wrap">{streamingDisplay()}</div>
+                {:else}
+                  <div class="flex items-center gap-2">
+                    <div class="tk-ember w-[7px] h-[7px] rounded-full bg-copper shrink-0"></div>
+                    <span class="text-muted">Building changes...</span>
+                  </div>
+                {/if}
               </div>
             </div>
           {/if}
@@ -504,6 +545,15 @@
       </div>
     {/if}
   </div>
+
+  <ConfirmDialog
+    open={deleteConfirm.open}
+    title="Delete template"
+    description="This will permanently delete &ldquo;{deleteConfirm.key}&rdquo; and all its versions. This cannot be undone."
+    confirmLabel="Delete"
+    onconfirm={confirmDeleteTemplate}
+    oncancel={() => (deleteConfirm = { open: false, key: '' })}
+  />
 </div>
 
 <style>

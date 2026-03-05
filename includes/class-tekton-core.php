@@ -40,6 +40,7 @@ final class Tekton_Core {
 		require_once $dir . 'class-tekton-theme-bridge.php';
 		require_once $dir . 'class-tekton-assets.php';
 		require_once $dir . 'class-tekton-rest-api.php';
+		require_once $dir . 'class-tekton-structure-patcher.php';
 
 		require_once $dir . 'ai/interface-tekton-ai-provider.php';
 		require_once $dir . 'ai/class-tekton-ai-engine.php';

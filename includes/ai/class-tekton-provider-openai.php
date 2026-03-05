@@ -45,37 +45,81 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 			'max_tokens' => $max_tokens,
 		] );
 
-		$ch = curl_init( self::API_URL );
-		$chunks = [];
+		$queue  = new \SplQueue();
+		$error  = null;
+		$buffer = '';
 
-		curl_setopt_array( $ch, [
-			CURLOPT_POST           => true,
-			CURLOPT_POSTFIELDS     => $body,
-			CURLOPT_RETURNTRANSFER => false,
-			CURLOPT_HTTPHEADER     => [
-				'Content-Type: application/json',
-				'Authorization: Bearer ' . $this->api_key,
-			],
-			CURLOPT_TIMEOUT        => 120,
-			CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$chunks ): int {
-				$chunks[] = $data;
-				return strlen( $data );
-			},
-		] );
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer ) {
+			$ch = curl_init( self::API_URL );
+			curl_setopt_array( $ch, [
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => $body,
+				CURLOPT_RETURNTRANSFER => false,
+				CURLOPT_HTTPHEADER     => [
+					'Content-Type: application/json',
+					'Authorization: Bearer ' . $this->api_key,
+				],
+				CURLOPT_TIMEOUT        => 120,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer ): int {
+					$buffer .= $data;
+					$lines   = explode( "\n", $buffer );
+					$buffer  = array_pop( $lines );
 
-		curl_exec( $ch );
+					foreach ( $lines as $line ) {
+						$line = trim( $line );
+						if ( '' === $line || ! str_starts_with( $line, 'data: ' ) ) {
+							continue;
+						}
 
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
+						$payload = substr( $line, 6 );
+						if ( '[DONE]' === $payload ) {
+							continue;
+						}
 
-		if ( $http_code >= 400 ) {
-			$full = implode( '', $chunks );
-			$error = json_decode( $full, true );
-			$message = $error['error']['message'] ?? "OpenAI API error (HTTP {$http_code})";
-			throw new \RuntimeException( $message );
+						$json = json_decode( $payload, true );
+						if ( ! $json ) {
+							continue;
+						}
+
+						$text = $json['choices'][0]['delta']['content'] ?? '';
+						if ( '' !== $text ) {
+							$queue->enqueue( $text );
+							\Fiber::suspend();
+						}
+					}
+
+					return strlen( $data );
+				},
+			] );
+
+			curl_exec( $ch );
+
+			$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+			curl_close( $ch );
+
+			if ( $http_code >= 400 ) {
+				$error = "OpenAI API error (HTTP {$http_code})";
+			}
+		} );
+
+		$fiber->start();
+
+		while ( ! $fiber->isTerminated() ) {
+			while ( ! $queue->isEmpty() ) {
+				yield $queue->dequeue();
+			}
+			if ( ! $fiber->isTerminated() ) {
+				$fiber->resume();
+			}
 		}
 
-		yield from $this->parse_sse_chunks( $chunks );
+		while ( ! $queue->isEmpty() ) {
+			yield $queue->dequeue();
+		}
+
+		if ( $error ) {
+			throw new \RuntimeException( $error );
+		}
 	}
 
 	public function get_models(): array {
@@ -99,41 +143,5 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 		}
 
 		return 200 === wp_remote_retrieve_response_code( $response );
-	}
-
-	/**
-	 * @param string[] $chunks
-	 * @return \Generator<string>
-	 */
-	private function parse_sse_chunks( array $chunks ): \Generator {
-		$buffer = '';
-
-		foreach ( $chunks as $chunk ) {
-			$buffer .= $chunk;
-			$lines   = explode( "\n", $buffer );
-			$buffer  = array_pop( $lines );
-
-			foreach ( $lines as $line ) {
-				$line = trim( $line );
-				if ( '' === $line || ! str_starts_with( $line, 'data: ' ) ) {
-					continue;
-				}
-
-				$data = substr( $line, 6 );
-				if ( '[DONE]' === $data ) {
-					return;
-				}
-
-				$json = json_decode( $data, true );
-				if ( ! $json ) {
-					continue;
-				}
-
-				$text = $json['choices'][0]['delta']['content'] ?? '';
-				if ( '' !== $text ) {
-					yield $text;
-				}
-			}
-		}
 	}
 }

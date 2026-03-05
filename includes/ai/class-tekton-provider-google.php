@@ -46,55 +46,72 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 			],
 		] );
 
-		$ch     = curl_init( $url );
-		$chunks = [];
+		$queue  = new \SplQueue();
+		$error  = null;
+		$buffer = '';
 
-		curl_setopt_array( $ch, [
-			CURLOPT_POST           => true,
-			CURLOPT_POSTFIELDS     => $body,
-			CURLOPT_RETURNTRANSFER => false,
-			CURLOPT_HTTPHEADER     => [ 'Content-Type: application/json' ],
-			CURLOPT_TIMEOUT        => 120,
-			CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$chunks ): int {
-				$chunks[] = $data;
-				return strlen( $data );
-			},
-		] );
+		$fiber = new \Fiber( function () use ( $url, $body, &$queue, &$error, &$buffer ) {
+			$ch = curl_init( $url );
+			curl_setopt_array( $ch, [
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => $body,
+				CURLOPT_RETURNTRANSFER => false,
+				CURLOPT_HTTPHEADER     => [ 'Content-Type: application/json' ],
+				CURLOPT_TIMEOUT        => 120,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer ): int {
+					$buffer .= $data;
+					$lines   = explode( "\n", $buffer );
+					$buffer  = array_pop( $lines );
 
-		curl_exec( $ch );
+					foreach ( $lines as $line ) {
+						$line = trim( $line );
+						if ( ! str_starts_with( $line, 'data: ' ) ) {
+							continue;
+						}
 
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
+						$json = json_decode( substr( $line, 6 ), true );
+						if ( ! $json ) {
+							continue;
+						}
 
-		if ( $http_code >= 400 ) {
-			$full  = implode( '', $chunks );
-			$error = json_decode( $full, true );
-			$message = $error['error']['message'] ?? "Google API error (HTTP {$http_code})";
-			throw new \RuntimeException( $message );
+						$text = $json['candidates'][0]['content']['parts'][0]['text'] ?? '';
+						if ( '' !== $text ) {
+							$queue->enqueue( $text );
+							\Fiber::suspend();
+						}
+					}
+
+					return strlen( $data );
+				},
+			] );
+
+			curl_exec( $ch );
+
+			$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+			curl_close( $ch );
+
+			if ( $http_code >= 400 ) {
+				$error = "Google API error (HTTP {$http_code})";
+			}
+		} );
+
+		$fiber->start();
+
+		while ( ! $fiber->isTerminated() ) {
+			while ( ! $queue->isEmpty() ) {
+				yield $queue->dequeue();
+			}
+			if ( ! $fiber->isTerminated() ) {
+				$fiber->resume();
+			}
 		}
 
-		$buffer = '';
-		foreach ( $chunks as $chunk ) {
-			$buffer .= $chunk;
-			$lines   = explode( "\n", $buffer );
-			$buffer  = array_pop( $lines );
+		while ( ! $queue->isEmpty() ) {
+			yield $queue->dequeue();
+		}
 
-			foreach ( $lines as $line ) {
-				$line = trim( $line );
-				if ( ! str_starts_with( $line, 'data: ' ) ) {
-					continue;
-				}
-
-				$json = json_decode( substr( $line, 6 ), true );
-				if ( ! $json ) {
-					continue;
-				}
-
-				$text = $json['candidates'][0]['content']['parts'][0]['text'] ?? '';
-				if ( '' !== $text ) {
-					yield $text;
-				}
-			}
+		if ( $error ) {
+			throw new \RuntimeException( $error );
 		}
 	}
 

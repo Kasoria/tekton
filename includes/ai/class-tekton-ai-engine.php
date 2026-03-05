@@ -67,14 +67,14 @@ class Tekton_AI_Engine {
 	}
 
 	/**
-	 * @return array<string, string>
+	 * @return array<string, array{name: string}>
 	 */
 	public static function get_available_providers(): array {
 		return [
-			'anthropic'  => 'Anthropic',
-			'openai'     => 'OpenAI',
-			'google'     => 'Google Gemini',
-			'openrouter' => 'OpenRouter',
+			'anthropic'  => [ 'name' => 'Anthropic' ],
+			'openai'     => [ 'name' => 'OpenAI' ],
+			'google'     => [ 'name' => 'Google Gemini' ],
+			'openrouter' => [ 'name' => 'OpenRouter' ],
 		];
 	}
 
@@ -93,36 +93,83 @@ class Tekton_AI_Engine {
 		return $provider->get_models();
 	}
 
+	/**
+	 * Build the system prompt from template files.
+	 */
 	public function build_system_prompt( string $type, array $context ): string {
-		$base = "You are Tekton, an AI site builder for WordPress. You generate structured component JSON that renders to HTML pages.\n\n";
+		$templates_dir = TEKTON_DIR . 'templates/';
 
-		$base .= "RESPONSE FORMAT: You MUST respond with valid JSON only. No markdown, no explanation, no code fences. The JSON must match the Tekton component schema.\n\n";
+		// Load base prompt.
+		$prompt = $this->load_template( $templates_dir . 'system-prompt-base.md' );
 
-		$base .= "COMPONENT SCHEMA:\n";
-		$base .= "Each component has: id (comp_XXXXXXXX), type, props, styles (desktop/tablet/mobile), children.\n";
-		$base .= "Available types: section, container, heading, text, image, button, grid, flex-row, flex-column, link, list, spacer, divider, video, icon.\n\n";
+		// Load type-specific prompt.
+		$type_map = [
+			'generate_page'      => 'system-prompt-page.md',
+			'generate_fullstack' => 'system-prompt-fullstack.md',
+			'fullstack'          => 'system-prompt-fullstack.md',
+			'generate_plugin'    => 'system-prompt-plugin.md',
+			'generate_component' => 'system-prompt-component.md',
+			'modify_page'        => 'system-prompt-page.md',
+		];
 
-		$base .= "CONTENT SOURCES (never hardcode content):\n";
-		$base .= '- Static: {"source":"static","value":"..."} (only for labels/ARIA)' . "\n";
-		$base .= '- Post field: {"source":"post","field":"post_title|post_content|featured_image"}' . "\n";
-		$base .= '- Option: {"source":"option","key":"blogname"}' . "\n";
-		$base .= '- Tekton field: {"source":"field","group":"slug","field":"name","fallback":"..."}' . "\n\n";
+		$type_file = $type_map[ $type ] ?? 'system-prompt-page.md';
+		$prompt   .= "\n\n" . $this->load_template( $templates_dir . $type_file );
 
-		$base .= "DESIGN TOKENS: Use var(--tekton-*) CSS custom properties for all colors, fonts, spacing.\n\n";
-
-		$base .= "STYLES: Each component can have styles.desktop, styles.tablet, styles.mobile with CSS property objects.\n\n";
-
-		if ( 'generate_fullstack' === $type ) {
-			$base .= "FULL-STACK MODE: Generate postTypes, fieldGroups, AND structure in a single response.\n";
-			$base .= 'Format: {"type":"fullstack","postTypes":[...],"fieldGroups":[...],"structure":{"templateKey":"...","components":[...]}}' . "\n\n";
-		} else {
-			$base .= 'RESPONSE: {"components":[...],"styles":{},"templateKey":"...","title":"..."}' . "\n\n";
-		}
-
+		// Append site context.
 		if ( ! empty( $context ) ) {
-			$base .= "SITE CONTEXT:\n" . wp_json_encode( $context, JSON_PRETTY_PRINT ) . "\n";
+			$context_template = $this->load_template( $templates_dir . 'context-template.md' );
+			$context_json     = wp_json_encode( $context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+			$prompt          .= "\n\n" . str_replace( '{{context_json}}', $context_json, $context_template );
 		}
 
-		return $base;
+		return $prompt;
+	}
+
+	/**
+	 * Load a template file, returning empty string if not found.
+	 */
+	private function load_template( string $path ): string {
+		if ( ! file_exists( $path ) ) {
+			return '';
+		}
+		return (string) file_get_contents( $path );
+	}
+
+	/**
+	 * Parse an AI response into natural language message and structured data.
+	 *
+	 * The AI is instructed to respond with natural language first,
+	 * then JSON inside a ```json code fence.
+	 *
+	 * @return array{message: string, json: ?array}
+	 */
+	public static function parse_response( string $response ): array {
+		$message = $response;
+		$json    = null;
+
+		// Try to extract JSON from code fences.
+		if ( preg_match( '/```(?:json)?\s*\n(.*?)\n```/s', $response, $matches ) ) {
+			$decoded = json_decode( $matches[1], true );
+			if ( is_array( $decoded ) ) {
+				$json = $decoded;
+				// Extract the natural language part (everything before the code fence).
+				$before = trim( substr( $response, 0, strpos( $response, '```' ) ) );
+				$message = $before !== '' ? $before : 'Changes applied to the preview.';
+			}
+		}
+
+		// If no code fence, try direct JSON parse (backwards compat).
+		if ( ! $json ) {
+			$decoded = json_decode( $response, true );
+			if ( is_array( $decoded ) && ( isset( $decoded['components'] ) || isset( $decoded['type'] ) || isset( $decoded['structure'] ) ) ) {
+				$json    = $decoded;
+				$message = 'Changes applied to the preview.';
+			}
+		}
+
+		return [
+			'message' => $message,
+			'json'    => $json,
+		];
 	}
 }

@@ -62,6 +62,10 @@ a:hover {
   padding-inline: var(--tekton-spacing-md, 1rem);
 }
 
+.tekton-div {
+  /* Plain div — no base styles applied. */
+}
+
 .tekton-grid {
   display: grid;
 }
