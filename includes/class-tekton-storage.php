@@ -1,0 +1,295 @@
+<?php
+declare(strict_types=1);
+/**
+ * CRUD for page structures, versions, and chat history.
+ *
+ * @package Tekton
+ * @since   1.0.0
+ */
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+class Tekton_Storage {
+
+	public static function create_tables(): void {
+		global $wpdb;
+		$charset = $wpdb->get_charset_collate();
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$tables = [];
+
+		$tables[] = "CREATE TABLE {$wpdb->prefix}tekton_structures (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			template_key VARCHAR(100) NOT NULL,
+			title VARCHAR(255) DEFAULT '',
+			components LONGTEXT NOT NULL,
+			styles LONGTEXT DEFAULT NULL,
+			status VARCHAR(20) DEFAULT 'draft',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY template_key (template_key)
+		) {$charset};";
+
+		$tables[] = "CREATE TABLE {$wpdb->prefix}tekton_versions (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			structure_id BIGINT UNSIGNED NOT NULL,
+			version_number INT NOT NULL,
+			components LONGTEXT NOT NULL,
+			styles LONGTEXT DEFAULT NULL,
+			change_type VARCHAR(50) DEFAULT 'ai_generate',
+			change_summary TEXT DEFAULT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY structure_version (structure_id, version_number)
+		) {$charset};";
+
+		$tables[] = "CREATE TABLE {$wpdb->prefix}tekton_chat_history (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			template_key VARCHAR(100) NOT NULL,
+			role VARCHAR(20) NOT NULL,
+			content LONGTEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY template_key (template_key)
+		) {$charset};";
+
+		$tables[] = "CREATE TABLE {$wpdb->prefix}tekton_field_groups (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			title VARCHAR(255) NOT NULL,
+			slug VARCHAR(100) NOT NULL,
+			fields LONGTEXT NOT NULL,
+			location_rules LONGTEXT NOT NULL,
+			position VARCHAR(20) DEFAULT 'normal',
+			priority VARCHAR(20) DEFAULT 'high',
+			menu_order INT DEFAULT 0,
+			is_active TINYINT(1) DEFAULT 1,
+			source VARCHAR(20) DEFAULT 'ai',
+			ai_prompt TEXT DEFAULT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY slug (slug)
+		) {$charset};";
+
+		$tables[] = "CREATE TABLE {$wpdb->prefix}tekton_post_types (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			slug VARCHAR(20) NOT NULL,
+			config LONGTEXT NOT NULL,
+			taxonomies LONGTEXT DEFAULT NULL,
+			source VARCHAR(20) DEFAULT 'ai',
+			ai_prompt TEXT DEFAULT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY slug (slug)
+		) {$charset};";
+
+		foreach ( $tables as $sql ) {
+			dbDelta( $sql );
+		}
+	}
+
+	public function get_structure( string $template_key ): ?array {
+		global $wpdb;
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}tekton_structures WHERE template_key = %s",
+				$template_key
+			),
+			ARRAY_A
+		);
+
+		if ( ! $row ) {
+			return null;
+		}
+
+		$row['components'] = json_decode( $row['components'], true ) ?? [];
+		$row['styles']     = json_decode( $row['styles'] ?? '{}', true ) ?? [];
+
+		return $row;
+	}
+
+	public function save_structure( string $template_key, array $data ): int {
+		global $wpdb;
+
+		$table    = $wpdb->prefix . 'tekton_structures';
+		$existing = $this->get_structure( $template_key );
+
+		$row_data = [
+			'template_key' => $template_key,
+			'title'        => $data['title'] ?? '',
+			'components'   => wp_json_encode( $data['components'] ?? [] ),
+			'styles'       => wp_json_encode( $data['styles'] ?? [] ),
+			'status'       => $data['status'] ?? 'draft',
+		];
+
+		if ( $existing ) {
+			$wpdb->update( $table, $row_data, [ 'template_key' => $template_key ] );
+			$structure_id = (int) $existing['id'];
+		} else {
+			$wpdb->insert( $table, $row_data );
+			$structure_id = (int) $wpdb->insert_id;
+		}
+
+		$this->create_version( $structure_id, $data );
+
+		return $structure_id;
+	}
+
+	public function delete_structure( string $template_key ): bool {
+		global $wpdb;
+
+		$structure = $this->get_structure( $template_key );
+		if ( ! $structure ) {
+			return false;
+		}
+
+		$wpdb->delete(
+			$wpdb->prefix . 'tekton_versions',
+			[ 'structure_id' => $structure['id'] ]
+		);
+
+		return (bool) $wpdb->delete(
+			$wpdb->prefix . 'tekton_structures',
+			[ 'template_key' => $template_key ]
+		);
+	}
+
+	public function list_structures(): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			"SELECT id, template_key, title, status, created_at, updated_at
+			 FROM {$wpdb->prefix}tekton_structures
+			 ORDER BY updated_at DESC",
+			ARRAY_A
+		);
+
+		return $rows ?: [];
+	}
+
+	public function get_versions( int $structure_id, int $limit = 20 ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, version_number, change_type, change_summary, created_at
+				 FROM {$wpdb->prefix}tekton_versions
+				 WHERE structure_id = %d
+				 ORDER BY version_number DESC
+				 LIMIT %d",
+				$structure_id,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		return $rows ?: [];
+	}
+
+	public function rollback( int $structure_id, int $version_number ): bool {
+		global $wpdb;
+
+		$version = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT components, styles FROM {$wpdb->prefix}tekton_versions
+				 WHERE structure_id = %d AND version_number = %d",
+				$structure_id,
+				$version_number
+			),
+			ARRAY_A
+		);
+
+		if ( ! $version ) {
+			return false;
+		}
+
+		$wpdb->update(
+			$wpdb->prefix . 'tekton_structures',
+			[
+				'components' => $version['components'],
+				'styles'     => $version['styles'],
+			],
+			[ 'id' => $structure_id ]
+		);
+
+		$this->create_version( $structure_id, [
+			'components'     => json_decode( $version['components'], true ),
+			'styles'         => json_decode( $version['styles'] ?? '{}', true ),
+			'change_type'    => 'rollback',
+			'change_summary' => sprintf( 'Rolled back to version %d', $version_number ),
+		] );
+
+		return true;
+	}
+
+	public function get_chat_history( string $template_key, int $limit = 50 ): array {
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, role, content, created_at
+				 FROM {$wpdb->prefix}tekton_chat_history
+				 WHERE template_key = %s
+				 ORDER BY created_at ASC
+				 LIMIT %d",
+				$template_key,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		return $rows ?: [];
+	}
+
+	public function add_chat_message( string $template_key, string $role, string $content ): int {
+		global $wpdb;
+
+		$wpdb->insert(
+			$wpdb->prefix . 'tekton_chat_history',
+			[
+				'template_key' => $template_key,
+				'role'         => $role,
+				'content'      => $content,
+			]
+		);
+
+		return (int) $wpdb->insert_id;
+	}
+
+	public function clear_chat_history( string $template_key ): bool {
+		global $wpdb;
+
+		return (bool) $wpdb->delete(
+			$wpdb->prefix . 'tekton_chat_history',
+			[ 'template_key' => $template_key ]
+		);
+	}
+
+	private function create_version( int $structure_id, array $data ): void {
+		global $wpdb;
+
+		$max_version = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(MAX(version_number), 0)
+				 FROM {$wpdb->prefix}tekton_versions
+				 WHERE structure_id = %d",
+				$structure_id
+			)
+		);
+
+		$wpdb->insert(
+			$wpdb->prefix . 'tekton_versions',
+			[
+				'structure_id'   => $structure_id,
+				'version_number' => $max_version + 1,
+				'components'     => wp_json_encode( $data['components'] ?? [] ),
+				'styles'         => wp_json_encode( $data['styles'] ?? [] ),
+				'change_type'    => $data['change_type'] ?? 'ai_generate',
+				'change_summary' => $data['change_summary'] ?? null,
+			]
+		);
+	}
+}
