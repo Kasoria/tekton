@@ -26,7 +26,7 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 	}
 
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
-		$model      = $options['model'] ?: 'gemini-2.0-flash';
+		$model      = $options['model'] ?: 'gemini-2.5-flash';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 		$url        = self::API_BASE . $model . ':streamGenerateContent?alt=sse&key=' . $this->api_key;
 
@@ -178,10 +178,11 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 
 	public function get_models(): array {
 		return [
-			[ 'id' => 'gemini-2.0-flash', 'name' => 'Gemini 2.0 Flash' ],
-			[ 'id' => 'gemini-2.0-pro',   'name' => 'Gemini 2.0 Pro' ],
-			[ 'id' => 'gemini-1.5-pro',   'name' => 'Gemini 1.5 Pro' ],
-			[ 'id' => 'gemini-1.5-flash', 'name' => 'Gemini 1.5 Flash' ],
+			[ 'id' => 'gemini-3.1-pro-preview',        'name' => 'Gemini 3.1 Pro' ],
+			[ 'id' => 'gemini-3.1-flash-lite-preview',  'name' => 'Gemini 3.1 Flash Lite' ],
+			[ 'id' => 'gemini-3-flash-preview',         'name' => 'Gemini 3 Flash' ],
+			[ 'id' => 'gemini-2.5-pro',                 'name' => 'Gemini 2.5 Pro' ],
+			[ 'id' => 'gemini-2.5-flash',               'name' => 'Gemini 2.5 Flash' ],
 		];
 	}
 

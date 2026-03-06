@@ -604,6 +604,7 @@
                 <Select
                   bind:value={aiModel}
                   options={modelOptions}
+                  searchable={aiProvider === 'openrouter'}
                   onchange={handleModelChange}
                 />
               {/if}

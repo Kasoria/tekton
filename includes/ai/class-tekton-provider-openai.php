@@ -26,13 +26,13 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 	}
 
 	/** Models that require max_completion_tokens instead of max_tokens. */
-	private const COMPLETION_TOKEN_MODELS = [ 'o1', 'o1-mini', 'o1-pro', 'o3', 'o3-mini', 'o4-mini' ];
+	private const COMPLETION_TOKEN_MODELS = [ 'o3-pro', 'o4-mini' ];
 
 	/** Models that do not support system role messages. */
-	private const NO_SYSTEM_ROLE_MODELS = [ 'o1', 'o1-mini', 'o1-pro' ];
+	private const NO_SYSTEM_ROLE_MODELS = [];
 
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
-		$model      = $options['model'] ?: 'gpt-4o';
+		$model      = $options['model'] ?: 'gpt-5.4';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
 		$is_reasoning = in_array( $model, self::COMPLETION_TOKEN_MODELS, true )
@@ -213,11 +213,11 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 
 	public function get_models(): array {
 		return [
-			[ 'id' => 'gpt-4o',       'name' => 'GPT-4o' ],
-			[ 'id' => 'gpt-4o-mini',  'name' => 'GPT-4o Mini' ],
-			[ 'id' => 'gpt-4-turbo',  'name' => 'GPT-4 Turbo' ],
-			[ 'id' => 'o1',           'name' => 'o1' ],
-			[ 'id' => 'o1-mini',      'name' => 'o1 Mini' ],
+			[ 'id' => 'gpt-5.4',      'name' => 'GPT 5.4' ],
+			[ 'id' => 'gpt-5.4-pro',  'name' => 'GPT 5.4 Pro' ],
+			[ 'id' => 'gpt-5-mini',   'name' => 'GPT 5 Mini' ],
+			[ 'id' => 'o3-pro',       'name' => 'o3 Pro' ],
+			[ 'id' => 'o4-mini',      'name' => 'o4 Mini' ],
 		];
 	}
 

@@ -27,7 +27,7 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 	}
 
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
-		$model      = $options['model'] ?: 'anthropic/claude-sonnet-4-20250514';
+		$model      = $options['model'] ?: 'anthropic/claude-sonnet-4-6';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
 		$api_messages = $this->build_api_messages( $system_prompt, $messages );

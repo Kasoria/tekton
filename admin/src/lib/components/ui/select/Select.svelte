@@ -5,6 +5,7 @@
     value = $bindable(''),
     options = [],
     placeholder = '',
+    searchable = false,
     class: className = '',
     onchange,
     ...restProps
@@ -12,42 +13,59 @@
 
   let open = $state(false);
   let triggerEl = $state(null);
+  let searchInputEl = $state(null);
   let dropdownPos = $state({ top: 0, left: 0, minWidth: 0 });
   let openUpward = $state(false);
+  let searchQuery = $state('');
 
   let selectedLabel = $derived(
     options.find(o => o.value === value)?.label || placeholder || value
+  );
+
+  let filteredOptions = $derived(
+    searchable && searchQuery
+      ? options.filter(o => o.label.toLowerCase().includes(searchQuery.toLowerCase()) || o.value.toLowerCase().includes(searchQuery.toLowerCase()))
+      : options
   );
 
   function updatePosition() {
     if (!triggerEl) return;
     const rect = triggerEl.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    const estimatedHeight = Math.min(options.length * 32 + 10, 240);
+    const estimatedHeight = Math.min(filteredOptions.length * 32 + (searchable ? 42 : 0) + 10, 300);
     openUpward = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
     dropdownPos = {
       top: openUpward ? rect.top - 4 : rect.bottom + 4,
       left: rect.right,
-      minWidth: rect.width,
+      minWidth: Math.max(rect.width, searchable ? 220 : rect.width),
     };
   }
 
   function toggleOpen() {
-    if (!open) updatePosition();
-    open = !open;
+    if (!open) {
+      updatePosition();
+      open = true;
+      searchQuery = '';
+      if (searchable) {
+        requestAnimationFrame(() => searchInputEl?.focus());
+      }
+    } else {
+      open = false;
+    }
   }
 
   function select(val) {
     value = val;
     open = false;
+    searchQuery = '';
     onchange?.(val);
   }
 
   function handleKeydown(e) {
-    if (e.key === 'Escape') open = false;
+    if (e.key === 'Escape') { open = false; searchQuery = ''; }
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      open = !open;
+      toggleOpen();
     }
   }
 
@@ -55,6 +73,13 @@
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       select(val);
+    }
+  }
+
+  function handleSearchKeydown(e) {
+    if (e.key === 'Escape') { open = false; searchQuery = ''; }
+    if (e.key === 'Enter' && filteredOptions.length === 1) {
+      select(filteredOptions[0].value);
     }
   }
 </script>
@@ -75,13 +100,25 @@
 
   {#if open}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="fixed inset-0 z-[99998]" onclick={() => (open = false)}></div>
+    <div class="fixed inset-0 z-[99998]" onclick={() => { open = false; searchQuery = ''; }}></div>
     <div
       class="tk-select-dropdown"
       role="listbox"
       style="position:fixed; {openUpward ? `bottom:${window.innerHeight - dropdownPos.top}px` : `top:${dropdownPos.top}px`}; left:auto; right:{window.innerWidth - dropdownPos.left}px; min-width:{dropdownPos.minWidth}px;"
     >
-      {#each options as opt}
+      {#if searchable}
+        <div class="tk-select-search">
+          <input
+            bind:this={searchInputEl}
+            type="text"
+            class="tk-select-search-input"
+            placeholder="Search..."
+            bind:value={searchQuery}
+            onkeydown={handleSearchKeydown}
+          />
+        </div>
+      {/if}
+      {#each filteredOptions as opt}
         <button
           type="button"
           role="option"
@@ -97,6 +134,8 @@
             </svg>
           {/if}
         </button>
+      {:else}
+        <div class="tk-select-empty">No results</div>
       {/each}
     </div>
   {/if}
@@ -158,13 +197,42 @@
 
   .tk-select-dropdown {
     z-index: 99999;
-    max-height: 240px;
+    max-height: 300px;
     overflow-y: auto;
     background: var(--color-card-hover);
     border: 1px solid var(--color-dim);
     border-radius: 8px;
     padding: 3px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .tk-select-search {
+    padding: 4px 4px 2px;
+    position: sticky;
+    top: 0;
+    background: var(--color-card-hover);
+    z-index: 1;
+  }
+
+  .tk-select-search-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-size: 12px;
+    font-family: var(--font-body);
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .tk-select-search-input:focus {
+    border-color: var(--color-copper);
+  }
+
+  .tk-select-search-input::placeholder {
+    color: var(--color-muted);
   }
 
   .tk-select-option {
@@ -198,6 +266,13 @@
 
   .tk-select-option-active:hover {
     color: var(--color-copper);
+  }
+
+  .tk-select-empty {
+    padding: 8px 10px;
+    color: var(--color-muted);
+    font-size: 12px;
+    text-align: center;
   }
 
   .tk-select-dropdown::-webkit-scrollbar {

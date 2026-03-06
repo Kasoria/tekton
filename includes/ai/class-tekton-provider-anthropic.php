@@ -26,7 +26,7 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 	}
 
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
-		$model      = $options['model'] ?: 'claude-sonnet-4-20250514';
+		$model      = $options['model'] ?: 'claude-sonnet-4-6';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
 		$api_messages = $this->build_api_messages( $messages );
@@ -196,9 +196,9 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 
 	public function get_models(): array {
 		return [
-			[ 'id' => 'claude-sonnet-4-20250514', 'name' => 'Claude Sonnet 4' ],
-			[ 'id' => 'claude-haiku-4-20250414',  'name' => 'Claude Haiku 4' ],
-			[ 'id' => 'claude-opus-4-20250514',   'name' => 'Claude Opus 4' ],
+			[ 'id' => 'claude-opus-4-6',   'name' => 'Claude Opus 4.6' ],
+			[ 'id' => 'claude-sonnet-4-6',  'name' => 'Claude Sonnet 4.6' ],
+			[ 'id' => 'claude-haiku-4-5',   'name' => 'Claude Haiku 4.5' ],
 		];
 	}
 
@@ -210,7 +210,7 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 				'anthropic-version' => '2023-06-01',
 			],
 			'body'    => wp_json_encode( [
-				'model'      => 'claude-haiku-4-20250414',
+				'model'      => 'claude-haiku-4-5',
 				'max_tokens' => 1,
 				'messages'   => [ [ 'role' => 'user', 'content' => 'hi' ] ],
 			] ),
