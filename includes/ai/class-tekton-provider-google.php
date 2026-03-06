@@ -31,11 +31,20 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 
 		$contents = [];
 		foreach ( $messages as $msg ) {
-			$role = 'assistant' === $msg['role'] ? 'model' : 'user';
-			$contents[] = [
-				'role'  => $role,
-				'parts' => [ [ 'text' => $msg['content'] ] ],
-			];
+			$role  = 'assistant' === $msg['role'] ? 'model' : 'user';
+			$parts = [];
+			if ( ! empty( $msg['images'] ) && 'user' === $msg['role'] ) {
+				foreach ( $msg['images'] as $img ) {
+					$parts[] = [
+						'inline_data' => [
+							'mime_type' => $img['media_type'] ?? 'image/png',
+							'data'      => $img['data'],
+						],
+					];
+				}
+			}
+			$parts[] = [ 'text' => $msg['content'] ];
+			$contents[] = [ 'role' => $role, 'parts' => $parts ];
 		}
 
 		$body = wp_json_encode( [

@@ -21,6 +21,8 @@
   let deleteConfirm = $state({ open: false, key: '' });
   let newTemplateName = $state('');
   let showNewTemplate = $state(false);
+  let attachedImages = $state([]);
+  let fileInputEl;
 
   const GLOBAL_TEMPLATES = ['header', 'footer'];
 
@@ -93,15 +95,17 @@
 
   async function send(text) {
     const val = text || input;
-    if (!val.trim()) return;
+    if (!val.trim() && attachedImages.length === 0) return;
     input = '';
+    const imagesToSend = [...attachedImages];
+    attachedImages = [];
 
     // Detect command type
     let type = 'generate_page';
     if (val.startsWith('/fullstack')) type = 'fullstack';
     else if (val.startsWith('/plugin')) type = 'generate_plugin';
 
-    const structure = await chat.sendMessage(val, type);
+    const structure = await chat.sendMessage(val, type, imagesToSend);
     if (structure) {
       page.setStructure(structure);
       // Reload sidebar data
@@ -110,6 +114,31 @@
         page.loadStructures();
       }
     }
+  }
+
+  function handleImageUpload(e) {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > 5 * 1024 * 1024) continue; // 5MB limit
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        attachedImages = [...attachedImages, {
+          data: base64,
+          media_type: file.type,
+          preview: reader.result,
+          name: file.name,
+        }];
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  }
+
+  function removeImage(index) {
+    attachedImages = attachedImages.filter((_, i) => i !== index);
   }
 
   async function handlePublish() {
@@ -207,6 +236,27 @@
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       send();
+    }
+  }
+
+  function handlePaste(e) {
+    const items = Array.from(e.clipboardData?.items || []);
+    for (const item of items) {
+      if (!item.type.startsWith('image/')) continue;
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file || file.size > 5 * 1024 * 1024) continue;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        attachedImages = [...attachedImages, {
+          data: base64,
+          media_type: file.type,
+          preview: reader.result,
+          name: 'pasted-image',
+        }];
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -479,6 +529,13 @@
                 {m.role === 'user' ? 'You' : 'Tekton'}
               </span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 {m.role === 'user' ? 'bg-card-hover text-foreground border-l-2 border-dim' : 'bg-card text-foreground/75 border-l-2 border-copper/20'}">
+                {#if m.images?.length}
+                  <div class="flex gap-1.5 mb-2 flex-wrap">
+                    {#each m.images as img}
+                      <img src={img.preview} alt="" class="w-10 h-10 object-cover rounded-[5px] border border-border/50 opacity-80" />
+                    {/each}
+                  </div>
+                {/if}
                 <div class="whitespace-pre-wrap">{m.content}</div>
 
                 {#if m.structure}
@@ -521,24 +578,64 @@
 
       <!-- Input area -->
       <div class="p-4 pt-2 border-t border-border">
+        <!-- Image thumbnails -->
+        {#if attachedImages.length > 0}
+          <div class="flex gap-1.5 mb-2 flex-wrap">
+            {#each attachedImages as img, i}
+              <div class="relative group">
+                <img
+                  src={img.preview}
+                  alt={img.name}
+                  class="w-12 h-12 object-cover rounded-[6px] border border-border"
+                />
+                <button
+                  class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-border text-dim text-[10px] leading-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
+                  onclick={() => removeImage(i)}
+                >×</button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
         <div class="flex gap-2 items-end bg-card rounded-[10px] border border-border px-3 py-2.5 focus-within:border-dim transition-colors">
+          <button
+            onclick={() => fileInputEl?.click()}
+            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 bg-transparent opacity-50 hover:opacity-100"
+            aria-label="Attach image"
+            title="Attach image"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2" stroke="#8a847d" stroke-width="1.3"/>
+              <circle cx="5.5" cy="5.5" r="1.2" fill="#8a847d"/>
+              <path d="M2 11l3-3.5 2.5 2.5L10 7.5l4 4.5" stroke="#8a847d" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <input
+            bind:this={fileInputEl}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            multiple
+            onchange={handleImageUpload}
+            class="hidden"
+          />
           <textarea
             bind:this={textareaEl}
             bind:value={input}
             onkeydown={handleKeydown}
             oninput={autoResize}
+            onpaste={handlePaste}
             placeholder="Describe what to build or change..."
             rows="1"
             class="flex-1 bg-transparent border-none text-foreground text-[13px] leading-[1.5] resize-none outline-none font-body min-h-[20px] max-h-[100px] placeholder:text-dim"
           ></textarea>
           <button
             onclick={() => send()}
-            disabled={!input.trim() || chat.isStreaming}
-            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 {input.trim() ? 'bg-copper opacity-100' : 'bg-transparent opacity-40'}"
+            disabled={(!input.trim() && attachedImages.length === 0) || chat.isStreaming}
+            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 {input.trim() || attachedImages.length > 0 ? 'bg-copper opacity-100' : 'bg-transparent opacity-40'}"
             aria-label="Send message"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() ? '#1a1816' : '#5c5753'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#1a1816' : '#5c5753'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </div>

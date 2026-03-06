@@ -18,16 +18,20 @@ async function apiFetch(endpoint, options = {}) {
   return response.json();
 }
 
-export async function* streamGenerate(prompt, templateKey, type = 'generate_page') {
+export async function* streamGenerate(prompt, templateKey, type = 'generate_page', images = []) {
   const { restUrl, nonce } = getConfig();
   const url = `${restUrl}tekton/v1/ai/generate`;
+  const body = { prompt, template_key: templateKey, type };
+  if (images.length > 0) {
+    body.images = images;
+  }
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-WP-Nonce': nonce,
     },
-    body: JSON.stringify({ prompt, template_key: templateKey, type }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

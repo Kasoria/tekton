@@ -25,6 +25,12 @@ class Tekton_REST_API {
 			'methods'             => 'POST',
 			'callback'            => [ $this, 'handle_ai_generate' ],
 			'permission_callback' => [ $this, 'check_permission' ],
+			'args'                => [
+				'images' => [
+					'type'    => 'array',
+					'default' => [],
+				],
+			],
 		] );
 
 		register_rest_route( $ns, '/ai/models', [
@@ -159,6 +165,7 @@ class Tekton_REST_API {
 		$prompt       = sanitize_text_field( $request->get_param( 'prompt' ) ?? '' );
 		$template_key = sanitize_key( $request->get_param( 'template_key' ) ?? 'front-page' );
 		$type         = sanitize_key( $request->get_param( 'type' ) ?? 'generate_page' );
+		$raw_images   = $request->get_param( 'images' ) ?? [];
 
 		if ( '' === $prompt ) {
 			$this->send_sse_error( 'Prompt is required.' );
@@ -193,6 +200,27 @@ class Tekton_REST_API {
 			];
 		}
 
+		// Sanitize images: validate base64 and restrict to safe MIME types.
+		$images        = [];
+		$allowed_mimes = [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ];
+		foreach ( $raw_images as $img ) {
+			if ( empty( $img['data'] ) ) {
+				continue;
+			}
+			$mime = $img['media_type'] ?? 'image/png';
+			if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+				continue;
+			}
+			// Validate base64.
+			if ( false === base64_decode( $img['data'], true ) ) {
+				continue;
+			}
+			$images[] = [
+				'media_type' => $mime,
+				'data'       => $img['data'],
+			];
+		}
+
 		$storage->add_chat_message( $template_key, 'user', $prompt );
 
 		$full_response = '';
@@ -201,6 +229,7 @@ class Tekton_REST_API {
 			$generator = $ai->send_message( $prompt, $chat_history, [
 				'type'    => $type,
 				'context' => $site_context,
+				'images'  => $images,
 			] );
 
 			foreach ( $generator as $chunk ) {

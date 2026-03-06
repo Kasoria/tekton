@@ -33,10 +33,21 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 		$api_messages   = [];
 		$api_messages[] = [ 'role' => 'system', 'content' => $system_prompt ];
 		foreach ( $messages as $msg ) {
-			$api_messages[] = [
-				'role'    => $msg['role'],
-				'content' => $msg['content'],
-			];
+			if ( ! empty( $msg['images'] ) && 'user' === $msg['role'] ) {
+				$content = [ [ 'type' => 'text', 'text' => $msg['content'] ] ];
+				foreach ( $msg['images'] as $img ) {
+					$mime = $img['media_type'] ?? 'image/png';
+					$content[] = [
+						'type'      => 'image_url',
+						'image_url' => [
+							'url' => 'data:' . $mime . ';base64,' . $img['data'],
+						],
+					];
+				}
+				$api_messages[] = [ 'role' => 'user', 'content' => $content ];
+			} else {
+				$api_messages[] = [ 'role' => $msg['role'], 'content' => $msg['content'] ];
+			}
 		}
 
 		$body = wp_json_encode( [

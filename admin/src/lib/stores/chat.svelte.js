@@ -6,13 +6,18 @@ export function createChatStore() {
   let currentStream = $state('');
   let templateKey = $state('front-page');
 
-  async function sendMessage(prompt, type = 'generate_page') {
-    messages.push({ role: 'user', content: prompt, timestamp: Date.now() });
+  async function sendMessage(prompt, type = 'generate_page', images = []) {
+    messages.push({
+      role: 'user',
+      content: prompt,
+      images: images.length > 0 ? images : undefined,
+      timestamp: Date.now(),
+    });
     isStreaming = true;
     currentStream = '';
 
     try {
-      for await (const event of streamGenerate(prompt, templateKey, type)) {
+      for await (const event of streamGenerate(prompt, templateKey, type, images)) {
         if (event.type === 'chunk') {
           currentStream += event.content;
         } else if (event.type === 'complete') {

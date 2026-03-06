@@ -37,7 +37,18 @@ class Tekton_AI_Engine {
 				'content' => $msg['content'] ?? '',
 			];
 		}
-		$messages[] = [ 'role' => 'user', 'content' => $prompt ];
+
+		// Build the current user message, optionally with images.
+		$images = $options['images'] ?? [];
+		if ( ! empty( $images ) ) {
+			$messages[] = [
+				'role'    => 'user',
+				'content' => $prompt,
+				'images'  => $images,
+			];
+		} else {
+			$messages[] = [ 'role' => 'user', 'content' => $prompt ];
+		}
 
 		yield from $provider->send_streaming( $system_prompt, $messages, [
 			'model'      => $options['model'] ?? get_option( 'tekton_ai_model', '' ),

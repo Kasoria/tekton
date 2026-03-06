@@ -29,11 +29,32 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 		$model      = $options['model'] ?: 'claude-sonnet-4-20250514';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
+		$api_messages = [];
+		foreach ( $messages as $msg ) {
+			if ( ! empty( $msg['images'] ) && 'user' === $msg['role'] ) {
+				$content = [];
+				foreach ( $msg['images'] as $img ) {
+					$content[] = [
+						'type'   => 'image',
+						'source' => [
+							'type'       => 'base64',
+							'media_type' => $img['media_type'] ?? 'image/png',
+							'data'       => $img['data'],
+						],
+					];
+				}
+				$content[] = [ 'type' => 'text', 'text' => $msg['content'] ];
+				$api_messages[] = [ 'role' => 'user', 'content' => $content ];
+			} else {
+				$api_messages[] = [ 'role' => $msg['role'], 'content' => $msg['content'] ];
+			}
+		}
+
 		$body = wp_json_encode( [
 			'model'      => $model,
 			'max_tokens' => $max_tokens,
 			'system'     => $system_prompt,
-			'messages'   => $messages,
+			'messages'   => $api_messages,
 			'stream'     => true,
 		] );
 
