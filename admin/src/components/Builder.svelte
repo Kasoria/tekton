@@ -114,14 +114,43 @@
 
   async function handlePublish() {
     if (!currentPage || !page.currentStructure) return;
-    await api.saveStructure({
+    const result = await api.saveStructure({
       template_key: currentPage.template_key,
       title: page.currentStructure.title || currentPage.title || currentPage.template_key,
       components: page.currentStructure.components || [],
       styles: page.currentStructure.styles || [],
       status: 'published',
     });
+    if (result?.url) {
+      currentPage = { ...currentPage, url: result.url, preview_url: result.preview_url, status: 'published' };
+    }
     page.loadStructures();
+  }
+
+  async function handleUnpublish() {
+    if (!currentPage || !page.currentStructure) return;
+    const result = await api.saveStructure({
+      template_key: currentPage.template_key,
+      title: page.currentStructure.title || currentPage.title || currentPage.template_key,
+      components: page.currentStructure.components || [],
+      styles: page.currentStructure.styles || [],
+      status: 'draft',
+    });
+    currentPage = { ...currentPage, url: null, preview_url: result?.preview_url || null, status: 'draft' };
+    page.loadStructures();
+  }
+
+  function handlePreview() {
+    const url = currentPage?.preview_url || currentPage?.url;
+    if (url) {
+      window.open(url, '_blank');
+    }
+  }
+
+  function viewPage() {
+    if (currentPage?.url) {
+      window.open(currentPage.url, '_blank');
+    }
   }
 
   async function createTemplate() {
@@ -239,8 +268,15 @@
     if (!raw) return '';
     const fenceIdx = raw.indexOf('```');
     if (fenceIdx > 0) return raw.substring(0, fenceIdx).trim();
-    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) return 'Building...';
+    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) return '';
     return raw;
+  });
+
+  // Detect when the AI has moved past natural language into JSON/structure generation.
+  let isBuildingStructure = $derived(() => {
+    if (!chat.isStreaming || !chat.currentStream) return false;
+    const raw = chat.currentStream.trim();
+    return raw.includes('```') || raw.startsWith('{') || raw.startsWith('[');
   });
 
   function relativeTime(dateStr) {
@@ -408,11 +444,24 @@
       {#if currentPage}
         <span class="text-[10px] text-dim font-mono">v{versions[0]?.version_number || '–'}</span>
       {/if}
-      <button
-        class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim"
-        onclick={refreshPreview}
-      >Preview</button>
-      <Button onclick={handlePublish}>Publish</Button>
+      {#if currentPage?.preview_url || currentPage?.url}
+        <button
+          class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
+          onclick={handlePreview}
+        >Preview ↗</button>
+      {/if}
+      {#if currentPage?.status === 'published'}
+        <button
+          class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
+          onclick={handleUnpublish}
+        >Unpublish</button>
+        <button
+          class="px-3 py-[5px] bg-transparent border border-copper/30 rounded-md text-copper cursor-pointer text-xs font-body font-medium hover:border-copper/60 hover:bg-copper/5 transition-colors"
+          onclick={viewPage}
+        >View ↗</button>
+      {:else}
+        <Button onclick={handlePublish}>Publish</Button>
+      {/if}
     </div>
   </header>
 
@@ -449,10 +498,18 @@
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 bg-card text-foreground/75 border-l-2 border-copper/20">
                 {#if streamingDisplay()}
                   <div class="whitespace-pre-wrap">{streamingDisplay()}</div>
-                {:else}
+                {/if}
+                {#if isBuildingStructure()}
+                  <div class="flex items-center gap-2.5 {streamingDisplay() ? 'mt-3 pt-3 border-t border-border/30' : ''}">
+                    <div class="tk-cooking flex gap-[3px]">
+                      <span></span><span></span><span></span>
+                    </div>
+                    <span class="text-[12px] text-copper/80 font-medium">Generating structure…</span>
+                  </div>
+                {:else if !streamingDisplay()}
                   <div class="flex items-center gap-2">
                     <div class="tk-ember w-[7px] h-[7px] rounded-full bg-copper shrink-0"></div>
-                    <span class="text-muted">Building changes...</span>
+                    <span class="text-muted">Thinking...</span>
                   </div>
                 {/if}
               </div>
@@ -720,6 +777,27 @@
 
   :global(.tk-ember) {
     animation: ember 1.6s ease-in-out infinite;
+  }
+
+  /* Cooking / structure generation indicator */
+  .tk-cooking {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .tk-cooking span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-copper, #c97d3c);
+    animation: cooking 1.4s ease-in-out infinite;
+  }
+  .tk-cooking span:nth-child(2) { animation-delay: 0.15s; }
+  .tk-cooking span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes cooking {
+    0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+    40% { opacity: 1; transform: scale(1.1); }
   }
 
   /* Drawer overlay */

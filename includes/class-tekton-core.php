@@ -32,6 +32,7 @@ final class Tekton_Core {
 	private function load_dependencies(): void {
 		$dir = TEKTON_DIR . 'includes/';
 
+		require_once $dir . 'class-tekton-activator.php';
 		require_once $dir . 'class-tekton-security.php';
 		require_once $dir . 'class-tekton-storage.php';
 		require_once $dir . 'class-tekton-schema.php';
@@ -41,6 +42,7 @@ final class Tekton_Core {
 		require_once $dir . 'class-tekton-assets.php';
 		require_once $dir . 'class-tekton-rest-api.php';
 		require_once $dir . 'class-tekton-structure-patcher.php';
+		require_once $dir . 'class-tekton-publisher.php';
 
 		require_once $dir . 'ai/interface-tekton-ai-provider.php';
 		require_once $dir . 'ai/class-tekton-ai-engine.php';
@@ -72,6 +74,7 @@ final class Tekton_Core {
 		$this->modules['theme_bridge']   = new Tekton_Theme_Bridge( $this->modules['storage'], $this->modules['renderer'] );
 		$this->modules['assets']         = new Tekton_Assets();
 		$this->modules['ai_engine']      = new Tekton_AI_Engine( $this->modules['security'] );
+		$this->modules['publisher']      = new Tekton_Publisher();
 		$this->modules['rest_api']       = new Tekton_REST_API( $this );
 
 		$this->ensure_global_templates();

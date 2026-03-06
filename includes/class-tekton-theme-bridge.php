@@ -33,7 +33,7 @@ class Tekton_Theme_Bridge {
 		}
 
 		$structure = $this->storage->get_structure( $key );
-		if ( ! $structure ) {
+		if ( ! $structure || empty( $structure['components'] ) ) {
 			return $template;
 		}
 
@@ -55,11 +55,26 @@ class Tekton_Theme_Bridge {
 	 * Try specific keys first, then generic fallbacks.
 	 */
 	private function resolve_template_key(): ?string {
+		// 1. Check post meta first (any singular page with _tekton_template_key).
+		if ( is_singular() ) {
+			$post_id = get_the_ID();
+			if ( $post_id ) {
+				$meta_key = get_post_meta( $post_id, '_tekton_template_key', true );
+				if ( $meta_key ) {
+					$structure = $this->storage->get_structure( $meta_key );
+					if ( $structure && ! empty( $structure['components'] ) ) {
+						return $meta_key;
+					}
+				}
+			}
+		}
+
+		// 2. Fall back to conditional-based template matching.
 		$candidates = $this->get_template_candidates();
 
 		foreach ( $candidates as $key ) {
 			$structure = $this->storage->get_structure( $key );
-			if ( $structure ) {
+			if ( $structure && ! empty( $structure['components'] ) ) {
 				return $key;
 			}
 		}

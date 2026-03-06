@@ -259,7 +259,18 @@ class Tekton_REST_API {
 	public function handle_list_structures(): \WP_REST_Response {
 		/** @var Tekton_Storage $storage */
 		$storage = $this->core->get_module( 'storage' );
-		return new \WP_REST_Response( $storage->list_structures() );
+		/** @var Tekton_Publisher $publisher */
+		$publisher = $this->core->get_module( 'publisher' );
+
+		$structures = $storage->list_structures();
+		foreach ( $structures as &$s ) {
+			$key = $s['template_key'];
+			$s['url']         = $publisher->get_url( $key );
+			$s['preview_url'] = $publisher->get_preview_url( $key );
+			$s['wp_status']   = $publisher->get_post_status( $key );
+		}
+
+		return new \WP_REST_Response( $structures );
 	}
 
 	public function handle_get_structure( \WP_REST_Request $request ): \WP_REST_Response {
@@ -283,17 +294,34 @@ class Tekton_REST_API {
 
 		/** @var Tekton_Storage $storage */
 		$storage = $this->core->get_module( 'storage' );
+		/** @var Tekton_Publisher $publisher */
+		$publisher = $this->core->get_module( 'publisher' );
+
+		$title  = sanitize_text_field( $request->get_param( 'title' ) ?? '' );
+		$status = sanitize_key( $request->get_param( 'status' ) ?? 'draft' );
 
 		$data = [
-			'title'      => sanitize_text_field( $request->get_param( 'title' ) ?? '' ),
+			'title'      => $title,
 			'components' => $request->get_param( 'components' ) ?? [],
 			'styles'     => $request->get_param( 'styles' ) ?? [],
-			'status'     => sanitize_key( $request->get_param( 'status' ) ?? 'draft' ),
+			'status'     => $status,
 		];
 
 		$id = $storage->save_structure( $key, $data );
 
-		return new \WP_REST_Response( [ 'id' => $id, 'template_key' => $key ] );
+		// Create/update the corresponding WordPress page.
+		$page_url = $publisher->publish( $key, $title, $status );
+
+		$response = [ 'id' => $id, 'template_key' => $key, 'status' => $status ];
+		if ( $page_url ) {
+			$response['url'] = $page_url;
+		}
+		$preview_url = $publisher->get_preview_url( $key );
+		if ( $preview_url ) {
+			$response['preview_url'] = $preview_url;
+		}
+
+		return new \WP_REST_Response( $response );
 	}
 
 	public function handle_delete_structure( \WP_REST_Request $request ): \WP_REST_Response {
