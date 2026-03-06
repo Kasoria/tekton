@@ -98,6 +98,12 @@ class Tekton_REST_API {
 			],
 		] );
 
+		register_rest_route( $ns, '/chat/(?P<template_key>[a-zA-Z0-9_-]+)/summarize-clear', [
+			'methods'             => 'POST',
+			'callback'            => [ $this, 'handle_summarize_and_clear_chat' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
 		// Context.
 		register_rest_route( $ns, '/context', [
 			'methods'             => 'GET',
@@ -471,6 +477,58 @@ class Tekton_REST_API {
 		$storage = $this->core->get_module( 'storage' );
 		$storage->clear_chat_history( $key );
 		return new \WP_REST_Response( [ 'cleared' => true ] );
+	}
+
+	public function handle_summarize_and_clear_chat( \WP_REST_Request $request ): \WP_REST_Response {
+		$key = sanitize_key( $request['template_key'] );
+
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+		/** @var Tekton_AI_Engine $ai */
+		$ai = $this->core->get_module( 'ai_engine' );
+
+		$history = $storage->get_chat_history( $key );
+
+		if ( empty( $history ) ) {
+			return new \WP_REST_Response( [ 'cleared' => true ] );
+		}
+
+		// Build a compact transcript for the AI to summarize.
+		$transcript = '';
+		foreach ( $history as $msg ) {
+			$role = 'user' === $msg['role'] ? 'User' : 'AI';
+			$transcript .= "{$role}: {$msg['content']}\n";
+		}
+
+		$summary = '';
+		try {
+			$provider = $ai->get_provider();
+			$generator = $provider->send_streaming(
+				'You are a concise summarizer. Summarize the following conversation in 2-3 short sentences. Focus on what was built, changed, or decided. Do not use markdown. Just plain text.',
+				[
+					[
+						'role'    => 'user',
+						'content' => "Summarize this conversation:\n\n{$transcript}",
+					],
+				],
+				[
+					'model'      => get_option( 'tekton_ai_model', '' ),
+					'max_tokens' => 200,
+				]
+			);
+
+			foreach ( $generator as $chunk ) {
+				$summary .= $chunk;
+			}
+		} catch ( \Throwable $e ) {
+			$summary = 'Previous conversation cleared. (Summary generation failed.)';
+		}
+
+		// Clear and add summary as a system-style message.
+		$storage->clear_chat_history( $key );
+		$storage->add_chat_message( $key, 'assistant', trim( $summary ), [ 'is_summary' => true ] );
+
+		return new \WP_REST_Response( [ 'cleared' => true, 'summary' => trim( $summary ) ] );
 	}
 
 	// ─── Context ────────────────────────────────────────────────────────

@@ -23,6 +23,8 @@
   let showNewTemplate = $state(false);
   let attachedImages = $state([]);
   let fileInputEl;
+  let showClearMenu = $state(false);
+  let isClearing = $state(false);
 
   const GLOBAL_TEMPLATES = ['header', 'footer'];
 
@@ -272,6 +274,24 @@
         }];
       };
       reader.readAsDataURL(file);
+    }
+  }
+
+  async function clearChat(withSummary = false) {
+    if (!currentPage) return;
+    isClearing = true;
+    showClearMenu = false;
+    try {
+      if (withSummary) {
+        await api.summarizeAndClearChat(currentPage.template_key);
+      } else {
+        await api.clearChat(currentPage.template_key);
+      }
+      // Reload chat history (will be empty or contain just the summary)
+      const history = await api.getChatHistory(currentPage.template_key);
+      chat.loadHistory(history);
+    } finally {
+      isClearing = false;
     }
   }
 
@@ -542,6 +562,7 @@
             <div class="flex flex-col gap-[5px]">
               <span class="text-[10px] font-semibold uppercase tracking-[1.2px] pl-0.5 {m.role === 'user' ? 'text-muted' : 'text-copper'}">
                 {m.role === 'user' ? 'You' : 'Tekton'}
+                {#if m.is_summary}<span class="text-[9px] text-dim font-normal normal-case tracking-normal ml-1">· summary of previous session</span>{/if}
               </span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 {m.role === 'user' ? 'bg-card-hover text-foreground border-l-2 border-dim' : 'bg-card text-foreground/75 border-l-2 border-copper/20'}">
                 {#if m.images?.length}
@@ -661,7 +682,38 @@
               onclick={() => { input = cmd + ' '; textareaEl?.focus(); }}
             >{cmd}</button>
           {/each}
-          <span class="ml-auto text-[10px] text-border">shift+enter for newline</span>
+
+          <!-- Clear chat -->
+          {#if chat.messages.length > 0}
+            <div class="relative ml-auto">
+              <button
+                class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[10px] font-body transition-colors hover:text-muted hover:border-dim {isClearing ? 'opacity-50 pointer-events-none' : ''}"
+                onclick={() => (showClearMenu = !showClearMenu)}
+              >{isClearing ? 'Clearing...' : 'Clear chat'}</button>
+              {#if showClearMenu}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="fixed inset-0 z-[29]" onclick={() => (showClearMenu = false)}></div>
+                <div class="absolute bottom-[calc(100%+6px)] right-0 w-[200px] z-30 bg-card-hover border border-dim rounded-[8px] p-1 shadow-[0_12px_40px_#00000060]">
+                  <button
+                    class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
+                    onclick={() => clearChat(true)}
+                  >
+                    <span class="text-[12px] text-foreground font-medium">Clear with summary</span>
+                    <span class="text-[10px] text-dim leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
+                  </button>
+                  <button
+                    class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
+                    onclick={() => clearChat(false)}
+                  >
+                    <span class="text-[12px] text-foreground font-medium">Clear all</span>
+                    <span class="text-[10px] text-dim leading-tight mt-0.5">Remove entire chat history</span>
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <span class="ml-auto text-[10px] text-border">shift+enter for newline</span>
+          {/if}
         </div>
       </div>
     </div>

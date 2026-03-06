@@ -81,6 +81,7 @@ export const api = {
     }),
   getChatHistory: (key) => apiFetch(`chat/${key}`),
   clearChat: (key) => apiFetch(`chat/${key}`, { method: 'DELETE' }),
+  summarizeAndClearChat: (key) => apiFetch(`chat/${key}/summarize-clear`, { method: 'POST' }),
   getContext: () => apiFetch('context'),
   refreshContext: () => apiFetch('context/refresh', { method: 'POST' }),
   getDashboard: () => apiFetch('dashboard'),

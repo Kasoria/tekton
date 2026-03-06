@@ -94,6 +94,10 @@ export function createChatStore() {
       if (msg.metadata?.has_structure) {
         m.structure = true;
       }
+      // Mark summary messages.
+      if (msg.metadata?.is_summary) {
+        m.is_summary = true;
+      }
       return m;
     });
   }
