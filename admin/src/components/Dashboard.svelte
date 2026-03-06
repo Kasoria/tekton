@@ -18,6 +18,7 @@
   let tab = $state('overview');
   let deleteConfirm = $state({ open: false, key: '' });
   let showOnboarding = $state(false);
+  let currentTheme = $state(null);
 
   const dashboard = createDashboardStore();
   const settingsStore = createSettingsStore();
@@ -29,8 +30,10 @@
       if (!themeData.onboarding_complete) {
         showOnboarding = true;
       }
+      if (themeData.theme) {
+        currentTheme = themeData.theme;
+      }
     }).catch(() => {
-      // Theme endpoint not available yet, show onboarding
       showOnboarding = true;
     });
   });
@@ -247,7 +250,7 @@
 </script>
 
 {#if showOnboarding}
-  <OnboardingFlow oncomplete={() => { showOnboarding = false; dashboard.load(); }} />
+  <OnboardingFlow oncomplete={() => { showOnboarding = false; dashboard.load(); api.getTheme().then(d => { if (d.theme) currentTheme = d.theme; }).catch(() => {}); }} />
 {:else}
 <div class="tk-dashboard">
   <!-- Grain overlay -->
@@ -681,13 +684,51 @@
           <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
             {t('theme', 'Theme')}
           </div>
-          <div class="px-[18px] py-3">
-            <div class="text-[13px] text-foreground/80 mb-1">
-              {t('theme_current', 'Current theme configuration')}
-            </div>
-            <p class="text-[12px] text-muted mb-3">
-              {t('theme_desc', 'Regenerate your site theme with AI based on a description of your site.')}
-            </p>
+          <div class="px-[18px] py-4">
+            {#if currentTheme}
+              {#if currentTheme.name}
+                <div class="text-[13px] font-semibold mb-0.5">{currentTheme.name}</div>
+              {/if}
+              {#if currentTheme.description}
+                <p class="text-[12px] text-muted mb-4">{currentTheme.description}</p>
+              {/if}
+
+              <!-- Color swatches -->
+              {#if currentTheme.colors}
+                <div class="flex gap-2.5 flex-wrap mb-4">
+                  {#each [['primary','Primary'],['secondary','Secondary'],['accent','Accent'],['background','Bg'],['surface','Surface'],['text','Text']] as [key, label]}
+                    {#if currentTheme.colors[key]}
+                      <div class="flex flex-col items-center gap-1">
+                        <div class="w-7 h-7 rounded-full border border-border" style="background-color: {currentTheme.colors[key]}"></div>
+                        <span class="text-[10px] text-dim">{label}</span>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              {/if}
+
+              <!-- Font pairing -->
+              {#if currentTheme.fonts}
+                <div class="p-3 rounded-md bg-background border border-border-subtle mb-4">
+                  {#if currentTheme.fonts.heading}
+                    <div class="text-base font-bold mb-1" style="font-family: {currentTheme.fonts.heading}, sans-serif">{currentTheme.fonts.heading}</div>
+                  {/if}
+                  {#if currentTheme.fonts.body}
+                    <p class="text-[12px] text-muted-foreground leading-relaxed" style="font-family: {currentTheme.fonts.body}, sans-serif">{currentTheme.fonts.body}</p>
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Style notes -->
+              {#if currentTheme.style_notes}
+                <p class="text-[12px] text-muted italic leading-relaxed mb-4">{currentTheme.style_notes}</p>
+              {/if}
+            {:else}
+              <p class="text-[12px] text-muted mb-3">
+                {t('theme_desc', 'Regenerate your site theme with AI based on a description of your site.')}
+              </p>
+            {/if}
+
             <Button size="sm" variant="secondary" onclick={() => { showOnboarding = true; }}>
               {t('regenerate_theme', 'Regenerate Theme')}
             </Button>
