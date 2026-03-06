@@ -57,11 +57,12 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 			'max_tokens' => $max_tokens,
 		] );
 
-		$queue  = new \SplQueue();
-		$error  = null;
-		$buffer = '';
+		$queue      = new \SplQueue();
+		$error      = null;
+		$buffer     = '';
+		$error_body = '';
 
-		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer ) {
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body ) {
 			$ch = curl_init( self::API_URL );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
@@ -74,7 +75,13 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 					'X-Title: Tekton',
 				],
 				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer ): int {
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+					if ( $http_code >= 400 ) {
+						$error_body .= $data;
+						return strlen( $data );
+					}
+
 					$buffer .= $data;
 					$lines   = explode( "\n", $buffer );
 					$buffer  = array_pop( $lines );
@@ -112,7 +119,12 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 			curl_close( $ch );
 
 			if ( $http_code >= 400 ) {
-				$error = "OpenRouter API error (HTTP {$http_code})";
+				$detail = '';
+				$err_json = json_decode( $error_body, true );
+				if ( ! empty( $err_json['error']['message'] ) ) {
+					$detail = ': ' . $err_json['error']['message'];
+				}
+				$error = "OpenRouter API error (HTTP {$http_code}){$detail}";
 			}
 		} );
 

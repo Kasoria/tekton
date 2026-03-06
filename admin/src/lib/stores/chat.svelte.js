@@ -80,11 +80,18 @@ export function createChatStore() {
   }
 
   function loadHistory(history) {
-    messages = history.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-      timestamp: new Date(msg.created_at).getTime(),
-    }));
+    messages = history.map((msg) => {
+      const m = {
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.created_at).getTime(),
+      };
+      // Restore image previews from saved URLs.
+      if (msg.metadata?.images?.length) {
+        m.images = msg.metadata.images.map((url) => ({ preview: url }));
+      }
+      return m;
+    });
   }
 
   function clear() {

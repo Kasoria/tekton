@@ -24,9 +24,18 @@ final class Tekton_Core {
 
 	private function __construct() {
 		$this->load_dependencies();
+		$this->maybe_upgrade_db();
 		$this->disable_gutenberg();
 		$this->init_modules();
 		$this->register_hooks();
+	}
+
+	private function maybe_upgrade_db(): void {
+		$db_version = get_option( 'tekton_db_version', '0' );
+		if ( version_compare( $db_version, TEKTON_VERSION, '<' ) ) {
+			Tekton_Storage::create_tables();
+			update_option( 'tekton_db_version', TEKTON_VERSION );
+		}
 	}
 
 	private function load_dependencies(): void {

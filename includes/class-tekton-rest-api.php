@@ -221,7 +221,36 @@ class Tekton_REST_API {
 			];
 		}
 
-		$storage->add_chat_message( $template_key, 'user', $prompt );
+		// Save images to uploads and store URLs in chat metadata.
+		$image_urls = [];
+		if ( ! empty( $images ) ) {
+			$upload_dir = wp_upload_dir();
+			$chat_dir   = $upload_dir['basedir'] . '/tekton/chat';
+			if ( ! is_dir( $chat_dir ) ) {
+				wp_mkdir_p( $chat_dir );
+			}
+
+			$mime_ext = [
+				'image/jpeg' => 'jpg',
+				'image/png'  => 'png',
+				'image/gif'  => 'gif',
+				'image/webp' => 'webp',
+			];
+
+			foreach ( $images as $img ) {
+				$ext      = $mime_ext[ $img['media_type'] ] ?? 'png';
+				$filename = wp_unique_filename( $chat_dir, 'img-' . wp_generate_password( 8, false ) . '.' . $ext );
+				$filepath = $chat_dir . '/' . $filename;
+				$bytes    = base64_decode( $img['data'], true );
+
+				if ( false !== $bytes && file_put_contents( $filepath, $bytes ) ) {
+					$image_urls[] = $upload_dir['baseurl'] . '/tekton/chat/' . $filename;
+				}
+			}
+		}
+
+		$chat_metadata = ! empty( $image_urls ) ? [ 'images' => $image_urls ] : null;
+		$storage->add_chat_message( $template_key, 'user', $prompt, $chat_metadata );
 
 		$full_response = '';
 

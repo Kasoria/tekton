@@ -25,12 +25,32 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 		return 'OpenAI';
 	}
 
+	/** Models that require max_completion_tokens instead of max_tokens. */
+	private const COMPLETION_TOKEN_MODELS = [ 'o1', 'o1-mini', 'o1-pro', 'o3', 'o3-mini', 'o4-mini' ];
+
+	/** Models that do not support system role messages. */
+	private const NO_SYSTEM_ROLE_MODELS = [ 'o1', 'o1-mini', 'o1-pro' ];
+
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
 		$model      = $options['model'] ?: 'gpt-4o';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
-		$api_messages   = [];
-		$api_messages[] = [ 'role' => 'system', 'content' => $system_prompt ];
+		$is_reasoning = in_array( $model, self::COMPLETION_TOKEN_MODELS, true )
+		             || str_starts_with( $model, 'o1' )
+		             || str_starts_with( $model, 'o3' )
+		             || str_starts_with( $model, 'o4' )
+		             || str_starts_with( $model, 'gpt-5' );
+		$no_system   = in_array( $model, self::NO_SYSTEM_ROLE_MODELS, true );
+
+		$api_messages = [];
+
+		// System prompt: use developer role for reasoning models, system for others.
+		if ( $no_system ) {
+			$api_messages[] = [ 'role' => 'developer', 'content' => $system_prompt ];
+		} else {
+			$api_messages[] = [ 'role' => 'system', 'content' => $system_prompt ];
+		}
+
 		foreach ( $messages as $msg ) {
 			if ( ! empty( $msg['images'] ) && 'user' === $msg['role'] ) {
 				$content = [ [ 'type' => 'text', 'text' => $msg['content'] ] ];
@@ -49,18 +69,26 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 			}
 		}
 
-		$body = wp_json_encode( [
-			'model'      => $model,
-			'messages'   => $api_messages,
-			'stream'     => true,
-			'max_tokens' => $max_tokens,
-		] );
+		$request = [
+			'model'    => $model,
+			'messages' => $api_messages,
+			'stream'   => true,
+		];
 
-		$queue  = new \SplQueue();
-		$error  = null;
-		$buffer = '';
+		if ( $is_reasoning ) {
+			$request['max_completion_tokens'] = $max_tokens;
+		} else {
+			$request['max_tokens'] = $max_tokens;
+		}
 
-		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer ) {
+		$body = wp_json_encode( $request );
+
+		$queue      = new \SplQueue();
+		$error      = null;
+		$buffer     = '';
+		$error_body = '';
+
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body ) {
 			$ch = curl_init( self::API_URL );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
@@ -71,7 +99,13 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 					'Authorization: Bearer ' . $this->api_key,
 				],
 				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer ): int {
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+					if ( $http_code >= 400 ) {
+						$error_body .= $data;
+						return strlen( $data );
+					}
+
 					$buffer .= $data;
 					$lines   = explode( "\n", $buffer );
 					$buffer  = array_pop( $lines );
@@ -109,7 +143,12 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 			curl_close( $ch );
 
 			if ( $http_code >= 400 ) {
-				$error = "OpenAI API error (HTTP {$http_code})";
+				$detail = '';
+				$err_json = json_decode( $error_body, true );
+				if ( ! empty( $err_json['error']['message'] ) ) {
+					$detail = ': ' . $err_json['error']['message'];
+				}
+				$error = "OpenAI API error (HTTP {$http_code}){$detail}";
 			}
 		} );
 

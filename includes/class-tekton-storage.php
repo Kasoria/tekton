@@ -49,6 +49,7 @@ class Tekton_Storage {
 			template_key VARCHAR(100) NOT NULL,
 			role VARCHAR(20) NOT NULL,
 			content LONGTEXT NOT NULL,
+			metadata LONGTEXT DEFAULT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			KEY template_key (template_key)
@@ -230,7 +231,7 @@ class Tekton_Storage {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, role, content, created_at
+				"SELECT id, role, content, metadata, created_at
 				 FROM {$wpdb->prefix}tekton_chat_history
 				 WHERE template_key = %s
 				 ORDER BY created_at ASC
@@ -241,20 +242,32 @@ class Tekton_Storage {
 			ARRAY_A
 		);
 
+		// Decode metadata JSON for each row.
+		foreach ( ( $rows ?: [] ) as &$row ) {
+			if ( ! empty( $row['metadata'] ) ) {
+				$row['metadata'] = json_decode( $row['metadata'], true ) ?: null;
+			} else {
+				$row['metadata'] = null;
+			}
+		}
+
 		return $rows ?: [];
 	}
 
-	public function add_chat_message( string $template_key, string $role, string $content ): int {
+	public function add_chat_message( string $template_key, string $role, string $content, ?array $metadata = null ): int {
 		global $wpdb;
 
-		$wpdb->insert(
-			$wpdb->prefix . 'tekton_chat_history',
-			[
-				'template_key' => $template_key,
-				'role'         => $role,
-				'content'      => $content,
-			]
-		);
+		$data = [
+			'template_key' => $template_key,
+			'role'         => $role,
+			'content'      => $content,
+		];
+
+		if ( $metadata ) {
+			$data['metadata'] = wp_json_encode( $metadata );
+		}
+
+		$wpdb->insert( $wpdb->prefix . 'tekton_chat_history', $data );
 
 		return (int) $wpdb->insert_id;
 	}
