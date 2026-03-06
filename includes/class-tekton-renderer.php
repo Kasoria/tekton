@@ -403,6 +403,13 @@ class Tekton_Renderer {
 	}
 
 	private function camel_to_kebab( string $str ): string {
-		return strtolower( (string) preg_replace( '/([a-z])([A-Z])/', '$1-$2', $str ) );
+		$kebab = strtolower( (string) preg_replace( '/([a-z])([A-Z])/', '$1-$2', $str ) );
+
+		// Vendor-prefixed properties: WebkitTextStroke → -webkit-text-stroke.
+		if ( preg_match( '/^(webkit|moz|ms|o)-/', $kebab ) ) {
+			$kebab = '-' . $kebab;
+		}
+
+		return $kebab;
 	}
 }
