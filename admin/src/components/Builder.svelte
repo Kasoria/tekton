@@ -754,7 +754,7 @@
                   {/if}
                   <span class="ml-auto text-[10px] text-muted shrink-0">{relativeTime(v.created_at)}</span>
                 </div>
-                <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || v.change_type}</div>
+                <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || { ai_generate: 'AI generated', manual: 'Manual edit', rollback: 'Restored', publish: 'Published' }[v.change_type] || v.change_type}</div>
 
                 {#if editingVersion === v.version_number}
                   <div class="flex items-center gap-1 mt-1.5">
