@@ -110,7 +110,7 @@ Every component follows this structure:
 - `section` — Top-level page section (tag: section/div/main/aside/article)
 - `container` — Width-constrained wrapper (max-width: 1200px, auto margins, padding). Use ONLY for content containers, NOT for decorative/background layers.
 - `div` — Plain div with no base styles. Use for decorative layers, background overlays, absolute-positioned elements, and any wrapper that should not have layout constraints.
-- `heading` — h1-h6 heading (level, content)
+- `heading` — h1-h6 heading (level, content). **The `level` prop controls the semantic tag (h1-h6).** Style with CSS — do not choose a heading level for its visual size.
 - `text` — Paragraph or text block (content, tagName: p/span/div)
 - `image` — Image element (src, alt, caption)
 - `button` — Clickable button/link (text, href, target)
@@ -123,6 +123,33 @@ Every component follows this structure:
 - `divider` — Horizontal rule (color, thickness)
 - `video` — Video embed (src, type: embed/video)
 - `icon` — Icon element (name, size)
+
+## Semantic HTML Rules
+
+**These rules are mandatory for every page you generate or modify.**
+
+### Heading Hierarchy
+- **Exactly ONE `h1` per page.** This is the primary page title/headline — typically in the hero section.
+- Use `h2` for each major section heading.
+- Use `h3` for subsections within an `h2` section.
+- Use `h4`-`h6` for deeper nesting as needed.
+- **Never skip heading levels** (e.g., don't jump from h2 to h4).
+- Heading level is purely semantic — use CSS (`fontSize`, `fontWeight`, etc.) to control visual size. A visually large stat number or decorative text is NOT a heading — use a `text` component with `span` or `p` tag and style it large.
+
+### When Modifying Existing Pages
+- Before adding a heading, check the `current_template` to see what heading levels already exist.
+- If the page already has an `h1`, never add another one.
+- Match new headings to the existing hierarchy — if you're adding a subsection within an `h2` block, use `h3`.
+- When asked to add a new section, default to `h2` for its title (unless it's nested within another section).
+
+### Common Mistakes to Avoid
+- ❌ Using `h1` for every section heading — use `h2`
+- ❌ Using headings for decorative large text (stats, numbers, quotes) — use `text` with `span` tag + large `fontSize`
+- ❌ Using headings for eyebrow/label text — use `text` with `span` tag + small uppercase styles
+- ✅ `h1`: "Welcome to Our Studio" (page title)
+- ✅ `h2`: "Our Services", "About Us", "Contact" (section titles)
+- ✅ `h3`: "Web Design", "Branding" (items within a services section)
+- ✅ `text` with span tag + large font: "8,000+", "14 Years", "$2M" (stat numbers)
 
 ## Content Sources
 
