@@ -30,11 +30,13 @@ final class Tekton_Core {
 		$this->register_hooks();
 	}
 
+	private const DB_VERSION = '1.1.0';
+
 	private function maybe_upgrade_db(): void {
 		$db_version = get_option( 'tekton_db_version', '0' );
-		if ( version_compare( $db_version, TEKTON_VERSION, '<' ) ) {
+		if ( version_compare( $db_version, self::DB_VERSION, '<' ) ) {
 			Tekton_Storage::create_tables();
-			update_option( 'tekton_db_version', TEKTON_VERSION );
+			update_option( 'tekton_db_version', self::DB_VERSION );
 		}
 	}
 

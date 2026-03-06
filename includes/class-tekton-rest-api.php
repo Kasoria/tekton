@@ -278,7 +278,8 @@ class Tekton_REST_API {
 			}
 
 			// Store the natural language message in chat history (not the raw JSON).
-			$storage->add_chat_message( $template_key, 'assistant', $message );
+			$assistant_meta = $structure ? [ 'has_structure' => true ] : null;
+			$storage->add_chat_message( $template_key, 'assistant', $message, $assistant_meta );
 
 			if ( $structure ) {
 				$storage->save_structure( $template_key, $structure );

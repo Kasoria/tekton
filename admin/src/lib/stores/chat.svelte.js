@@ -90,6 +90,10 @@ export function createChatStore() {
       if (msg.metadata?.images?.length) {
         m.images = msg.metadata.images.map((url) => ({ preview: url }));
       }
+      // Restore "preview updated" badge.
+      if (msg.metadata?.has_structure) {
+        m.structure = true;
+      }
       return m;
     });
   }
