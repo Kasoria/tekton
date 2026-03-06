@@ -704,10 +704,10 @@
           </div>
         {/if}
 
-        <div class="flex gap-2 items-end bg-card rounded-[10px] border border-border px-3 py-2.5 focus-within:border-dim transition-colors">
+        <div class="flex gap-2 items-start bg-card rounded-[10px] border border-border px-3 py-2.5 focus-within:border-dim transition-colors">
           <button
             onclick={() => fileInputEl?.click()}
-            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 bg-transparent opacity-50 hover:opacity-100"
+            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 bg-transparent opacity-70 hover:opacity-100"
             aria-label="Attach image"
             title="Attach image"
           >
@@ -732,13 +732,13 @@
             oninput={autoResize}
             onpaste={handlePaste}
             placeholder={t('describe_prompt', 'Describe what to build or change...')}
-            rows="1"
-            class="flex-1 bg-transparent border-none text-foreground text-[13px] leading-[1.5] resize-none outline-none font-body min-h-[20px] max-h-[100px] placeholder:text-dim"
+            rows="3"
+            class="flex-1 bg-transparent border-none text-foreground text-[13px] leading-[1.5] resize-none outline-none font-body min-h-[54px] max-h-[150px] placeholder:text-dim"
           ></textarea>
           <button
             onclick={() => send()}
             disabled={(!input.trim() && attachedImages.length === 0) || chat.isStreaming}
-            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 {input.trim() || attachedImages.length > 0 ? 'bg-copper opacity-100' : 'bg-transparent opacity-40'}"
+            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 {input.trim() || attachedImages.length > 0 ? 'bg-copper opacity-100' : 'bg-transparent opacity-60'}"
             aria-label="Send message"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -746,10 +746,11 @@
             </svg>
           </button>
         </div>
-        <div class="flex items-center gap-1.5 mt-1.5 pl-0.5">
+        <div class="flex items-center justify-start gap-1.5 mt-1.5 pl-0.5">
           {#each ['/fullstack', '/plugin', '/undo'] as cmd}
             <button
-              class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[12px] font-mono transition-colors hover:text-muted hover:border-dim"
+              class="px-[7px] py-[2px] bg-transparent rounded cursor-pointer text-[12px] font-mono transition-colors"
+              style="border: 1px solid var(--color-muted); color: var(--color-muted-foreground);"
               onclick={() => { input = cmd + ' '; textareaEl?.focus(); }}
             >{cmd}</button>
           {/each}

@@ -89,6 +89,17 @@ class Tekton_Structure_Patcher {
 					$structure['meta'] = array_merge( $existing_meta, $op['meta'] ?? [] );
 					break;
 
+				case 'set_wrapper_styles':
+					$existing_ws = $structure['wrapper_styles'] ?? [];
+					foreach ( ( $op['wrapper_styles'] ?? [] ) as $breakpoint => $props ) {
+						if ( ! isset( $existing_ws[ $breakpoint ] ) ) {
+							$existing_ws[ $breakpoint ] = [];
+						}
+						$existing_ws[ $breakpoint ] = array_merge( $existing_ws[ $breakpoint ], $props );
+					}
+					$structure['wrapper_styles'] = $existing_ws;
+					break;
+
 				case 'move_component':
 					// Extract the component, then insert at new position.
 					$extracted = null;

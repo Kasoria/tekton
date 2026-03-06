@@ -124,6 +124,10 @@ class Tekton_Storage {
 			$row['meta'] = $row['styles']['meta'];
 			unset( $row['styles']['meta'] );
 		}
+		if ( ! empty( $row['styles']['wrapper_styles'] ) ) {
+			$row['wrapper_styles'] = $row['styles']['wrapper_styles'];
+			unset( $row['styles']['wrapper_styles'] );
+		}
 
 		return $row;
 	}
@@ -143,6 +147,9 @@ class Tekton_Storage {
 		}
 		if ( ! empty( $data['meta'] ) ) {
 			$styles_data['meta'] = $data['meta'];
+		}
+		if ( ! empty( $data['wrapper_styles'] ) ) {
+			$styles_data['wrapper_styles'] = $data['wrapper_styles'];
 		}
 
 		$row_data = [

@@ -50,6 +50,17 @@ a:hover {
   color: var(--tekton-accent-hover, #1d4ed8);
 }
 
+/* Tekton site wrapper — provides shared scroll context for sticky/fixed elements */
+#tekton-site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#tekton-site > main {
+  flex: 1;
+}
+
 /* Tekton page container */
 .tekton-page {
   width: 100%;

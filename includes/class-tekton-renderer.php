@@ -13,7 +13,7 @@ class Tekton_Renderer {
 	/** @var string[] Collected styles from all components. */
 	private array $collected_styles = [];
 
-	public function render_page( array $structure, int $post_id = 0 ): string {
+	public function render_page( array $structure, int $post_id = 0, string $wrapper_tag = 'div' ): string {
 		$this->collected_styles = [];
 
 		$components = $structure['components'] ?? [];
@@ -23,12 +23,22 @@ class Tekton_Renderer {
 			$html .= $this->render_component( $component, $post_id );
 		}
 
-		$template_key = esc_attr( $structure['template_key'] ?? '' );
+		$template_key  = esc_attr( $structure['template_key'] ?? '' );
 		$keyframes_css = $this->render_keyframes( $structure['keyframes'] ?? [] );
 
+		// Wrapper-level styles (e.g. position: sticky on <header>).
+		$wrapper_styles = $structure['wrapper_styles'] ?? [];
+		$wrapper_css    = '';
+		$wrapper_id     = '';
+		if ( ! empty( $wrapper_styles ) ) {
+			$wrapper_id  = 'tekton-' . $template_key;
+			$wrapper_css = $this->render_styles( $wrapper_styles, $wrapper_id );
+		}
+
+		$all_css = $keyframes_css . $wrapper_css . implode( "\n", $this->collected_styles );
 		$styles_block = '';
-		if ( ! empty( $this->collected_styles ) || '' !== $keyframes_css ) {
-			$styles_block = '<style class="tekton-scoped">' . "\n" . $keyframes_css . implode( "\n", $this->collected_styles ) . "\n</style>\n";
+		if ( '' !== $all_css ) {
+			$styles_block = '<style class="tekton-scoped">' . "\n" . $all_css . "\n</style>\n";
 		}
 
 		$scripts_block = '';
@@ -41,10 +51,13 @@ class Tekton_Renderer {
 				. "\n</script>\n";
 		}
 
+		$tag      = in_array( $wrapper_tag, [ 'header', 'main', 'footer', 'div' ], true ) ? $wrapper_tag : 'div';
+		$id_attr  = $wrapper_id ? ' id="' . esc_attr( $wrapper_id ) . '"' : '';
+
 		return $styles_block
-			. '<div class="tekton-page" data-template="' . $template_key . '">'
+			. '<' . $tag . $id_attr . ' class="tekton-page" data-template="' . $template_key . '">'
 			. "\n" . $html
-			. "\n</div>"
+			. "\n</" . $tag . '>'
 			. $scripts_block;
 	}
 

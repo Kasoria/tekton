@@ -680,6 +680,7 @@ class Tekton_REST_API {
 		$html .= '<link rel="stylesheet" href="' . $reset_url . '">';
 		$html .= '<style>:root{' . "\n" . $tokens_css . '}</style>';
 		$html .= '</head><body class="tekton-preview">';
+		$html .= '<div id="tekton-site">';
 
 		// Render header (unless we're previewing the header itself).
 		if ( 'header' !== $template_key ) {
@@ -689,7 +690,8 @@ class Tekton_REST_API {
 			}
 		}
 
-		$html .= $renderer->render_page( $structure );
+		$main_tag = ( 'header' === $template_key || 'footer' === $template_key ) ? $template_key : 'main';
+		$html .= $renderer->render_page( $structure, 0, $main_tag );
 
 		// Render footer (unless we're previewing the footer itself).
 		if ( 'footer' !== $template_key ) {
@@ -699,7 +701,7 @@ class Tekton_REST_API {
 			}
 		}
 
-		$html .= '</body></html>';
+		$html .= '</div></body></html>';
 
 		return new \WP_REST_Response( [ 'html' => $html ] );
 	}
@@ -712,7 +714,8 @@ class Tekton_REST_API {
 		if ( ! $structure || empty( $structure['components'] ) ) {
 			return '';
 		}
-		return $renderer->render_page( $structure );
+		$tag = in_array( $key, [ 'header', 'footer' ], true ) ? $key : 'div';
+		return $renderer->render_page( $structure, 0, $tag );
 	}
 
 	// ─── Dashboard ─────────────────────────────────────────────────────

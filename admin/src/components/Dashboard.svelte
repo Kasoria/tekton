@@ -614,8 +614,8 @@
           <div class="flex items-center justify-between px-[18px] py-2.5">
             <span class="text-[13px] text-foreground/80">{t('max_tokens', 'Max tokens')}</span>
             <input
-              type="text"
-              class="text-xs text-muted font-body px-2.5 py-1 bg-background rounded-[5px] border border-border outline-none focus:border-copper w-48 text-right"
+              type="number"
+              class="tk-input"
               value={getSettingValue('tekton_ai_max_tokens')}
               onchange={(e) => handleSettingInput('tekton_ai_max_tokens', e)}
             />
@@ -719,6 +719,44 @@
   .tk-dashboard :global(input) {
     font-family: var(--font-body);
     color: var(--color-foreground);
+  }
+
+  .tk-dashboard :global(input.tk-input) {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 5px 10px !important;
+    background: var(--color-background) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 6px !important;
+    color: var(--color-foreground) !important;
+    font-size: 13px !important;
+    font-family: var(--font-body) !important;
+    line-height: 1.4 !important;
+    text-align: right !important;
+    outline: none !important;
+    box-shadow: none !important;
+    height: auto !important;
+    width: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    transition: border-color 0.15s, background 0.15s !important;
+    -moz-appearance: textfield !important;
+  }
+
+  .tk-dashboard :global(input.tk-input:hover) {
+    border-color: var(--color-dim) !important;
+    background: var(--color-card-hover) !important;
+  }
+
+  .tk-dashboard :global(input.tk-input:focus) {
+    border-color: var(--color-copper) !important;
+    box-shadow: none !important;
+  }
+
+  .tk-dashboard :global(input.tk-input::-webkit-inner-spin-button),
+  .tk-dashboard :global(input.tk-input::-webkit-outer-spin-button) {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
   }
 
   .tk-dashboard :global(label) {

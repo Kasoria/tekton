@@ -30,29 +30,31 @@ $template_key = $bridge->get_current_template_key();
 <body <?php body_class( 'tekton-rendered' ); ?>>
 <?php wp_body_open(); ?>
 
+<div id="tekton-site">
 <?php
 // Render header (unless this IS the header template).
 if ( 'header' !== $template_key ) {
 	$header = $storage->get_structure( 'header' );
 	if ( $header && ! empty( $header['components'] ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo $renderer->render_page( $header, get_the_ID() ?: 0 );
+		echo $renderer->render_page( $header, get_the_ID() ?: 0, 'header' );
 	}
 }
 
 // Render the main page structure.
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-echo $renderer->render_page( $structure, get_the_ID() ?: 0 );
+echo $renderer->render_page( $structure, get_the_ID() ?: 0, 'main' );
 
 // Render footer (unless this IS the footer template).
 if ( 'footer' !== $template_key ) {
 	$footer = $storage->get_structure( 'footer' );
 	if ( $footer && ! empty( $footer['components'] ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo $renderer->render_page( $footer, get_the_ID() ?: 0 );
+		echo $renderer->render_page( $footer, get_the_ID() ?: 0, 'footer' );
 	}
 }
 ?>
+</div>
 
 <?php wp_footer(); ?>
 </body>

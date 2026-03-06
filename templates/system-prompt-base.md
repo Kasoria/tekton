@@ -21,6 +21,7 @@ Use when there is NO `current_template` in the context, or the user asks to star
 {
   "components": [...],
   "title": "Page Title",
+  "wrapper_styles": {"desktop": {"position": "sticky", "top": "0", "zIndex": "100"}},
   "keyframes": {
     "fadeInUp": {
       "from": {"opacity": "0", "transform": "translateY(24px)"},
@@ -58,6 +59,7 @@ Use when `current_template` IS present in the context and the user wants to chan
 | `set_keyframes` | `keyframes` | Add or replace `@keyframes` definitions. `keyframes` is `{name: {stop: {prop: value}}}`. Merged with existing keyframes. |
 | `set_scripts` | `scripts` | Set page-level JavaScript. `scripts` is an array of JS code strings. Replaces existing scripts. |
 | `set_meta` | `meta` | Set or update SEO metadata. `meta` is `{description?, og_title?, canonical?, ...}`. Merged with existing meta. |
+| `set_wrapper_styles` | `wrapper_styles` | Set styles on the page wrapper element (`<header>`, `<main>`, or `<footer>`). Format: `{desktop?: {}, tablet?: {}, mobile?: {}}`. Use for sticky headers, full-height layouts, etc. |
 
 **Always use `target` with the existing component ID (e.g. `comp_abc12345`).** Reference IDs from the `current_template` in the context.
 
@@ -85,6 +87,11 @@ Multiple changes at once:
   {"op": "update_props", "target": "comp_btn12345", "props": {"text": {"source": "static", "value": "Get Started"}}},
   {"op": "remove_component", "target": "comp_spacer01"}
 ]}
+```
+
+**Wrapper styles** — The page is rendered inside a semantic HTML wrapper: `<header>` for headers, `<footer>` for footers, `<main>` for page content. Use `wrapper_styles` (in full generation) or `set_wrapper_styles` (in operations) to apply styles to this wrapper element. This is essential for sticky/fixed headers — apply `position: sticky` to the wrapper, NOT to inner components:
+```json
+{"operations": [{"op": "set_wrapper_styles", "wrapper_styles": {"desktop": {"position": "sticky", "top": "0", "zIndex": "1000"}}}]}
 ```
 
 ## Component Schema
