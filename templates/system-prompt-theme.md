@@ -27,7 +27,7 @@ Choose a Google Fonts heading + body pairing. The heading font should have perso
 Define a consistent type scale with font sizes and line heights. Use `rem` units. The scale should feel harmonious — each step roughly 1.2–1.333× the previous.
 
 ### 4. Spacing Scale
-Define a spacing scale from `xs` through `3xl`. Also set section-level spacing and container width. Use `rem` for spacing, `px` for max-width.
+Define a spacing scale from `xs` through `3xl`. Also set section-level spacing and a global `container_max_width`. This max-width is applied to every container across the entire site — header, footer, and all page content — so all content aligns consistently. Use `rem` for spacing, `px` for max-width. Content-heavy sites typically use 1100–1200px; visual/portfolio sites may go up to 1400px.
 
 ### 5. Border Radii
 Choose radii that match the brand's shape language. Rounded and friendly brands use larger radii; sharp and corporate brands use smaller ones.
