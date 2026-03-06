@@ -149,14 +149,20 @@ class Tekton_Renderer {
 	}
 
 	private function render_button( array $c, int $post_id ): string {
-		$text   = $this->resolve_prop_content( $c, 'text', $post_id );
 		$href   = $this->resolve_prop_content( $c, 'href', $post_id );
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
 		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-button' );
 
+		// If the button has children (e.g. icon + label), render them instead of text prop.
+		if ( ! empty( $c['children'] ) ) {
+			$inner = $this->render_children( $c, $post_id );
+		} else {
+			$inner = esc_html( $this->resolve_prop_content( $c, 'text', $post_id ) );
+		}
+
 		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
-			. esc_html( $text ) . "</a>\n";
+			. $inner . "</a>\n";
 	}
 
 	private function render_grid( array $c, int $post_id ): string {
@@ -173,14 +179,20 @@ class Tekton_Renderer {
 	}
 
 	private function render_link( array $c, int $post_id ): string {
-		$text   = $this->resolve_prop_content( $c, 'text', $post_id );
 		$href   = $this->resolve_prop_content( $c, 'href', $post_id );
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
 		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-link' );
 
+		// If the link has children (e.g. logo with icon + text), render them instead of text prop.
+		if ( ! empty( $c['children'] ) ) {
+			$inner = $this->render_children( $c, $post_id );
+		} else {
+			$inner = esc_html( $this->resolve_prop_content( $c, 'text', $post_id ) );
+		}
+
 		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
-			. esc_html( $text ) . "</a>\n";
+			. $inner . "</a>\n";
 	}
 
 	private function render_list( array $c, int $post_id ): string {
