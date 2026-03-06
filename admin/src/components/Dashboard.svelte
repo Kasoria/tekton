@@ -9,6 +9,7 @@
   import { createSettingsStore } from '$lib/stores/settings.svelte.js';
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
+  import OnboardingFlow from './OnboardingFlow.svelte';
 
   let { onOpenBuilder, onOpenTemplate } = $props();
 
@@ -16,6 +17,7 @@
 
   let tab = $state('overview');
   let deleteConfirm = $state({ open: false, key: '' });
+  let showOnboarding = $state(false);
 
   const dashboard = createDashboardStore();
   const settingsStore = createSettingsStore();
@@ -23,6 +25,14 @@
   $effect(() => {
     dashboard.load();
     settingsStore.load();
+    api.getTheme().then((themeData) => {
+      if (!themeData.onboarding_complete) {
+        showOnboarding = true;
+      }
+    }).catch(() => {
+      // Theme endpoint not available yet, show onboarding
+      showOnboarding = true;
+    });
   });
 
   const kindColor = {
@@ -236,6 +246,9 @@
   }
 </script>
 
+{#if showOnboarding}
+  <OnboardingFlow oncomplete={() => { showOnboarding = false; dashboard.load(); }} />
+{:else}
 <div class="tk-dashboard">
   <!-- Grain overlay -->
   <div
@@ -662,10 +675,29 @@
             />
           </div>
         </Card>
+
+        <!-- Theme -->
+        <Card class="mb-4">
+          <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
+            {t('theme', 'Theme')}
+          </div>
+          <div class="px-[18px] py-3">
+            <div class="text-[13px] text-foreground/80 mb-1">
+              {t('theme_current', 'Current theme configuration')}
+            </div>
+            <p class="text-[12px] text-muted mb-3">
+              {t('theme_desc', 'Regenerate your site theme with AI based on a description of your site.')}
+            </p>
+            <Button size="sm" variant="secondary" onclick={() => { showOnboarding = true; }}>
+              {t('regenerate_theme', 'Regenerate Theme')}
+            </Button>
+          </div>
+        </Card>
       </div>
     {/if}
   </div>
 </div>
+{/if}
 
 <ConfirmDialog
   open={deleteConfirm.open}

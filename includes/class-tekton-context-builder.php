@@ -45,6 +45,7 @@ class Tekton_Context_Builder {
 			'design_tokens'   => $this->get_design_tokens(),
 			'active_plugins'  => $this->get_active_plugins(),
 			'woocommerce'     => $this->get_woocommerce_status(),
+			'theme'           => $this->get_theme(),
 		];
 
 		set_transient( $cache_key, $context, HOUR_IN_SECONDS );
@@ -94,6 +95,22 @@ class Tekton_Context_Builder {
 
 		if ( ! empty( $context['woocommerce']['active'] ) ) {
 			$lines[] = 'WooCommerce: active';
+		}
+
+		if ( ! empty( $context['theme'] ) ) {
+			$theme = $context['theme'];
+			$lines[] = "Theme: {$theme['name']} — {$theme['description']}";
+			if ( ! empty( $theme['style_notes'] ) ) {
+				$lines[] = "Style: {$theme['style_notes']}";
+			}
+			if ( ! empty( $theme['colors'] ) ) {
+				$c = $theme['colors'];
+				$lines[] = "Colors: primary={$c['primary']}, secondary={$c['secondary']}, accent={$c['accent']}, bg={$c['background']}";
+			}
+			if ( ! empty( $theme['fonts'] ) ) {
+				$f = $theme['fonts'];
+				$lines[] = "Fonts: heading={$f['heading']}, body={$f['body']}";
+			}
 		}
 
 		return implode( "\n", $lines );
@@ -201,6 +218,14 @@ class Tekton_Context_Builder {
 	private function get_active_plugins(): array {
 		$plugins = get_option( 'active_plugins', [] );
 		return array_map( fn( $p ) => explode( '/', $p )[0], $plugins );
+	}
+
+	private function get_theme(): ?array {
+		$theme = get_option( 'tekton_theme', null );
+		if ( is_string( $theme ) ) {
+			$theme = json_decode( $theme, true );
+		}
+		return is_array( $theme ) ? $theme : null;
 	}
 
 	private function get_woocommerce_status(): array {

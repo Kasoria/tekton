@@ -96,4 +96,35 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ components: structure.components || structure, keyframes: structure.keyframes, scripts: structure.scripts, template_key: templateKey }),
     }),
+  getTheme: () => apiFetch('theme'),
+  saveTheme: (theme) => apiFetch('theme', { method: 'POST', body: JSON.stringify(theme) }),
 };
+
+export async function* streamThemeGenerate(description) {
+  const { restUrl, nonce } = getConfig();
+  const url = `${restUrl}tekton/v1/theme/generate`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+    body: JSON.stringify({ description }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Stream failed' }));
+    throw new Error(err.message || 'Stream failed');
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try { yield JSON.parse(line.slice(6)); } catch {}
+      }
+    }
+  }
+}

@@ -121,6 +121,7 @@ class Tekton_AI_Engine {
 			'generate_plugin'    => 'system-prompt-plugin.md',
 			'generate_component' => 'system-prompt-component.md',
 			'modify_page'        => 'system-prompt-page.md',
+			'generate_theme'     => 'system-prompt-theme.md',
 		];
 
 		$type_file = $type_map[ $type ] ?? 'system-prompt-page.md';

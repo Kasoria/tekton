@@ -159,6 +159,26 @@ class Tekton_REST_API {
 			'permission_callback' => [ $this, 'check_permission' ],
 		] );
 
+		// Theme.
+		register_rest_route( $ns, '/theme', [
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_get_theme' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			],
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_save_theme' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			],
+		] );
+
+		register_rest_route( $ns, '/theme/generate', [
+			'methods'             => 'POST',
+			'callback'            => [ $this, 'handle_generate_theme' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
 		// Preview.
 		register_rest_route( $ns, '/preview', [
 			'methods'             => 'POST',
@@ -794,6 +814,180 @@ class Tekton_REST_API {
 		}
 
 		return new \WP_REST_Response( $activity );
+	}
+
+	// ─── Theme ─────────────────────────────────────────────────────────
+
+	public function handle_get_theme(): \WP_REST_Response {
+		$theme = get_option( 'tekton_theme', null );
+		if ( is_string( $theme ) ) {
+			$theme = json_decode( $theme, true );
+		}
+		$onboarding_complete = (bool) get_option( 'tekton_onboarding_complete', false );
+
+		return new \WP_REST_Response( [
+			'theme'                => $theme,
+			'onboarding_complete'  => $onboarding_complete,
+		] );
+	}
+
+	public function handle_save_theme( \WP_REST_Request $request ): \WP_REST_Response {
+		$theme = $request->get_json_params();
+
+		if ( empty( $theme ) || ! is_array( $theme ) ) {
+			return new \WP_REST_Response( [ 'message' => 'Invalid theme data.' ], 400 );
+		}
+
+		update_option( 'tekton_theme', wp_json_encode( $theme ) );
+
+		// Auto-derive design tokens from theme.
+		$tokens = $this->derive_design_tokens( $theme );
+		update_option( 'tekton_design_tokens', wp_json_encode( $tokens ) );
+
+		// Mark onboarding complete.
+		update_option( 'tekton_onboarding_complete', true );
+
+		// Flush context cache so new theme data is picked up.
+		/** @var Tekton_Context_Builder $context_builder */
+		$context_builder = $this->core->get_module( 'context' );
+		$context_builder->flush_cache();
+
+		return new \WP_REST_Response( [
+			'saved'         => true,
+			'design_tokens' => $tokens,
+		] );
+	}
+
+	public function handle_generate_theme( \WP_REST_Request $request ): void {
+		$description = sanitize_text_field( $request->get_param( 'description' ) ?? '' );
+
+		if ( '' === $description ) {
+			$this->send_sse_error( 'Business description is required.' );
+			return;
+		}
+
+		// Allow long-running streaming requests.
+		set_time_limit( 0 );
+		@ini_set( 'max_execution_time', '0' );
+
+		// Set up SSE.
+		header( 'Content-Type: text/event-stream' );
+		header( 'Cache-Control: no-cache' );
+		header( 'X-Accel-Buffering: no' );
+		header( 'Connection: keep-alive' );
+		while ( ob_get_level() ) {
+			ob_end_clean();
+		}
+
+		/** @var Tekton_AI_Engine $ai */
+		$ai = $this->core->get_module( 'ai_engine' );
+
+		$full_response = '';
+
+		try {
+			$generator = $ai->send_message( $description, [], [
+				'type'    => 'generate_theme',
+				'context' => [],
+			] );
+
+			foreach ( $generator as $chunk ) {
+				$full_response .= $chunk;
+				$this->send_sse_event( 'chunk', $chunk );
+			}
+
+			// Parse the JSON from the response.
+			$parsed  = Tekton_AI_Engine::parse_response( $full_response );
+			$message = $parsed['message'];
+			$json    = $parsed['json'];
+
+			if ( $json ) {
+				$this->send_sse_event( 'complete', null, [
+					'theme'   => $json,
+					'message' => $message,
+				] );
+			} else {
+				$this->send_sse_event( 'complete', null, [
+					'message' => $message ?: 'Failed to generate theme. Please try again.',
+				] );
+			}
+		} catch ( \Throwable $e ) {
+			$this->send_sse_error( $e->getMessage() );
+		}
+
+		exit;
+	}
+
+	/**
+	 * Derive CSS custom property design tokens from a theme array.
+	 *
+	 * @param  array<string, mixed> $theme
+	 * @return array<string, string>
+	 */
+	private function derive_design_tokens( array $theme ): array {
+		$colors  = $theme['colors'] ?? [];
+		$fonts   = $theme['fonts'] ?? [];
+		$spacing = $theme['spacing'] ?? [];
+
+		$tokens = [];
+
+		// Colors.
+		if ( ! empty( $colors['text'] ) ) {
+			$tokens['--tekton-text-primary'] = sanitize_hex_color( $colors['text'] ) ?: $colors['text'];
+		}
+		if ( ! empty( $colors['text_muted'] ) ) {
+			$tokens['--tekton-text-muted'] = sanitize_hex_color( $colors['text_muted'] ) ?: $colors['text_muted'];
+		}
+		if ( ! empty( $colors['background'] ) ) {
+			$tokens['--tekton-bg-primary'] = sanitize_hex_color( $colors['background'] ) ?: $colors['background'];
+		}
+		if ( ! empty( $colors['surface'] ) ) {
+			$tokens['--tekton-bg-surface'] = sanitize_hex_color( $colors['surface'] ) ?: $colors['surface'];
+		}
+		if ( ! empty( $colors['primary'] ) ) {
+			$tokens['--tekton-accent'] = sanitize_hex_color( $colors['primary'] ) ?: $colors['primary'];
+			// Derive a hover color by darkening primary slightly.
+			$tokens['--tekton-accent-hover'] = $this->darken_hex_color( $colors['primary'], 15 );
+		}
+
+		// Fonts.
+		if ( ! empty( $fonts['body'] ) ) {
+			$tokens['--tekton-font-primary'] = sanitize_text_field( $fonts['body'] );
+		}
+		if ( ! empty( $fonts['heading'] ) ) {
+			$tokens['--tekton-font-heading'] = sanitize_text_field( $fonts['heading'] );
+		}
+
+		// Spacing.
+		if ( ! empty( $spacing['section_padding'] ) ) {
+			$tokens['--tekton-spacing-section'] = sanitize_text_field( $spacing['section_padding'] );
+		}
+		if ( ! empty( $spacing['content_gap'] ) ) {
+			$tokens['--tekton-spacing-gap'] = sanitize_text_field( $spacing['content_gap'] );
+		}
+		if ( ! empty( $spacing['container_max_width'] ) ) {
+			$tokens['--tekton-container-max-width'] = sanitize_text_field( $spacing['container_max_width'] );
+		}
+
+		return $tokens;
+	}
+
+	/**
+	 * Darken a hex color by a percentage.
+	 */
+	private function darken_hex_color( string $hex, int $percent ): string {
+		$hex = ltrim( $hex, '#' );
+		if ( 3 === strlen( $hex ) ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+		if ( 6 !== strlen( $hex ) ) {
+			return "#{$hex}";
+		}
+
+		$r = max( 0, (int) round( hexdec( substr( $hex, 0, 2 ) ) * ( 1 - $percent / 100 ) ) );
+		$g = max( 0, (int) round( hexdec( substr( $hex, 2, 2 ) ) * ( 1 - $percent / 100 ) ) );
+		$b = max( 0, (int) round( hexdec( substr( $hex, 4, 2 ) ) * ( 1 - $percent / 100 ) ) );
+
+		return sprintf( '#%02x%02x%02x', $r, $g, $b );
 	}
 
 	// ─── Helpers ────────────────────────────────────────────────────────
