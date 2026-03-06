@@ -225,10 +225,25 @@
     }
   }
 
+  let editingVersion = $state(null);
+  let editingLabel = $state('');
+
   async function handleRollback(versionNumber) {
     if (!currentPage) return;
     await api.rollback(currentPage.template_key, versionNumber);
     page.loadStructure(currentPage.template_key);
+    loadSidebarData(currentPage.template_key);
+  }
+
+  function startRenameVersion(v) {
+    editingVersion = v.version_number;
+    editingLabel = v.label || '';
+  }
+
+  async function saveVersionLabel(versionNumber) {
+    if (!currentPage) return;
+    await api.renameVersion(currentPage.template_key, versionNumber, editingLabel.trim());
+    editingVersion = null;
     loadSidebarData(currentPage.template_key);
   }
 
@@ -727,21 +742,52 @@
           <div class="text-xs text-muted text-center py-4">No versions yet.</div>
         {:else}
           <div class="flex flex-col gap-0.5">
-            {#each versions as v, i}
-              <div class="px-2 py-2 rounded-[5px] {i === 0 ? 'bg-copper/5' : ''}">
+            {#each versions as v}
+              <div class="px-2 py-2 rounded-[5px] {v.is_active ? 'bg-copper/5' : ''} group/ver">
                 <div class="flex items-center gap-2 mb-[3px]">
-                  <span class="text-[11px] font-semibold font-mono {i === 0 ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
-                  {#if i === 0}
+                  <span class="text-[11px] font-semibold font-mono {v.is_active ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
+                  {#if v.label}
+                    <span class="text-[10px] text-copper/70 font-medium truncate max-w-[100px]">{v.label}</span>
+                  {/if}
+                  {#if v.is_active}
                     <span class="text-[9px] text-green font-semibold">CURRENT</span>
                   {/if}
-                  <span class="ml-auto text-[10px] text-border">{relativeTime(v.created_at)}</span>
+                  <span class="ml-auto text-[10px] text-muted shrink-0">{relativeTime(v.created_at)}</span>
                 </div>
                 <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || v.change_type}</div>
-                {#if i !== 0}
-                  <button
-                    class="mt-[5px] px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[10px] font-body hover:border-dim"
-                    onclick={() => handleRollback(v.version_number)}
-                  >Restore</button>
+
+                {#if editingVersion === v.version_number}
+                  <div class="flex items-center gap-1 mt-1.5">
+                    <input
+                      type="text"
+                      bind:value={editingLabel}
+                      onkeydown={(e) => { if (e.key === 'Enter') saveVersionLabel(v.version_number); if (e.key === 'Escape') editingVersion = null; }}
+                      placeholder="Version label..."
+                      class="flex-1 px-1.5 py-[3px] bg-background border border-border/50 rounded text-[11px] font-body text-foreground outline-none placeholder:text-dim"
+                      autofocus
+                    />
+                    <button
+                      class="px-1.5 py-[3px] border-none rounded bg-copper text-background text-[10px] font-medium cursor-pointer"
+                      onclick={() => saveVersionLabel(v.version_number)}
+                    >Save</button>
+                    <button
+                      class="px-1.5 py-[3px] border-none rounded bg-transparent text-dim text-[10px] cursor-pointer hover:text-muted"
+                      onclick={() => (editingVersion = null)}
+                    >×</button>
+                  </div>
+                {:else}
+                  <div class="flex items-center gap-1.5 mt-1.5">
+                    {#if !v.is_active}
+                      <button
+                        class="px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[10px] font-body hover:border-dim hover:text-foreground transition-colors"
+                        onclick={() => handleRollback(v.version_number)}
+                      >Restore</button>
+                    {/if}
+                    <button
+                      class="px-2 py-[3px] bg-transparent border-none text-dim cursor-pointer text-[10px] font-body opacity-0 group-hover/ver:opacity-100 transition-opacity hover:text-muted"
+                      onclick={() => startRenameVersion(v)}
+                    >{v.label ? 'Rename' : 'Label'}</button>
+                  </div>
                 {/if}
               </div>
             {/each}

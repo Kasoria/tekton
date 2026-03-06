@@ -30,7 +30,7 @@ final class Tekton_Core {
 		$this->register_hooks();
 	}
 
-	private const DB_VERSION = '1.1.0';
+	private const DB_VERSION = '1.2.0';
 
 	private function maybe_upgrade_db(): void {
 		$db_version = get_option( 'tekton_db_version', '0' );

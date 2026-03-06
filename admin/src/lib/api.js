@@ -74,6 +74,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ version_number: version }),
     }),
+  renameVersion: (key, version, label) =>
+    apiFetch(`structures/${key}/versions/${version}/rename`, {
+      method: 'POST',
+      body: JSON.stringify({ label }),
+    }),
   getChatHistory: (key) => apiFetch(`chat/${key}`),
   clearChat: (key) => apiFetch(`chat/${key}`, { method: 'DELETE' }),
   getContext: () => apiFetch('context'),

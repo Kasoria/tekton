@@ -78,6 +78,12 @@ class Tekton_REST_API {
 			'permission_callback' => [ $this, 'check_permission' ],
 		] );
 
+		register_rest_route( $ns, '/structures/(?P<template_key>[a-zA-Z0-9_-]+)/versions/(?P<version_number>\d+)/rename', [
+			'methods'             => 'POST',
+			'callback'            => [ $this, 'handle_rename_version' ],
+			'permission_callback' => [ $this, 'check_permission' ],
+		] );
+
 		// Chat.
 		register_rest_route( $ns, '/chat/(?P<template_key>[a-zA-Z0-9_-]+)', [
 			[
@@ -430,6 +436,24 @@ class Tekton_REST_API {
 		}
 
 		return new \WP_REST_Response( [ 'message' => 'Version not found.' ], 404 );
+	}
+
+	public function handle_rename_version( \WP_REST_Request $request ): \WP_REST_Response {
+		$key     = sanitize_key( $request['template_key'] );
+		$version = (int) $request['version_number'];
+		$label   = sanitize_text_field( $request->get_param( 'label' ) ?? '' );
+
+		/** @var Tekton_Storage $storage */
+		$storage   = $this->core->get_module( 'storage' );
+		$structure = $storage->get_structure( $key );
+
+		if ( ! $structure ) {
+			return new \WP_REST_Response( [ 'message' => 'Not found.' ], 404 );
+		}
+
+		$storage->rename_version( (int) $structure['id'], $version, $label );
+
+		return new \WP_REST_Response( [ 'success' => true ] );
 	}
 
 	// ─── Chat ───────────────────────────────────────────────────────────

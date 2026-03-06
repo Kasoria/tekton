@@ -25,6 +25,7 @@ class Tekton_Storage {
 			components LONGTEXT NOT NULL,
 			styles LONGTEXT DEFAULT NULL,
 			status VARCHAR(20) DEFAULT 'draft',
+			active_version INT DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
@@ -39,6 +40,7 @@ class Tekton_Storage {
 			styles LONGTEXT DEFAULT NULL,
 			change_type VARCHAR(50) DEFAULT 'ai_generate',
 			change_summary TEXT DEFAULT NULL,
+			label VARCHAR(255) DEFAULT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			KEY structure_version (structure_id, version_number)
@@ -134,7 +136,10 @@ class Tekton_Storage {
 			$structure_id = (int) $wpdb->insert_id;
 		}
 
-		$this->create_version( $structure_id, $data );
+		$version_number = $this->create_version( $structure_id, $data );
+
+		// Point active_version to the newly created version.
+		$wpdb->update( $table, [ 'active_version' => $version_number ], [ 'id' => $structure_id ] );
 
 		return $structure_id;
 	}
@@ -174,9 +179,17 @@ class Tekton_Storage {
 	public function get_versions( int $structure_id, int $limit = 20 ): array {
 		global $wpdb;
 
+		// Get active_version for this structure.
+		$active = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT active_version FROM {$wpdb->prefix}tekton_structures WHERE id = %d",
+				$structure_id
+			)
+		);
+
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, version_number, change_type, change_summary, created_at
+				"SELECT id, version_number, change_type, change_summary, label, created_at
 				 FROM {$wpdb->prefix}tekton_versions
 				 WHERE structure_id = %d
 				 ORDER BY version_number DESC
@@ -187,7 +200,17 @@ class Tekton_Storage {
 			ARRAY_A
 		);
 
-		return $rows ?: [];
+		if ( ! $rows ) {
+			return [];
+		}
+
+		// Mark which version is active.
+		foreach ( $rows as &$row ) {
+			$row['is_active'] = ( (int) $row['version_number'] === $active );
+		}
+		unset( $row );
+
+		return $rows;
 	}
 
 	public function rollback( int $structure_id, int $version_number ): bool {
@@ -207,23 +230,31 @@ class Tekton_Storage {
 			return false;
 		}
 
+		// Restore structure to this version and update the active pointer. No new version created.
 		$wpdb->update(
 			$wpdb->prefix . 'tekton_structures',
 			[
-				'components' => $version['components'],
-				'styles'     => $version['styles'],
+				'components'     => $version['components'],
+				'styles'         => $version['styles'],
+				'active_version' => $version_number,
 			],
 			[ 'id' => $structure_id ]
 		);
 
-		$this->create_version( $structure_id, [
-			'components'     => json_decode( $version['components'], true ),
-			'styles'         => json_decode( $version['styles'] ?? '{}', true ),
-			'change_type'    => 'rollback',
-			'change_summary' => sprintf( 'Rolled back to version %d', $version_number ),
-		] );
-
 		return true;
+	}
+
+	public function rename_version( int $structure_id, int $version_number, string $label ): bool {
+		global $wpdb;
+
+		return false !== $wpdb->update(
+			$wpdb->prefix . 'tekton_versions',
+			[ 'label' => $label ],
+			[
+				'structure_id'   => $structure_id,
+				'version_number' => $version_number,
+			]
+		);
 	}
 
 	public function get_chat_history( string $template_key, int $limit = 50 ): array {
@@ -380,7 +411,7 @@ class Tekton_Storage {
 		return array_slice( $activity, 0, $limit );
 	}
 
-	private function create_version( int $structure_id, array $data ): void {
+	private function create_version( int $structure_id, array $data ): int {
 		global $wpdb;
 
 		$max_version = (int) $wpdb->get_var(
@@ -392,16 +423,20 @@ class Tekton_Storage {
 			)
 		);
 
+		$new_version = $max_version + 1;
+
 		$wpdb->insert(
 			$wpdb->prefix . 'tekton_versions',
 			[
 				'structure_id'   => $structure_id,
-				'version_number' => $max_version + 1,
+				'version_number' => $new_version,
 				'components'     => wp_json_encode( $data['components'] ?? [] ),
 				'styles'         => wp_json_encode( $data['styles'] ?? [] ),
 				'change_type'    => $data['change_type'] ?? 'ai_generate',
 				'change_summary' => $data['change_summary'] ?? null,
 			]
 		);
+
+		return $new_version;
 	}
 }
