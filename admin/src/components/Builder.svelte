@@ -25,6 +25,12 @@
   let fileInputEl;
   let showClearMenu = $state(false);
   let isClearing = $state(false);
+  let viewMode = $state('preview'); // 'preview' | 'code'
+  let codeViewTab = $state('structure'); // 'structure' | 'html'
+  let codeEditorValue = $state('');
+  let codeEditorDirty = $state(false);
+  let codeEditorError = $state('');
+  let codeSaving = $state(false);
 
   const GLOBAL_TEMPLATES = ['header', 'footer'];
 
@@ -62,6 +68,14 @@
     }
   });
 
+  // Sync code editor when structure changes (only if not dirty)
+  $effect(() => {
+    if (page.currentStructure && !codeEditorDirty) {
+      codeEditorValue = JSON.stringify(page.currentStructure, null, 2);
+      codeEditorError = '';
+    }
+  });
+
   function selectPage(p) {
     currentPage = p;
     chat.setTemplateKey(p.template_key);
@@ -88,7 +102,7 @@
     if (!page.currentStructure?.components) return;
     try {
       const result = await api.preview(
-        page.currentStructure.components,
+        page.currentStructure,
         currentPage?.template_key || 'preview'
       );
       previewHtml = result.html || '';
@@ -169,6 +183,47 @@
     });
     currentPage = { ...currentPage, url: null, preview_url: result?.preview_url || null, status: 'draft' };
     page.loadStructures();
+  }
+
+  async function saveCodeEdits() {
+    if (!currentPage) return;
+    codeEditorError = '';
+    let parsed;
+    try {
+      parsed = JSON.parse(codeEditorValue);
+    } catch (e) {
+      codeEditorError = `Invalid JSON: ${e.message}`;
+      return;
+    }
+
+    // Accept either a full structure object or just a components array.
+    const components = Array.isArray(parsed) ? parsed : (parsed.components || []);
+    const styles = parsed.styles || page.currentStructure?.styles || {};
+
+    codeSaving = true;
+    try {
+      await api.saveStructure({
+        template_key: currentPage.template_key,
+        title: parsed.title || page.currentStructure?.title || currentPage.title || currentPage.template_key,
+        components,
+        styles,
+        status: currentPage.status || 'draft',
+        change_type: 'manual',
+      });
+      page.setStructure({ ...page.currentStructure, components, styles });
+      codeEditorDirty = false;
+      loadSidebarData(currentPage.template_key);
+    } catch (e) {
+      codeEditorError = `Save failed: ${e.message}`;
+    } finally {
+      codeSaving = false;
+    }
+  }
+
+  function resetCodeEditor() {
+    codeEditorValue = JSON.stringify(page.currentStructure, null, 2);
+    codeEditorDirty = false;
+    codeEditorError = '';
   }
 
   function handlePreview() {
@@ -314,8 +369,8 @@
     'flex-column': { letter: 'F', hue: '#6b8a7d' },
     link: { letter: 'L', hue: '#7d6b8a' },
     list: { letter: 'Li', hue: '#8a7d6b' },
-    spacer: { letter: '—', hue: '#5c5753' },
-    divider: { letter: '÷', hue: '#5c5753' },
+    spacer: { letter: '—', hue: '#7a746e' },
+    divider: { letter: '÷', hue: '#7a746e' },
     video: { letter: 'V', hue: '#6b7d8a' },
     icon: { letter: 'Ic', hue: '#8a847d' },
   };
@@ -406,13 +461,13 @@
           class="flex items-center gap-[7px] px-2 py-1 bg-transparent border-none rounded-[5px] text-foreground cursor-pointer text-[13px] font-medium font-body"
           onclick={() => (showPages = !showPages)}
         >
-          <span class="text-muted text-[11px]">editing</span>
+          <span class="text-muted text-[12px]">editing</span>
           <span>{currentPage?.title || currentPage?.template_key || 'Select page'}</span>
           {#if currentPage}
             <span class="w-[5px] h-[5px] rounded-full {currentPage.status === 'published' ? 'bg-green' : 'bg-gold'}"></span>
           {/if}
           <svg width="10" height="10" viewBox="0 0 10 10" class="transition-transform {showPages ? 'rotate-180' : ''}">
-            <path d="M2.5 4L5 6.5L7.5 4" stroke="#5c5753" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M2.5 4L5 6.5L7.5 4" class="stroke-muted" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           </svg>
         </button>
 
@@ -429,7 +484,7 @@
                 >
                   <span class="w-[5px] h-[5px] rounded-full bg-copper/60"></span>
                   <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
-                  <span class="text-[9px] text-muted font-mono ml-auto">global</span>
+                  <span class="text-[12px] text-muted font-mono ml-auto">global</span>
                 </button>
               </div>
             {/each}
@@ -450,7 +505,7 @@
                   <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
                 </button>
                 <button
-                  class="opacity-0 group-hover:opacity-100 px-1.5 py-1 border-none bg-transparent text-dim hover:text-gold cursor-pointer text-[11px] transition-opacity"
+                  class="opacity-0 group-hover:opacity-100 px-1.5 py-1 border-none bg-transparent text-dim hover:text-gold cursor-pointer text-[12px] transition-opacity"
                   onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(p.template_key); }}
                   title="Delete template"
                 >×</button>
@@ -470,7 +525,7 @@
                     autofocus
                   />
                   <button
-                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-background text-[11px] font-medium font-body cursor-pointer"
+                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-background text-[12px] font-medium font-body cursor-pointer"
                     onclick={createTemplate}
                   >Add</button>
                 </div>
@@ -491,6 +546,21 @@
 
     <!-- Center: viewport + sidebar toggles -->
     <div class="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+      <!-- View mode toggle -->
+      <div class="flex gap-px bg-card-hover rounded-md p-0.5">
+        {#each [
+          { key: 'preview', label: 'Preview' },
+          { key: 'code', label: 'Code' },
+        ] as v}
+          <button
+            class="px-2.5 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {viewMode === v.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
+            onclick={() => (viewMode = v.key)}
+          >{v.label}</button>
+        {/each}
+      </div>
+
+      <div class="w-px h-4 bg-border"></div>
+
       <!-- Viewport -->
       <div class="flex gap-px bg-card-hover rounded-md p-0.5">
         {#each [
@@ -499,7 +569,7 @@
           { key: 'mobile', label: '▯' },
         ] as m}
           <button
-            class="w-7 h-6 flex items-center justify-center border-none rounded cursor-pointer text-[11px] transition-colors {viewport === m.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
+            class="w-7 h-6 flex items-center justify-center border-none rounded cursor-pointer text-[12px] transition-colors {viewport === m.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
             onclick={() => (viewport = m.key)}
             title={m.key}
           >{m.label}</button>
@@ -517,7 +587,7 @@
           { key: 'plugins', label: 'Plugins' },
         ] as s}
           <button
-            class="px-3 py-1 border-none rounded cursor-pointer text-[11px] font-medium font-body transition-colors {sidebar === s.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
+            class="px-3 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {sidebar === s.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
             onclick={() => (sidebar = sidebar === s.key ? null : s.key)}
           >{s.label}</button>
         {/each}
@@ -527,7 +597,7 @@
     <!-- Right: actions -->
     <div class="flex items-center gap-2">
       {#if currentPage}
-        <span class="text-[10px] text-dim font-mono">v{versions[0]?.version_number || '–'}</span>
+        <span class="text-[12px] text-muted-foreground font-mono">v{versions[0]?.version_number || '–'}</span>
       {/if}
       {#if currentPage?.preview_url || currentPage?.url}
         <button
@@ -560,9 +630,9 @@
         <div class="flex flex-col gap-5">
           {#each chat.messages as m}
             <div class="flex flex-col gap-[5px]">
-              <span class="text-[10px] font-semibold uppercase tracking-[1.2px] pl-0.5 {m.role === 'user' ? 'text-muted' : 'text-copper'}">
+              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 {m.role === 'user' ? 'text-muted' : 'text-copper'}">
                 {m.role === 'user' ? 'You' : 'Tekton'}
-                {#if m.is_summary}<span class="text-[9px] text-dim font-normal normal-case tracking-normal ml-1">· summary of previous session</span>{/if}
+                {#if m.is_summary}<span class="text-[12px] text-muted-foreground font-normal normal-case tracking-normal ml-1">· summary of previous session</span>{/if}
               </span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 {m.role === 'user' ? 'bg-card-hover text-foreground border-l-2 border-dim' : 'bg-card text-foreground/75 border-l-2 border-copper/20'}">
                 {#if m.images?.length}
@@ -577,7 +647,7 @@
                 {#if m.structure}
                   <div class="inline-flex items-center gap-[5px] mt-2.5 px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.5L4 7.5L8 3" stroke="#7dab6e" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span class="text-[11px] text-green font-medium">Preview updated</span>
+                    <span class="text-[12px] text-green font-medium">Preview updated</span>
                   </div>
                 {/if}
               </div>
@@ -587,7 +657,7 @@
           <!-- Streaming indicator -->
           {#if chat.isStreaming}
             <div class="flex flex-col gap-[5px]">
-              <span class="text-[10px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">Tekton</span>
+              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">Tekton</span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 bg-card text-foreground/75 border-l-2 border-copper/20">
                 {#if streamingDisplay()}
                   <div class="whitespace-pre-wrap">{streamingDisplay()}</div>
@@ -625,7 +695,7 @@
                   class="w-12 h-12 object-cover rounded-[6px] border border-border"
                 />
                 <button
-                  class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-border text-dim text-[10px] leading-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
+                  class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-border text-dim text-[12px] leading-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
                   onclick={() => removeImage(i)}
                 >×</button>
               </div>
@@ -671,14 +741,14 @@
             aria-label="Send message"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#1a1816' : '#5c5753'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#1a1816' : '#7a746e'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </div>
         <div class="flex items-center gap-1.5 mt-1.5 pl-0.5">
           {#each ['/fullstack', '/plugin', '/undo'] as cmd}
             <button
-              class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[10px] font-mono transition-colors hover:text-muted hover:border-dim"
+              class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[12px] font-mono transition-colors hover:text-muted hover:border-dim"
               onclick={() => { input = cmd + ' '; textareaEl?.focus(); }}
             >{cmd}</button>
           {/each}
@@ -687,7 +757,7 @@
           {#if chat.messages.length > 0}
             <div class="relative ml-auto">
               <button
-                class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[10px] font-body transition-colors hover:text-muted hover:border-dim {isClearing ? 'opacity-50 pointer-events-none' : ''}"
+                class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[12px] font-body transition-colors hover:text-muted hover:border-dim {isClearing ? 'opacity-50 pointer-events-none' : ''}"
                 onclick={() => (showClearMenu = !showClearMenu)}
               >{isClearing ? 'Clearing...' : 'Clear chat'}</button>
               {#if showClearMenu}
@@ -699,53 +769,129 @@
                     onclick={() => clearChat(true)}
                   >
                     <span class="text-[12px] text-foreground font-medium">Clear with summary</span>
-                    <span class="text-[10px] text-muted leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
+                    <span class="text-[12px] text-muted leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
                   </button>
                   <button
                     class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
                     onclick={() => clearChat(false)}
                   >
                     <span class="text-[12px] text-foreground font-medium">Clear all</span>
-                    <span class="text-[10px] text-muted leading-tight mt-0.5">Remove entire chat history</span>
+                    <span class="text-[12px] text-muted leading-tight mt-0.5">Remove entire chat history</span>
                   </button>
                 </div>
               {/if}
             </div>
           {:else}
-            <span class="ml-auto text-[10px] text-border">shift+enter for newline</span>
+            <span class="ml-auto text-[12px] text-muted">shift+enter for newline</span>
           {/if}
         </div>
       </div>
     </div>
 
-    <!-- CENTER: PREVIEW -->
-    <div
-      class="flex-1 flex items-stretch justify-center overflow-auto transition-all duration-300"
-      style="padding: {viewport === 'desktop' ? '0' : '24px'}; background: {viewport !== 'desktop' ? '#151311' : '#151311'}; background-image: {viewport !== 'desktop' ? 'radial-gradient(#2a272518 1px, transparent 1px)' : 'none'}; background-size: 20px 20px;"
-    >
-      <div
-        class="bg-white overflow-auto transition-all duration-300"
-        style="width: {vw[viewport]}; max-width: 100%; {viewport === 'desktop' ? 'height: 100%;' : 'min-height: 600px;'} border-radius: {viewport === 'desktop' ? '0' : '8px'}; box-shadow: {viewport !== 'desktop' ? '0 8px 60px #00000050' : 'none'};"
-      >
-        {#if previewHtml}
-          <iframe
-            srcdoc={previewHtml}
-            title="Preview"
-            class="w-full h-full border-none"
-            sandbox="allow-same-origin"
-          ></iframe>
-        {:else if page.currentStructure}
-          <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
-            Loading preview...
+    <!-- CENTER: PREVIEW / CODE -->
+    {#if viewMode === 'code'}
+      <div class="flex-1 flex flex-col overflow-hidden" style="background: #0d0c0b;">
+        {#if page.currentStructure}
+          <!-- Code view toolbar -->
+          <div class="flex items-center border-b border-border shrink-0">
+            {#each [
+              { key: 'structure', label: 'Structure JSON' },
+              { key: 'html', label: 'Rendered HTML' },
+            ] as t}
+              <button
+                class="px-4 py-2 border-none cursor-pointer text-[12px] font-medium font-body transition-colors {codeViewTab === t.key ? 'text-foreground border-b-2 border-copper -mb-px' : 'text-muted bg-transparent'}"
+                onclick={() => { codeViewTab = t.key; codeEditorError = ''; }}
+              >{t.label}</button>
+            {/each}
+
+            <div class="ml-auto flex items-center gap-2 mr-2">
+              {#if codeEditorError}
+                <span class="text-[12px] text-red-400 max-w-[300px] truncate">{codeEditorError}</span>
+              {/if}
+              {#if codeViewTab === 'structure' && codeEditorDirty}
+                <button
+                  class="px-2.5 py-1 bg-transparent border border-border rounded text-[12px] text-muted cursor-pointer hover:text-foreground hover:border-dim transition-colors"
+                  onclick={resetCodeEditor}
+                >Discard</button>
+                <button
+                  class="px-2.5 py-1 bg-copper border-none rounded text-[12px] text-background font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50"
+                  onclick={saveCodeEdits}
+                  disabled={codeSaving}
+                >{codeSaving ? 'Saving...' : 'Save'}</button>
+              {:else}
+                <button
+                  class="px-2 py-1 bg-transparent border border-border rounded text-[12px] text-muted cursor-pointer hover:text-foreground hover:border-dim transition-colors"
+                  onclick={() => {
+                    const text = codeViewTab === 'structure' ? codeEditorValue : previewHtml;
+                    navigator.clipboard.writeText(text);
+                  }}
+                >Copy</button>
+              {/if}
+            </div>
           </div>
+
+          {#if codeViewTab === 'structure'}
+            <textarea
+              class="tk-code-editor flex-1 m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground border-none outline-none resize-none"
+              style="background: #0d0c0b; tab-size: 2;"
+              spellcheck="false"
+              value={codeEditorValue}
+              oninput={(e) => { codeEditorValue = e.target.value; codeEditorDirty = true; codeEditorError = ''; }}
+              onkeydown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                  e.preventDefault();
+                  if (codeEditorDirty) saveCodeEdits();
+                }
+                if (e.key === 'Tab') {
+                  e.preventDefault();
+                  const ta = e.target;
+                  const start = ta.selectionStart;
+                  const end = ta.selectionEnd;
+                  ta.value = ta.value.substring(0, start) + '  ' + ta.value.substring(end);
+                  ta.selectionStart = ta.selectionEnd = start + 2;
+                  codeEditorValue = ta.value;
+                  codeEditorDirty = true;
+                }
+              }}
+            ></textarea>
+          {:else}
+            <pre class="flex-1 overflow-auto m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground whitespace-pre-wrap break-words" style="background: #0d0c0b;">{previewHtml || 'No preview HTML generated yet.'}</pre>
+          {/if}
         {:else}
-          <div class="flex flex-col items-center justify-center h-full gap-3 text-center px-8" style="font-family: 'Outfit', sans-serif; color: #8a847d;">
-            <div style="font-size: 14px;">No template selected</div>
-            <div style="font-size: 12px; color: #5c5753;">Use the chat to generate a page, or select a template from the dropdown above.</div>
+          <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
+            No template selected.
           </div>
         {/if}
       </div>
-    </div>
+    {:else}
+      <div
+        class="flex-1 flex items-stretch justify-center overflow-auto transition-all duration-300"
+        style="padding: {viewport === 'desktop' ? '0' : '24px'}; background: #151311; background-image: {viewport !== 'desktop' ? 'radial-gradient(#2a272518 1px, transparent 1px)' : 'none'}; background-size: 20px 20px;"
+      >
+        <div
+          class="bg-white overflow-auto transition-all duration-300"
+          style="width: {vw[viewport]}; max-width: 100%; {viewport === 'desktop' ? 'height: 100%;' : 'min-height: 600px;'} border-radius: {viewport === 'desktop' ? '0' : '8px'}; box-shadow: {viewport !== 'desktop' ? '0 8px 60px #00000050' : 'none'};"
+        >
+          {#if previewHtml}
+            <iframe
+              srcdoc={previewHtml}
+              title="Preview"
+              class="w-full h-full border-none"
+              sandbox="allow-same-origin allow-scripts"
+            ></iframe>
+          {:else if page.currentStructure}
+            <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Loading preview...
+            </div>
+          {:else}
+            <div class="flex flex-col items-center justify-center h-full gap-3 text-center px-8 text-muted-foreground" style="font-family: 'Outfit', sans-serif;">
+              <div style="font-size: 14px;">No template selected</div>
+              <div style="font-size: 12px;" class="text-muted">Use the chat to generate a page, or select a template from the dropdown above.</div>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
 
   </div>
 
@@ -757,7 +903,7 @@
   ></div>
   <div class="tk-drawer {sidebar ? 'tk-drawer-open' : ''}">
     <div class="px-3.5 py-2.5 border-b border-border flex items-center justify-between shrink-0">
-      <span class="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">{sidebarLabels[sidebar] || ''}</span>
+      <span class="text-[12px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">{sidebarLabels[sidebar] || ''}</span>
       <button
         class="bg-transparent border-none text-dim cursor-pointer text-[15px] leading-none p-0.5 hover:text-muted"
         onclick={() => (sidebar = null)}
@@ -779,10 +925,10 @@
               >
                 <span
                   class="w-4 h-4 rounded-[3px] shrink-0 text-[8px] font-bold font-mono flex items-center justify-center"
-                  style="background: {(TYPE_MAP[n.type]?.hue || '#5c5753')}15; color: {TYPE_MAP[n.type]?.hue || '#5c5753'};"
+                  style="background: {(TYPE_MAP[n.type]?.hue || '#7a746e')}15; color: {TYPE_MAP[n.type]?.hue || '#7a746e'};"
                 >{TYPE_MAP[n.type]?.letter || '?'}</span>
                 <span class="text-[11.5px] truncate {selectedComp === n.id ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal'}">{n.label}</span>
-                <span class="ml-auto text-[9px] text-muted font-mono shrink-0">{n.type}</span>
+                <span class="ml-auto text-[12px] text-muted font-mono shrink-0">{n.type}</span>
               </button>
             {/each}
           </div>
@@ -797,14 +943,14 @@
             {#each versions as v}
               <div class="px-2 py-2 rounded-[5px] {v.is_active ? 'bg-copper/5' : ''} group/ver">
                 <div class="flex items-center gap-2 mb-[3px]">
-                  <span class="text-[11px] font-semibold font-mono {v.is_active ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
+                  <span class="text-[12px] font-semibold font-mono {v.is_active ? 'text-copper' : 'text-dim'}">v{v.version_number}</span>
                   {#if v.label}
-                    <span class="text-[10px] text-copper/70 font-medium truncate max-w-[100px]">{v.label}</span>
+                    <span class="text-[12px] text-copper/70 font-medium truncate max-w-[100px]">{v.label}</span>
                   {/if}
                   {#if v.is_active}
-                    <span class="text-[9px] text-green font-semibold">CURRENT</span>
+                    <span class="text-[12px] text-green font-semibold">CURRENT</span>
                   {/if}
-                  <span class="ml-auto text-[10px] text-muted shrink-0">{relativeTime(v.created_at)}</span>
+                  <span class="ml-auto text-[12px] text-muted shrink-0">{relativeTime(v.created_at)}</span>
                 </div>
                 <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || { ai_generate: 'AI generated', manual: 'Manual edit', rollback: 'Restored', publish: 'Published' }[v.change_type] || v.change_type}</div>
 
@@ -815,15 +961,15 @@
                       bind:value={editingLabel}
                       onkeydown={(e) => { if (e.key === 'Enter') saveVersionLabel(v.version_number); if (e.key === 'Escape') editingVersion = null; }}
                       placeholder="Version label..."
-                      class="flex-1 px-1.5 py-[3px] bg-background border border-border/50 rounded text-[11px] font-body text-foreground outline-none placeholder:text-dim"
+                      class="flex-1 px-1.5 py-[3px] bg-background border border-border/50 rounded text-[12px] font-body text-foreground outline-none placeholder:text-dim"
                       autofocus
                     />
                     <button
-                      class="px-1.5 py-[3px] border-none rounded bg-copper text-background text-[10px] font-medium cursor-pointer"
+                      class="px-1.5 py-[3px] border-none rounded bg-copper text-background text-[12px] font-medium cursor-pointer"
                       onclick={() => saveVersionLabel(v.version_number)}
                     >Save</button>
                     <button
-                      class="px-1.5 py-[3px] border-none rounded bg-transparent text-dim text-[10px] cursor-pointer hover:text-muted"
+                      class="px-1.5 py-[3px] border-none rounded bg-transparent text-dim text-[12px] cursor-pointer hover:text-muted"
                       onclick={() => (editingVersion = null)}
                     >×</button>
                   </div>
@@ -831,12 +977,12 @@
                   <div class="flex items-center gap-1.5 mt-1.5">
                     {#if !v.is_active}
                       <button
-                        class="px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[10px] font-body hover:border-dim hover:text-foreground transition-colors"
+                        class="px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[12px] font-body hover:border-dim hover:text-foreground transition-colors"
                         onclick={() => handleRollback(v.version_number)}
                       >Restore</button>
                     {/if}
                     <button
-                      class="px-2 py-[3px] bg-transparent border-none text-dim cursor-pointer text-[10px] font-body opacity-0 group-hover/ver:opacity-100 transition-opacity hover:text-muted"
+                      class="px-2 py-[3px] bg-transparent border-none text-dim cursor-pointer text-[12px] font-body opacity-0 group-hover/ver:opacity-100 transition-opacity hover:text-muted"
                       onclick={() => startRenameVersion(v)}
                     >{v.label ? 'Rename' : 'Label'}</button>
                   </div>
@@ -855,9 +1001,9 @@
             {#each fieldGroups as g}
               <div class="p-2.5 rounded-[7px] border border-border bg-card-hover">
                 <div class="text-xs font-semibold text-foreground mb-0.5">{g.title}</div>
-                <div class="text-[10px] text-dim font-mono mb-2">{g.slug}</div>
+                <div class="text-[12px] text-dim font-mono mb-2">{g.slug}</div>
                 {#each (g.fields || []) as f}
-                  <div class="text-[11px] text-muted py-px font-mono flex items-center gap-1.5">
+                  <div class="text-[12px] text-muted py-px font-mono flex items-center gap-1.5">
                     <span class="w-[3px] h-[3px] rounded-sm bg-copper/40 shrink-0"></span>
                     {f.name || f.key || f}
                   </div>
@@ -975,6 +1121,18 @@
   }
 
   /* Cooking / structure generation indicator */
+  .tk-code-editor {
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    color: var(--color-muted-foreground);
+    caret-color: var(--color-copper);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    overflow: auto;
+  }
+  .tk-code-editor:focus {
+    color: var(--color-foreground);
+  }
+
   .tk-cooking {
     display: flex;
     align-items: center;

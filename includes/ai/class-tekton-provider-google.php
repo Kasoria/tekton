@@ -26,9 +26,43 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 	}
 
 	public function send_streaming( string $system_prompt, array $messages, array $options = [] ): \Generator {
-		$model = $options['model'] ?: 'gemini-2.0-flash';
-		$url   = self::API_BASE . $model . ':streamGenerateContent?alt=sse&key=' . $this->api_key;
+		$model      = $options['model'] ?: 'gemini-2.0-flash';
+		$max_tokens = $options['max_tokens'] ?? 8192;
+		$url        = self::API_BASE . $model . ':streamGenerateContent?alt=sse&key=' . $this->api_key;
 
+		$contents = $this->build_contents( $messages );
+
+		$accumulated       = '';
+		$max_continuations = 4;
+
+		for ( $attempt = 0; $attempt <= $max_continuations; $attempt++ ) {
+			$body = wp_json_encode( [
+				'contents'          => $contents,
+				'systemInstruction' => [ 'parts' => [ [ 'text' => $system_prompt ] ] ],
+				'generationConfig'  => [ 'maxOutputTokens' => $max_tokens ],
+			] );
+
+			$result = yield from $this->stream_request( $url, $body );
+			$accumulated .= $result['text'];
+
+			if ( $result['error'] ) {
+				throw new \RuntimeException( $result['error'] );
+			}
+
+			if ( 'MAX_TOKENS' !== $result['finish_reason'] ) {
+				break;
+			}
+
+			// Hit token limit — ask for continuation.
+			$contents[] = [ 'role' => 'model', 'parts' => [ [ 'text' => $accumulated ] ] ];
+			$contents[] = [ 'role' => 'user', 'parts' => [ [ 'text' => 'Continue exactly from where you left off. Do not repeat any content. Do not add any preamble — resume the JSON output immediately.' ] ] ];
+		}
+	}
+
+	/**
+	 * Build Gemini contents array from internal message format.
+	 */
+	private function build_contents( array $messages ): array {
 		$contents = [];
 		foreach ( $messages as $msg ) {
 			$role  = 'assistant' === $msg['role'] ? 'model' : 'user';
@@ -46,29 +80,31 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 			$parts[] = [ 'text' => $msg['content'] ];
 			$contents[] = [ 'role' => $role, 'parts' => $parts ];
 		}
+		return $contents;
+	}
 
-		$body = wp_json_encode( [
-			'contents'          => $contents,
-			'systemInstruction' => [ 'parts' => [ [ 'text' => $system_prompt ] ] ],
-			'generationConfig'  => [
-				'maxOutputTokens' => $options['max_tokens'] ?? 8192,
-			],
-		] );
+	/**
+	 * Execute a single streaming request and yield text chunks.
+	 *
+	 * @return array{text: string, finish_reason: ?string, error: ?string}
+	 */
+	private function stream_request( string $url, string $body ): \Generator {
+		$queue         = new \SplQueue();
+		$error         = null;
+		$buffer        = '';
+		$error_body    = '';
+		$finish_reason = null;
+		$chunk_text    = '';
 
-		$queue      = new \SplQueue();
-		$error      = null;
-		$buffer     = '';
-		$error_body = '';
-
-		$fiber = new \Fiber( function () use ( $url, $body, &$queue, &$error, &$buffer, &$error_body ) {
+		$fiber = new \Fiber( function () use ( $url, $body, &$queue, &$error, &$buffer, &$error_body, &$finish_reason, &$chunk_text ) {
 			$ch = curl_init( $url );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
 				CURLOPT_POSTFIELDS     => $body,
 				CURLOPT_RETURNTRANSFER => false,
 				CURLOPT_HTTPHEADER     => [ 'Content-Type: application/json' ],
-				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+				CURLOPT_TIMEOUT        => 300,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body, &$finish_reason, &$chunk_text ): int {
 					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 					if ( $http_code >= 400 ) {
 						$error_body .= $data;
@@ -90,8 +126,14 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 							continue;
 						}
 
+						$fr = $json['candidates'][0]['finishReason'] ?? null;
+						if ( $fr ) {
+							$finish_reason = $fr;
+						}
+
 						$text = $json['candidates'][0]['content']['parts'][0]['text'] ?? '';
 						if ( '' !== $text ) {
+							$chunk_text .= $text;
 							$queue->enqueue( $text );
 							\Fiber::suspend();
 						}
@@ -131,9 +173,7 @@ class Tekton_Provider_Google implements Tekton_AI_Provider_Interface {
 			yield $queue->dequeue();
 		}
 
-		if ( $error ) {
-			throw new \RuntimeException( $error );
-		}
+		return [ 'text' => $chunk_text, 'finish_reason' => $finish_reason, 'error' => $error ];
 	}
 
 	public function get_models(): array {

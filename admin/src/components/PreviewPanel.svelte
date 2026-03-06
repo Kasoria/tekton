@@ -52,7 +52,7 @@
       <iframe
         bind:this={iframeRef}
         title="Page Preview"
-        sandbox="allow-same-origin"
+        sandbox="allow-same-origin allow-scripts"
       ></iframe>
     </div>
   {/if}

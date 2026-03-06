@@ -20,7 +20,14 @@ Use when there is NO `current_template` in the context, or the user asks to star
 ```json
 {
   "components": [...],
-  "title": "Page Title"
+  "title": "Page Title",
+  "keyframes": {
+    "fadeInUp": {
+      "from": {"opacity": "0", "transform": "translateY(24px)"},
+      "to": {"opacity": "1", "transform": "translateY(0)"}
+    }
+  },
+  "scripts": ["/* optional JS for scroll animations, counters, etc. */"]
 }
 ```
 
@@ -48,6 +55,8 @@ Use when `current_template` IS present in the context and the user wants to chan
 | `remove_component` | `target` | Remove a component and all its children. |
 | `replace_component` | `target`, `component` | Replace a component entirely (preserves the original ID). |
 | `move_component` | `target`, `parent`, `position` | Move a component to a new parent at a given position. |
+| `set_keyframes` | `keyframes` | Add or replace `@keyframes` definitions. `keyframes` is `{name: {stop: {prop: value}}}`. Merged with existing keyframes. |
+| `set_scripts` | `scripts` | Set page-level JavaScript. `scripts` is an array of JS code strings. Replaces existing scripts. |
 
 **Always use `target` with the existing component ID (e.g. `comp_abc12345`).** Reference IDs from the `current_template` in the context.
 
@@ -153,3 +162,61 @@ Every component can have responsive styles:
 - Borders: `var(--tekton-border)`, `var(--tekton-radius-sm)` through `var(--tekton-radius-xl)`
 
 Every component MUST include at minimum a `mobile` breakpoint in styles.
+
+## Animations & Keyframes
+
+To animate components, use standard CSS `animation` properties in styles (e.g. `"animation": "fadeInUp 0.8s ease both"`, `"animationDelay": "0.3s"`).
+
+**You MUST define the `@keyframes` used.** Include a `keyframes` object at the top level of your response:
+
+```json
+{
+  "keyframes": {
+    "fadeInUp": {
+      "from": {"opacity": "0", "transform": "translateY(24px)"},
+      "to": {"opacity": "1", "transform": "translateY(0)"}
+    },
+    "slowZoomIn": {
+      "0%": {"opacity": "0", "transform": "scale(1.08)"},
+      "100%": {"opacity": "1", "transform": "scale(1)"}
+    }
+  },
+  "components": [...]
+}
+```
+
+In operations mode, use the `set_keyframes` operation:
+```json
+{"op": "set_keyframes", "keyframes": {"bounceIn": {"0%": {"transform": "scale(0.3)", "opacity": "0"}, "50%": {"transform": "scale(1.05)"}, "100%": {"transform": "scale(1)"}}}}
+```
+
+You have full control over keyframe names, stops, and CSS properties. Design creative, appropriate animations for the page's style.
+
+## Custom Scripts
+
+For advanced animations and interactivity that CSS alone can't handle (scroll-triggered animations, intersection observers, number counters, parallax effects, typed text, etc.), include a `scripts` array at the top level. Each entry is a JavaScript string that runs after the page loads.
+
+```json
+{
+  "components": [...],
+  "keyframes": {...},
+  "scripts": [
+    "const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }); }, { threshold: 0.15 }); document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));",
+    "document.querySelectorAll('[data-counter]').forEach(el => { const target = parseInt(el.dataset.counter); let current = 0; const step = Math.ceil(target / 60); const timer = setInterval(() => { current = Math.min(current + step, target); el.textContent = current.toLocaleString(); if (current >= target) clearInterval(timer); }, 16); });"
+  ]
+}
+```
+
+Scripts run inside an IIFE — no global pollution. Target components by their `id` attribute or `data-*` attributes set via component props.
+
+In operations mode, use the `set_scripts` operation:
+```json
+{"op": "set_scripts", "scripts": ["document.querySelector('#comp_hero0001').addEventListener('mousemove', (e) => { /* parallax logic */ });"]}
+```
+
+**Guidelines:**
+- Use `IntersectionObserver` for scroll-triggered effects instead of scroll event listeners
+- Target elements by their component `id` (e.g. `#comp_abc12345`)
+- For scroll-triggered animations, combine with CSS: add a class that triggers a CSS animation/transition, and use `data-animate` attributes + observer to add the class on scroll
+- Keep scripts minimal and focused — one concern per script string
+- Never use `document.write`, `eval`, or inline event handlers

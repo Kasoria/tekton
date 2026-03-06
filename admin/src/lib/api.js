@@ -91,9 +91,9 @@ export const api = {
   getSettings: () => apiFetch('settings'),
   saveSettings: (data) => apiFetch('settings', { method: 'POST', body: JSON.stringify(data) }),
   getModels: (provider) => apiFetch(`ai/models?provider=${provider}`),
-  preview: (components, templateKey) =>
+  preview: (structure, templateKey) =>
     apiFetch('preview', {
       method: 'POST',
-      body: JSON.stringify({ components, template_key: templateKey }),
+      body: JSON.stringify({ components: structure.components || structure, keyframes: structure.keyframes, scripts: structure.scripts, template_key: templateKey }),
     }),
 };

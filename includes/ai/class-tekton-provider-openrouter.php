@@ -30,6 +30,40 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 		$model      = $options['model'] ?: 'anthropic/claude-sonnet-4-20250514';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
+		$api_messages = $this->build_api_messages( $system_prompt, $messages );
+
+		$accumulated       = '';
+		$max_continuations = 4;
+
+		for ( $attempt = 0; $attempt <= $max_continuations; $attempt++ ) {
+			$body = wp_json_encode( [
+				'model'      => $model,
+				'messages'   => $api_messages,
+				'stream'     => true,
+				'max_tokens' => $max_tokens,
+			] );
+
+			$result = yield from $this->stream_request( $body );
+			$accumulated .= $result['text'];
+
+			if ( $result['error'] ) {
+				throw new \RuntimeException( $result['error'] );
+			}
+
+			if ( 'length' !== $result['finish_reason'] ) {
+				break;
+			}
+
+			// Hit token limit — ask for continuation.
+			$api_messages[] = [ 'role' => 'assistant', 'content' => $accumulated ];
+			$api_messages[] = [ 'role' => 'user', 'content' => 'Continue exactly from where you left off. Do not repeat any content. Do not add any preamble — resume the JSON output immediately.' ];
+		}
+	}
+
+	/**
+	 * Build OpenRouter API messages from internal message format.
+	 */
+	private function build_api_messages( string $system_prompt, array $messages ): array {
 		$api_messages   = [];
 		$api_messages[] = [ 'role' => 'system', 'content' => $system_prompt ];
 		foreach ( $messages as $msg ) {
@@ -49,20 +83,23 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 				$api_messages[] = [ 'role' => $msg['role'], 'content' => $msg['content'] ];
 			}
 		}
+		return $api_messages;
+	}
 
-		$body = wp_json_encode( [
-			'model'      => $model,
-			'messages'   => $api_messages,
-			'stream'     => true,
-			'max_tokens' => $max_tokens,
-		] );
+	/**
+	 * Execute a single streaming request and yield text chunks.
+	 *
+	 * @return array{text: string, finish_reason: ?string, error: ?string}
+	 */
+	private function stream_request( string $body ): \Generator {
+		$queue         = new \SplQueue();
+		$error         = null;
+		$buffer        = '';
+		$error_body    = '';
+		$finish_reason = null;
+		$chunk_text    = '';
 
-		$queue      = new \SplQueue();
-		$error      = null;
-		$buffer     = '';
-		$error_body = '';
-
-		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body ) {
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body, &$finish_reason, &$chunk_text ) {
 			$ch = curl_init( self::API_URL );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
@@ -74,8 +111,8 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 					'HTTP-Referer: ' . site_url(),
 					'X-Title: Tekton',
 				],
-				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+				CURLOPT_TIMEOUT        => 300,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body, &$finish_reason, &$chunk_text ): int {
 					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 					if ( $http_code >= 400 ) {
 						$error_body .= $data;
@@ -102,8 +139,14 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 							continue;
 						}
 
+						$fr = $json['choices'][0]['finish_reason'] ?? null;
+						if ( $fr ) {
+							$finish_reason = $fr;
+						}
+
 						$text = $json['choices'][0]['delta']['content'] ?? '';
 						if ( '' !== $text ) {
+							$chunk_text .= $text;
 							$queue->enqueue( $text );
 							\Fiber::suspend();
 						}
@@ -143,9 +186,7 @@ class Tekton_Provider_OpenRouter implements Tekton_AI_Provider_Interface {
 			yield $queue->dequeue();
 		}
 
-		if ( $error ) {
-			throw new \RuntimeException( $error );
-		}
+		return [ 'text' => $chunk_text, 'finish_reason' => $finish_reason, 'error' => $error ];
 	}
 
 	/**

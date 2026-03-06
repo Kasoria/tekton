@@ -24,15 +24,28 @@ class Tekton_Renderer {
 		}
 
 		$template_key = esc_attr( $structure['template_key'] ?? '' );
+		$keyframes_css = $this->render_keyframes( $structure['keyframes'] ?? [] );
+
 		$styles_block = '';
-		if ( ! empty( $this->collected_styles ) ) {
-			$styles_block = '<style class="tekton-scoped">' . "\n" . implode( "\n", $this->collected_styles ) . "\n</style>\n";
+		if ( ! empty( $this->collected_styles ) || '' !== $keyframes_css ) {
+			$styles_block = '<style class="tekton-scoped">' . "\n" . $keyframes_css . implode( "\n", $this->collected_styles ) . "\n</style>\n";
+		}
+
+		$scripts_block = '';
+		$scripts = $structure['scripts'] ?? [];
+		if ( ! empty( $scripts ) && is_array( $scripts ) ) {
+			$scripts_block = "\n" . '<script class="tekton-scripts">' . "\n"
+				. '(function(){' . "\n"
+				. implode( "\n", array_map( 'strval', $scripts ) )
+				. "\n" . '})();'
+				. "\n</script>\n";
 		}
 
 		return $styles_block
 			. '<div class="tekton-page" data-template="' . $template_key . '">'
 			. "\n" . $html
-			. "\n</div>";
+			. "\n</div>"
+			. $scripts_block;
 	}
 
 	public function render_component( array $component, int $post_id = 0 ): string {
@@ -308,6 +321,27 @@ class Tekton_Renderer {
 		$attrs .= ' data-component-type="' . esc_attr( $component['type'] ?? '' ) . '"';
 
 		return $attrs;
+	}
+
+	private function render_keyframes( array $keyframes ): string {
+		$css = '';
+		foreach ( $keyframes as $name => $steps ) {
+			if ( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_-]*$/', $name ) ) {
+				continue;
+			}
+			$css .= '@keyframes ' . $name . " {\n";
+			foreach ( $steps as $stop => $props ) {
+				$stop = esc_attr( (string) $stop );
+				$css .= "  {$stop} {\n";
+				foreach ( $props as $prop => $value ) {
+					$prop = $this->camel_to_kebab( $prop );
+					$css .= "    {$prop}: {$value};\n";
+				}
+				$css .= "  }\n";
+			}
+			$css .= "}\n";
+		}
+		return $css;
 	}
 
 	private function camel_to_kebab( string $str ): string {

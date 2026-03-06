@@ -75,6 +75,15 @@ class Tekton_Structure_Patcher {
 					} );
 					break;
 
+				case 'set_keyframes':
+					$existing = $structure['keyframes'] ?? [];
+					$structure['keyframes'] = array_merge( $existing, $op['keyframes'] ?? [] );
+					break;
+
+				case 'set_scripts':
+					$structure['scripts'] = $op['scripts'] ?? [];
+					break;
+
 				case 'move_component':
 					// Extract the component, then insert at new position.
 					$extracted = null;

@@ -111,6 +111,16 @@ class Tekton_Storage {
 		$row['components'] = json_decode( $row['components'], true ) ?? [];
 		$row['styles']     = json_decode( $row['styles'] ?? '{}', true ) ?? [];
 
+		// Extract keyframes and scripts from styles storage to top level.
+		if ( ! empty( $row['styles']['keyframes'] ) ) {
+			$row['keyframes'] = $row['styles']['keyframes'];
+			unset( $row['styles']['keyframes'] );
+		}
+		if ( ! empty( $row['styles']['scripts'] ) ) {
+			$row['scripts'] = $row['styles']['scripts'];
+			unset( $row['styles']['scripts'] );
+		}
+
 		return $row;
 	}
 
@@ -120,11 +130,19 @@ class Tekton_Storage {
 		$table    = $wpdb->prefix . 'tekton_structures';
 		$existing = $this->get_structure( $template_key );
 
+		$styles_data = $data['styles'] ?? [];
+		if ( ! empty( $data['keyframes'] ) ) {
+			$styles_data['keyframes'] = $data['keyframes'];
+		}
+		if ( ! empty( $data['scripts'] ) ) {
+			$styles_data['scripts'] = $data['scripts'];
+		}
+
 		$row_data = [
 			'template_key' => $template_key,
 			'title'        => $data['title'] ?? '',
 			'components'   => wp_json_encode( $data['components'] ?? [] ),
-			'styles'       => wp_json_encode( $data['styles'] ?? [] ),
+			'styles'       => wp_json_encode( $styles_data ),
 			'status'       => $data['status'] ?? 'draft',
 		];
 
@@ -136,6 +154,7 @@ class Tekton_Storage {
 			$structure_id = (int) $wpdb->insert_id;
 		}
 
+		$data['styles'] = $styles_data;
 		$version_number = $this->create_version( $structure_id, $data );
 
 		// Point active_version to the newly created version.

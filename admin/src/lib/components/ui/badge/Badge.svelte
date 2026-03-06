@@ -15,7 +15,7 @@
 
 <span
   class={cn(
-    'inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+    'inline-flex items-center rounded px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wider',
     variants[variant],
     className
   )}

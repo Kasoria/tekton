@@ -42,9 +42,47 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 		             || str_starts_with( $model, 'gpt-5' );
 		$no_system   = in_array( $model, self::NO_SYSTEM_ROLE_MODELS, true );
 
+		$api_messages = $this->build_api_messages( $system_prompt, $messages, $no_system );
+
+		$accumulated        = '';
+		$max_continuations  = 4;
+
+		for ( $attempt = 0; $attempt <= $max_continuations; $attempt++ ) {
+			$request = [
+				'model'    => $model,
+				'messages' => $api_messages,
+				'stream'   => true,
+			];
+
+			if ( $is_reasoning ) {
+				$request['max_completion_tokens'] = $max_tokens;
+			} else {
+				$request['max_tokens'] = $max_tokens;
+			}
+
+			$result = yield from $this->stream_request( wp_json_encode( $request ) );
+			$accumulated .= $result['text'];
+
+			if ( $result['error'] ) {
+				throw new \RuntimeException( $result['error'] );
+			}
+
+			if ( 'length' !== $result['finish_reason'] ) {
+				break;
+			}
+
+			// The model hit the token limit — ask it to continue.
+			$api_messages[] = [ 'role' => 'assistant', 'content' => $accumulated ];
+			$api_messages[] = [ 'role' => 'user', 'content' => 'Continue exactly from where you left off. Do not repeat any content. Do not add any preamble — resume the JSON output immediately.' ];
+		}
+	}
+
+	/**
+	 * Build OpenAI API messages from internal message format.
+	 */
+	private function build_api_messages( string $system_prompt, array $messages, bool $no_system ): array {
 		$api_messages = [];
 
-		// System prompt: use developer role for reasoning models, system for others.
 		if ( $no_system ) {
 			$api_messages[] = [ 'role' => 'developer', 'content' => $system_prompt ];
 		} else {
@@ -69,26 +107,23 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 			}
 		}
 
-		$request = [
-			'model'    => $model,
-			'messages' => $api_messages,
-			'stream'   => true,
-		];
+		return $api_messages;
+	}
 
-		if ( $is_reasoning ) {
-			$request['max_completion_tokens'] = $max_tokens;
-		} else {
-			$request['max_tokens'] = $max_tokens;
-		}
+	/**
+	 * Execute a single streaming request and yield text chunks.
+	 *
+	 * @return array{text: string, finish_reason: ?string, error: ?string}
+	 */
+	private function stream_request( string $body ): \Generator {
+		$queue         = new \SplQueue();
+		$error         = null;
+		$buffer        = '';
+		$error_body    = '';
+		$finish_reason = null;
+		$chunk_text    = '';
 
-		$body = wp_json_encode( $request );
-
-		$queue      = new \SplQueue();
-		$error      = null;
-		$buffer     = '';
-		$error_body = '';
-
-		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body ) {
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body, &$finish_reason, &$chunk_text ) {
 			$ch = curl_init( self::API_URL );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
@@ -98,8 +133,8 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 					'Content-Type: application/json',
 					'Authorization: Bearer ' . $this->api_key,
 				],
-				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+				CURLOPT_TIMEOUT        => 300,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body, &$finish_reason, &$chunk_text ): int {
 					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 					if ( $http_code >= 400 ) {
 						$error_body .= $data;
@@ -126,8 +161,14 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 							continue;
 						}
 
+						$fr = $json['choices'][0]['finish_reason'] ?? null;
+						if ( $fr ) {
+							$finish_reason = $fr;
+						}
+
 						$text = $json['choices'][0]['delta']['content'] ?? '';
 						if ( '' !== $text ) {
+							$chunk_text .= $text;
 							$queue->enqueue( $text );
 							\Fiber::suspend();
 						}
@@ -167,9 +208,7 @@ class Tekton_Provider_OpenAI implements Tekton_AI_Provider_Interface {
 			yield $queue->dequeue();
 		}
 
-		if ( $error ) {
-			throw new \RuntimeException( $error );
-		}
+		return [ 'text' => $chunk_text, 'finish_reason' => $finish_reason, 'error' => $error ];
 	}
 
 	public function get_models(): array {

@@ -174,19 +174,19 @@
         </svg>
         <div>
           <span class="font-heading text-lg font-extrabold tracking-tight">tekton</span>
-          <span class="text-[10px] text-muted ml-2 font-normal">v{window.tektonData?.version || '1.0.0'}</span>
+          <span class="text-[12px] text-muted ml-2 font-normal">v{window.tektonData?.version || '1.0.0'}</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
         {#if getMaskedKey(getSettingValue('tekton_ai_provider') || 'anthropic')}
           <div class="flex items-center gap-[5px] px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
             <div class="w-[5px] h-[5px] rounded-full bg-green"></div>
-            <span class="text-[11px] text-green font-medium">API Connected</span>
+            <span class="text-[12px] text-green font-medium">API Connected</span>
           </div>
         {:else}
           <div class="flex items-center gap-[5px] px-2.5 py-1 rounded-[5px] bg-gold/5 border border-gold/10">
             <div class="w-[5px] h-[5px] rounded-full bg-gold"></div>
-            <span class="text-[11px] text-gold font-medium">No API Key</span>
+            <span class="text-[12px] text-gold font-medium">No API Key</span>
           </div>
         {/if}
         <Button onclick={onOpenBuilder}>Open Builder</Button>
@@ -222,7 +222,7 @@
               <div class="absolute top-0 right-0 w-20 h-20 bg-[radial-gradient(circle_at_top_right,#c97d3c08,transparent_70%)]"></div>
               <div class="font-heading text-[40px] font-extrabold leading-none tracking-[-2px]">{s.n}</div>
               <div class="text-xs text-muted-foreground mt-1.5 font-medium">{s.label}</div>
-              <div class="text-[11px] text-dim mt-0.5">{s.sub}</div>
+              <div class="text-[12px] text-dim mt-0.5">{s.sub}</div>
             </Card>
           {/each}
         </div>
@@ -249,20 +249,20 @@
                       <div class="w-[3px] h-7 rounded-sm {t.status === 'published' ? 'bg-copper' : 'bg-border'}"></div>
                       <div>
                         <div class="text-[13px] font-medium">{t.title || t.template_key}</div>
-                        <div class="text-[10px] text-muted font-mono mt-px">{t.template_key}</div>
+                        <div class="text-[12px] text-muted font-mono mt-px">{t.template_key}</div>
                       </div>
                     </div>
                     <div class="flex items-center gap-4">
-                      <span class="text-[11px] text-dim">{t.component_count || 0} comp</span>
-                      <span class="text-[11px] text-dim">{relativeTime(t.updated_at)}</span>
+                      <span class="text-[12px] text-dim">{t.component_count || 0} comp</span>
+                      <span class="text-[12px] text-dim">{relativeTime(t.updated_at)}</span>
                       {#if GLOBAL_TEMPLATES.includes(t.template_key)}
-                        <span class="text-[9px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                        <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
                       {:else}
-                        <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
+                        <span class="text-[12px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
                           {t.status === 'published' ? 'LIVE' : 'DRAFT'}
                         </span>
                         <button
-                          class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[11px] bg-transparent border-none cursor-pointer transition-opacity"
+                          class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[12px] bg-transparent border-none cursor-pointer transition-opacity"
                           onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
                           title="Delete"
                         >×</button>
@@ -292,7 +292,7 @@
                         {' '}
                         <span class="text-foreground/80 font-medium">{a.target}</span>
                       </div>
-                      <div class="text-[10px] text-dim mt-px">{a.time}</div>
+                      <div class="text-[12px] text-dim mt-px">{a.time}</div>
                     </div>
                   </div>
                 {/each}
@@ -357,15 +357,15 @@
                 <div class="flex items-center justify-between">
                   <span class="text-sm font-semibold">{t.title || t.template_key}</span>
                   {#if GLOBAL_TEMPLATES.includes(t.template_key)}
-                    <span class="text-[9px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                    <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
                   {:else}
-                    <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
+                    <span class="text-[12px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
                       {t.status === 'published' ? 'LIVE' : 'DRAFT'}
                     </span>
                   {/if}
                 </div>
-                <div class="text-[10px] text-muted font-mono mt-[3px]">{t.template_key}</div>
-                <div class="flex gap-2.5 mt-2 text-[11px] text-dim">
+                <div class="text-[12px] text-muted font-mono mt-[3px]">{t.template_key}</div>
+                <div class="flex gap-2.5 mt-2 text-[12px] text-dim">
                   <span>v{t.version || 1}</span>
                   <span>·</span>
                   <span>{t.component_count || 0} components</span>
@@ -406,10 +406,10 @@
                   <div>
                     <div class="text-sm font-semibold">{fg.title}</div>
                     <div class="flex gap-2 mt-[3px] items-center">
-                      <span class="text-[11px] text-muted font-mono">{fg.slug}</span>
+                      <span class="text-[12px] text-muted font-mono">{fg.slug}</span>
                       {#if locationLabel(fg)}
-                        <span class="text-border">·</span>
-                        <span class="text-[11px] text-muted">{locationLabel(fg)}</span>
+                        <span class="text-dim">·</span>
+                        <span class="text-[12px] text-muted">{locationLabel(fg)}</span>
                       {/if}
                     </div>
                   </div>
@@ -440,11 +440,11 @@
                   <span class="font-heading text-base font-bold">{c.config?.label || c.slug}</span>
                   <Badge variant={c.source === 'ai' ? 'ai' : 'manual'}>{c.source}</Badge>
                 </div>
-                <div class="text-[11px] text-muted font-mono mb-2.5">{c.slug}</div>
+                <div class="text-[12px] text-muted font-mono mb-2.5">{c.slug}</div>
                 <div class="flex gap-2 text-xs text-muted-foreground">
                   <span>{c.entry_count || 0} entries</span>
                   {#if c.taxonomies && c.taxonomies.length > 0}
-                    <span class="text-border">·</span>
+                    <span class="text-dim">·</span>
                     <span>{c.taxonomies.map(t => t.slug || t).join(', ')}</span>
                   {/if}
                 </div>
@@ -461,7 +461,7 @@
 
         <!-- API Keys Section -->
         <Card class="mb-4">
-          <div class="px-[18px] py-2.5 border-b border-border text-[11px] font-semibold uppercase tracking-[1.5px] text-muted">
+          <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
             API Keys
           </div>
           {#each Object.entries(getProviders()) as [slug, providerInfo], i}
@@ -491,7 +491,7 @@
 
         {#each settingSections as sec}
           <Card class="mb-4">
-            <div class="px-[18px] py-2.5 border-b border-border text-[11px] font-semibold uppercase tracking-[1.5px] text-muted">
+            <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
               {sec.title}
             </div>
             {#each sec.rows as r, ri}

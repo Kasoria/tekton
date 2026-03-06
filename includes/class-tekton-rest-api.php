@@ -184,10 +184,15 @@ class Tekton_REST_API {
 			return;
 		}
 
+		// Allow long-running streaming requests.
+		set_time_limit( 0 );
+		@ini_set( 'max_execution_time', '0' );
+
 		// Set up SSE.
 		header( 'Content-Type: text/event-stream' );
 		header( 'Cache-Control: no-cache' );
 		header( 'X-Accel-Buffering: no' );
+		header( 'Connection: keep-alive' );
 		while ( ob_get_level() ) {
 			ob_end_clean();
 		}
@@ -264,9 +269,11 @@ class Tekton_REST_API {
 		$chat_metadata = ! empty( $image_urls ) ? [ 'images' => $image_urls ] : null;
 		$storage->add_chat_message( $template_key, 'user', $prompt, $chat_metadata );
 
-		$full_response = '';
+		$full_response    = '';
+		$max_continuations = 4;
 
 		try {
+			// Initial generation.
 			$generator = $ai->send_message( $prompt, $chat_history, [
 				'type'    => $type,
 				'context' => $site_context,
@@ -278,7 +285,34 @@ class Tekton_REST_API {
 				$this->send_sse_event( 'chunk', $chunk );
 			}
 
-			// Parse the response into natural language message + structured JSON.
+			// Attempt continuations if the response looks like truncated JSON.
+			for ( $cont = 0; $cont < $max_continuations; $cont++ ) {
+				$parsed = Tekton_AI_Engine::parse_response( $full_response );
+				if ( $parsed['json'] ) {
+					break; // Valid JSON found — done.
+				}
+				if ( ! $this->looks_like_truncated_json( $full_response ) ) {
+					break; // Not truncated JSON — it's just a text response.
+				}
+
+				// Send a continuation request.
+				$continuation_history   = $chat_history;
+				$continuation_history[] = [ 'role' => 'user', 'content' => $prompt ];
+				$continuation_history[] = [ 'role' => 'assistant', 'content' => $full_response ];
+
+				$cont_generator = $ai->send_message(
+					'Your previous response was cut off mid-JSON. Continue EXACTLY from where you stopped. Do not repeat any content. Do not add any preamble or explanation — output ONLY the remaining JSON to complete the structure.',
+					$continuation_history,
+					[ 'type' => $type, 'context' => $site_context ]
+				);
+
+				foreach ( $cont_generator as $chunk ) {
+					$full_response .= $chunk;
+					$this->send_sse_event( 'chunk', $chunk );
+				}
+			}
+
+			// Parse the final accumulated response.
 			$parsed_response = Tekton_AI_Engine::parse_response( $full_response );
 			$message         = $parsed_response['message'];
 			$json_data       = $parsed_response['json'];
@@ -375,6 +409,8 @@ class Tekton_REST_API {
 			'title'      => $title,
 			'components' => $request->get_param( 'components' ) ?? [],
 			'styles'     => $request->get_param( 'styles' ) ?? [],
+			'keyframes'  => $request->get_param( 'keyframes' ) ?? [],
+			'scripts'    => $request->get_param( 'scripts' ) ?? [],
 			'status'     => $status,
 		];
 
@@ -617,6 +653,8 @@ class Tekton_REST_API {
 
 	public function handle_preview( \WP_REST_Request $request ): \WP_REST_Response {
 		$components   = $request->get_param( 'components' ) ?? [];
+		$keyframes    = $request->get_param( 'keyframes' ) ?? [];
+		$scripts      = $request->get_param( 'scripts' ) ?? [];
 		$template_key = sanitize_key( $request->get_param( 'template_key' ) ?? 'preview' );
 
 		/** @var Tekton_Renderer $renderer */
@@ -629,6 +667,8 @@ class Tekton_REST_API {
 		$structure = [
 			'template_key' => $template_key,
 			'components'   => $components,
+			'keyframes'    => $keyframes,
+			'scripts'      => $scripts,
 		];
 
 		$tokens_css = $assets->get_design_tokens_css();
@@ -764,6 +804,36 @@ class Tekton_REST_API {
 			ob_flush();
 		}
 		flush();
+	}
+
+	/**
+	 * Detect if a response looks like truncated JSON (has opening braces/brackets
+	 * that were never closed, or contains a code fence that was never closed).
+	 */
+	private function looks_like_truncated_json( string $response ): bool {
+		$trimmed = trim( $response );
+
+		// Has an unclosed code fence with json-like content inside.
+		$fence_count = substr_count( $response, '```' );
+		if ( $fence_count % 2 !== 0 ) {
+			// Odd number of fences — one was never closed.
+			$last_fence = strrpos( $response, '```' );
+			$after      = trim( substr( $response, $last_fence + 3 ) );
+			if ( str_contains( $after, '"operations"' ) || str_contains( $after, '"components"' ) || str_contains( $after, '"op"' ) ) {
+				return true;
+			}
+		}
+
+		// Check for JSON-like keywords and unbalanced braces.
+		if ( str_contains( $trimmed, '"operations"' ) || str_contains( $trimmed, '"components"' ) || str_contains( $trimmed, '"op"' ) ) {
+			$opens  = substr_count( $trimmed, '{' ) + substr_count( $trimmed, '[' );
+			$closes = substr_count( $trimmed, '}' ) + substr_count( $trimmed, ']' );
+			if ( $opens > $closes ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private function send_sse_error( string $message ): void {

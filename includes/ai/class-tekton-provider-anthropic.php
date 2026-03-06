@@ -29,6 +29,46 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 		$model      = $options['model'] ?: 'claude-sonnet-4-20250514';
 		$max_tokens = $options['max_tokens'] ?? 8192;
 
+		$api_messages = $this->build_api_messages( $messages );
+
+		$accumulated = '';
+		$max_continuations = 4;
+
+		for ( $attempt = 0; $attempt <= $max_continuations; $attempt++ ) {
+			$stop_reason = null;
+
+			$body = wp_json_encode( [
+				'model'      => $model,
+				'max_tokens' => $max_tokens,
+				'system'     => $system_prompt,
+				'messages'   => $api_messages,
+				'stream'     => true,
+			] );
+
+			$result = yield from $this->stream_request( $body );
+			$accumulated .= $result['text'];
+			$stop_reason  = $result['stop_reason'];
+
+			if ( $result['error'] ) {
+				throw new \RuntimeException( $result['error'] );
+			}
+
+			// If the model stopped naturally (end_turn, stop_sequence), we're done.
+			if ( 'max_tokens' !== $stop_reason ) {
+				break;
+			}
+
+			// The model hit the token limit — ask it to continue.
+			// Append the partial assistant response and a continuation prompt.
+			$api_messages[] = [ 'role' => 'assistant', 'content' => $accumulated ];
+			$api_messages[] = [ 'role' => 'user', 'content' => 'Continue exactly from where you left off. Do not repeat any content. Do not add any preamble — resume the JSON output immediately.' ];
+		}
+	}
+
+	/**
+	 * Build Anthropic API messages from internal message format.
+	 */
+	private function build_api_messages( array $messages ): array {
 		$api_messages = [];
 		foreach ( $messages as $msg ) {
 			if ( ! empty( $msg['images'] ) && 'user' === $msg['role'] ) {
@@ -49,21 +89,23 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 				$api_messages[] = [ 'role' => $msg['role'], 'content' => $msg['content'] ];
 			}
 		}
+		return $api_messages;
+	}
 
-		$body = wp_json_encode( [
-			'model'      => $model,
-			'max_tokens' => $max_tokens,
-			'system'     => $system_prompt,
-			'messages'   => $api_messages,
-			'stream'     => true,
-		] );
+	/**
+	 * Execute a single streaming request and yield text chunks.
+	 *
+	 * @return array{text: string, stop_reason: ?string, error: ?string}
+	 */
+	private function stream_request( string $body ): \Generator {
+		$queue       = new \SplQueue();
+		$error       = null;
+		$buffer      = '';
+		$error_body  = '';
+		$stop_reason = null;
+		$chunk_text  = '';
 
-		$queue      = new \SplQueue();
-		$error      = null;
-		$buffer     = '';
-		$error_body = '';
-
-		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body ) {
+		$fiber = new \Fiber( function () use ( $body, &$queue, &$error, &$buffer, &$error_body, &$stop_reason, &$chunk_text ) {
 			$ch = curl_init( self::API_URL );
 			curl_setopt_array( $ch, [
 				CURLOPT_POST           => true,
@@ -74,8 +116,8 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 					'x-api-key: ' . $this->api_key,
 					'anthropic-version: 2023-06-01',
 				],
-				CURLOPT_TIMEOUT        => 120,
-				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body ): int {
+				CURLOPT_TIMEOUT        => 300,
+				CURLOPT_WRITEFUNCTION  => function ( $ch, string $data ) use ( &$queue, &$buffer, &$error_body, &$stop_reason, &$chunk_text ): int {
 					$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 					if ( $http_code >= 400 ) {
 						$error_body .= $data;
@@ -100,12 +142,17 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 							continue;
 						}
 
-						if ( 'content_block_delta' === ( $json['type'] ?? '' ) ) {
+						$type = $json['type'] ?? '';
+
+						if ( 'content_block_delta' === $type ) {
 							$text = $json['delta']['text'] ?? '';
 							if ( '' !== $text ) {
+								$chunk_text .= $text;
 								$queue->enqueue( $text );
 								\Fiber::suspend();
 							}
+						} elseif ( 'message_delta' === $type ) {
+							$stop_reason = $json['delta']['stop_reason'] ?? $stop_reason;
 						}
 					}
 
@@ -144,9 +191,7 @@ class Tekton_Provider_Anthropic implements Tekton_AI_Provider_Interface {
 			yield $queue->dequeue();
 		}
 
-		if ( $error ) {
-			throw new \RuntimeException( $error );
-		}
+		return [ 'text' => $chunk_text, 'stop_reason' => $stop_reason, 'error' => $error ];
 	}
 
 	public function get_models(): array {
