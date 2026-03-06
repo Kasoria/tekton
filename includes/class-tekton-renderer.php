@@ -138,9 +138,10 @@ class Tekton_Renderer {
 		$text   = $this->resolve_prop_content( $c, 'text', $post_id );
 		$href   = $this->resolve_prop_content( $c, 'href', $post_id );
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
+		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-button' );
 
-		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '">'
+		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
 			. esc_html( $text ) . "</a>\n";
 	}
 
@@ -161,9 +162,10 @@ class Tekton_Renderer {
 		$text   = $this->resolve_prop_content( $c, 'text', $post_id );
 		$href   = $this->resolve_prop_content( $c, 'href', $post_id );
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
+		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-link' );
 
-		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '">'
+		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
 			. esc_html( $text ) . "</a>\n";
 	}
 
@@ -336,6 +338,33 @@ class Tekton_Renderer {
 		}
 
 		return $attrs;
+	}
+
+	/**
+	 * Build the rel attribute for links/buttons.
+	 * Auto-adds noopener noreferrer for target="_blank". Supports explicit rel prop.
+	 */
+	private function build_link_rel( array $props ): string {
+		if ( empty( $props['rel'] ) ) {
+			return '';
+		}
+
+		$allowed = [ 'nofollow', 'noopener', 'noreferrer', 'sponsored', 'ugc', 'external' ];
+		$explicit = is_array( $props['rel'] ) ? $props['rel'] : explode( ' ', (string) $props['rel'] );
+		$rels     = [];
+
+		foreach ( $explicit as $r ) {
+			$r = strtolower( trim( $r ) );
+			if ( in_array( $r, $allowed, true ) && ! in_array( $r, $rels, true ) ) {
+				$rels[] = $r;
+			}
+		}
+
+		if ( empty( $rels ) ) {
+			return '';
+		}
+
+		return ' rel="' . esc_attr( implode( ' ', $rels ) ) . '"';
 	}
 
 	private function render_keyframes( array $keyframes ): string {

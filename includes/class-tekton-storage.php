@@ -120,6 +120,10 @@ class Tekton_Storage {
 			$row['scripts'] = $row['styles']['scripts'];
 			unset( $row['styles']['scripts'] );
 		}
+		if ( ! empty( $row['styles']['meta'] ) ) {
+			$row['meta'] = $row['styles']['meta'];
+			unset( $row['styles']['meta'] );
+		}
 
 		return $row;
 	}
@@ -136,6 +140,9 @@ class Tekton_Storage {
 		}
 		if ( ! empty( $data['scripts'] ) ) {
 			$styles_data['scripts'] = $data['scripts'];
+		}
+		if ( ! empty( $data['meta'] ) ) {
+			$styles_data['meta'] = $data['meta'];
 		}
 
 		$row_data = [

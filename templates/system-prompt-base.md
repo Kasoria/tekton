@@ -57,6 +57,7 @@ Use when `current_template` IS present in the context and the user wants to chan
 | `move_component` | `target`, `parent`, `position` | Move a component to a new parent at a given position. |
 | `set_keyframes` | `keyframes` | Add or replace `@keyframes` definitions. `keyframes` is `{name: {stop: {prop: value}}}`. Merged with existing keyframes. |
 | `set_scripts` | `scripts` | Set page-level JavaScript. `scripts` is an array of JS code strings. Replaces existing scripts. |
+| `set_meta` | `meta` | Set or update SEO metadata. `meta` is `{description?, og_title?, canonical?, ...}`. Merged with existing meta. |
 
 **Always use `target` with the existing component ID (e.g. `comp_abc12345`).** Reference IDs from the `current_template` in the context.
 
@@ -113,11 +114,11 @@ Every component follows this structure:
 - `heading` — h1-h6 heading (level, content). **The `level` prop controls the semantic tag (h1-h6).** Style with CSS — do not choose a heading level for its visual size.
 - `text` — Paragraph or text block (content, tagName: p/span/div)
 - `image` — Image element (src, alt, caption)
-- `button` — Clickable button/link (text, href, target)
+- `button` — Clickable button/link (text, href, target, rel)
 - `grid` — CSS Grid layout (columns, gap)
 - `flex-row` — Horizontal flex container (gap, alignItems, justifyContent)
 - `flex-column` — Vertical flex container (gap, alignItems)
-- `link` — Anchor element (text, href, target)
+- `link` — Anchor element (text, href, target, rel)
 - `list` — Ordered/unordered list (ordered, items)
 - `spacer` — Vertical spacing (height)
 - `divider` — Horizontal rule (color, thickness)
@@ -220,6 +221,72 @@ Use `data-*` props for JavaScript targeting (animations, scroll triggers, counte
   }
 }
 ```
+
+## Links & Rel Attributes
+
+Buttons and links support a `rel` prop — a string of space-separated rel values. The renderer only allows safe values: `nofollow`, `noopener`, `noreferrer`, `sponsored`, `ugc`, `external`.
+
+**Use the appropriate rel values based on context:**
+- External links (`target: "_blank"`) → `"rel": "noopener noreferrer"` (prevents tab-napping)
+- Affiliate / paid links → `"rel": "sponsored noopener noreferrer"`
+- User-generated content links → `"rel": "ugc noopener noreferrer"`
+- Links you don't want to endorse for SEO → `"rel": "nofollow"`
+- Internal links → no `rel` needed
+
+```json
+{
+  "type": "button",
+  "props": {
+    "text": "Visit Partner Site",
+    "href": "https://example.com",
+    "target": "_blank",
+    "rel": "noopener noreferrer sponsored"
+  }
+}
+```
+
+## SEO Metadata
+
+Include a `meta` object at the top level for page-level SEO. This outputs `<meta>` and `<link>` tags in `<head>`:
+
+```json
+{
+  "components": [...],
+  "meta": {
+    "description": "A concise page description for search engines (150-160 chars).",
+    "og_title": "Page Title for Social Sharing",
+    "og_description": "Description shown when shared on social media.",
+    "og_image": "https://example.com/share-image.jpg",
+    "og_type": "website",
+    "twitter_card": "summary_large_image",
+    "twitter_title": "Page Title for Twitter",
+    "twitter_desc": "Description for Twitter cards.",
+    "twitter_image": "https://example.com/twitter-image.jpg",
+    "canonical": "https://example.com/page",
+    "robots": "index, follow"
+  }
+}
+```
+
+In operations mode, use the `set_meta` operation (merges with existing meta):
+```json
+{"op": "set_meta", "meta": {"description": "Updated page description."}}
+```
+
+**Available meta fields:**
+| Key | Output | Notes |
+|-----|--------|-------|
+| `description` | `<meta name="description">` | 150-160 characters recommended |
+| `og_title` | `<meta property="og:title">` | Falls back to page title if omitted |
+| `og_description` | `<meta property="og:description">` | Falls back to description if omitted |
+| `og_image` | `<meta property="og:image">` | Absolute URL, min 1200x630px recommended |
+| `og_type` | `<meta property="og:type">` | Usually "website" or "article" |
+| `twitter_card` | `<meta name="twitter:card">` | "summary" or "summary_large_image" |
+| `twitter_title` | `<meta name="twitter:title">` | |
+| `twitter_desc` | `<meta name="twitter:description">` | |
+| `twitter_image` | `<meta name="twitter:image">` | |
+| `canonical` | `<link rel="canonical">` | Overrides default WordPress canonical |
+| `robots` | `<meta name="robots">` | e.g. "index, follow" or "noindex" |
 
 ## Content Sources
 

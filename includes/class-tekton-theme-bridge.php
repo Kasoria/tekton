@@ -20,6 +20,7 @@ class Tekton_Theme_Bridge {
 		$this->renderer = $renderer;
 
 		add_filter( 'template_include', [ $this, 'intercept_template' ], 999 );
+		add_action( 'wp_head', [ $this, 'output_seo_meta' ], 1 );
 	}
 
 	public function intercept_template( string $template ): string {
@@ -41,6 +42,61 @@ class Tekton_Theme_Bridge {
 		$this->matched_structure = $structure;
 
 		return TEKTON_DIR . 'includes/template-canvas.php';
+	}
+
+	/**
+	 * Output SEO meta tags from the structure's meta property.
+	 */
+	public function output_seo_meta(): void {
+		if ( ! $this->matched_structure ) {
+			return;
+		}
+
+		$meta = $this->matched_structure['meta'] ?? [];
+		if ( empty( $meta ) ) {
+			return;
+		}
+
+		if ( ! empty( $meta['description'] ) ) {
+			echo '<meta name="description" content="' . esc_attr( $meta['description'] ) . '">' . "\n";
+		}
+
+		// Open Graph tags.
+		$og_map = [
+			'og_title'       => 'og:title',
+			'og_description' => 'og:description',
+			'og_image'       => 'og:image',
+			'og_type'        => 'og:type',
+		];
+		foreach ( $og_map as $key => $property ) {
+			if ( ! empty( $meta[ $key ] ) ) {
+				echo '<meta property="' . esc_attr( $property ) . '" content="' . esc_attr( $meta[ $key ] ) . '">' . "\n";
+			}
+		}
+
+		// Twitter card tags.
+		$twitter_map = [
+			'twitter_card'  => 'twitter:card',
+			'twitter_title' => 'twitter:title',
+			'twitter_desc'  => 'twitter:description',
+			'twitter_image' => 'twitter:image',
+		];
+		foreach ( $twitter_map as $key => $name ) {
+			if ( ! empty( $meta[ $key ] ) ) {
+				echo '<meta name="' . esc_attr( $name ) . '" content="' . esc_attr( $meta[ $key ] ) . '">' . "\n";
+			}
+		}
+
+		// Canonical URL (overrides WP default).
+		if ( ! empty( $meta['canonical'] ) ) {
+			remove_action( 'wp_head', 'rel_canonical' );
+			echo '<link rel="canonical" href="' . esc_url( $meta['canonical'] ) . '">' . "\n";
+		}
+
+		// Robots directives.
+		if ( ! empty( $meta['robots'] ) ) {
+			echo '<meta name="robots" content="' . esc_attr( $meta['robots'] ) . '">' . "\n";
+		}
 	}
 
 	public function get_current_template_key(): ?string {

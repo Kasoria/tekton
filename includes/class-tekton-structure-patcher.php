@@ -84,6 +84,11 @@ class Tekton_Structure_Patcher {
 					$structure['scripts'] = $op['scripts'] ?? [];
 					break;
 
+				case 'set_meta':
+					$existing_meta = $structure['meta'] ?? [];
+					$structure['meta'] = array_merge( $existing_meta, $op['meta'] ?? [] );
+					break;
+
 				case 'move_component':
 					// Extract the component, then insert at new position.
 					$extracted = null;
