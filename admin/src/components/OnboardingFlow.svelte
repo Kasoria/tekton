@@ -22,8 +22,21 @@
   let apiKeyInput = $state('');
   let savingKey = $state(false);
 
+  let checkedApiKey = false;
+
   $effect(() => {
     settingsStore.load();
+  });
+
+  $effect(() => {
+    const s = settingsStore.settings;
+    if (checkedApiKey || !s.tekton_available_providers) return;
+    checkedApiKey = true;
+    const provider = s.tekton_ai_provider || '';
+    if (provider && s[`tekton_api_key_${provider}`]) {
+      aiProvider = provider;
+      step = 2;
+    }
   });
 
   let providerOptions = $derived(
