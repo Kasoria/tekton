@@ -113,6 +113,29 @@ class Tekton_Context_Builder {
 			}
 		}
 
+		// Include available CSS variable names so the AI uses exact token names.
+		if ( ! empty( $context['design_tokens'] ) ) {
+			$vars = [];
+			$prefixes = [
+				'colors'     => '--tekton-',
+				'fonts'      => '--tekton-font-',
+				'typography' => '--tekton-',
+				'spacing'    => '--tekton-spacing-',
+				'radii'      => '--tekton-radius-',
+				'shadows'    => '--tekton-shadow-',
+			];
+			foreach ( $prefixes as $category => $prefix ) {
+				if ( ! empty( $context['design_tokens'][ $category ] ) ) {
+					foreach ( array_keys( $context['design_tokens'][ $category ] ) as $key ) {
+						$vars[] = "var({$prefix}{$key})";
+					}
+				}
+			}
+			if ( $vars ) {
+				$lines[] = 'Available design tokens: ' . implode( ', ', $vars );
+			}
+		}
+
 		return implode( "\n", $lines );
 	}
 

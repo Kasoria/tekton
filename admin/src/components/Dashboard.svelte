@@ -729,9 +729,11 @@
               </p>
             {/if}
 
-            <Button size="sm" variant="secondary" onclick={() => { showOnboarding = true; }}>
-              {t('regenerate_theme', 'Regenerate Theme')}
-            </Button>
+            <div class="mt-4">
+              <Button onclick={() => { showOnboarding = true; }}>
+                {t('regenerate_theme', 'Regenerate Theme')}
+              </Button>
+            </div>
           </div>
         </Card>
       </div>

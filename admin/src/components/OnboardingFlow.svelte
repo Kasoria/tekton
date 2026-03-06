@@ -143,6 +143,7 @@
     { key: 'background', label: 'Background' },
     { key: 'surface', label: 'Surface' },
     { key: 'text', label: 'Text' },
+    { key: 'border', label: 'Border' },
   ];
 </script>
 

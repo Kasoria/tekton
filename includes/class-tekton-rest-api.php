@@ -695,8 +695,15 @@ class Tekton_REST_API {
 		$tokens_css = $assets->get_design_tokens_css();
 		$reset_url  = esc_url( TEKTON_URL . 'assets/css/tekton-frontend-reset.css?v=' . TEKTON_VERSION );
 
+		$google_fonts_url = $assets->get_google_fonts_url();
+
 		$html = '<!DOCTYPE html><html><head>';
 		$html .= '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+		if ( $google_fonts_url ) {
+			$html .= '<link rel="preconnect" href="https://fonts.googleapis.com">';
+			$html .= '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+			$html .= '<link rel="stylesheet" href="' . esc_url( $google_fonts_url ) . '">';
+		}
 		$html .= '<link rel="stylesheet" href="' . $reset_url . '">';
 		$html .= '<style>:root{' . "\n" . $tokens_css . '}</style>';
 		$html .= '</head><body class="tekton-preview">';
@@ -924,48 +931,37 @@ class Tekton_REST_API {
 	 * @return array<string, string>
 	 */
 	private function derive_design_tokens( array $theme ): array {
-		$colors  = $theme['colors'] ?? [];
-		$fonts   = $theme['fonts'] ?? [];
-		$spacing = $theme['spacing'] ?? [];
-
 		$tokens = [];
 
-		// Colors.
-		if ( ! empty( $colors['text'] ) ) {
-			$tokens['--tekton-text-primary'] = sanitize_hex_color( $colors['text'] ) ?: $colors['text'];
-		}
-		if ( ! empty( $colors['text_muted'] ) ) {
-			$tokens['--tekton-text-muted'] = sanitize_hex_color( $colors['text_muted'] ) ?: $colors['text_muted'];
-		}
-		if ( ! empty( $colors['background'] ) ) {
-			$tokens['--tekton-bg-primary'] = sanitize_hex_color( $colors['background'] ) ?: $colors['background'];
-		}
-		if ( ! empty( $colors['surface'] ) ) {
-			$tokens['--tekton-bg-surface'] = sanitize_hex_color( $colors['surface'] ) ?: $colors['surface'];
-		}
-		if ( ! empty( $colors['primary'] ) ) {
-			$tokens['--tekton-accent'] = sanitize_hex_color( $colors['primary'] ) ?: $colors['primary'];
-			// Derive a hover color by darkening primary slightly.
-			$tokens['--tekton-accent-hover'] = $this->darken_hex_color( $colors['primary'], 15 );
+		// All categories pass through directly — same key names everywhere.
+		$categories = [ 'colors', 'fonts', 'typography', 'spacing', 'radii', 'shadows' ];
+
+		foreach ( $categories as $category ) {
+			if ( empty( $theme[ $category ] ) || ! is_array( $theme[ $category ] ) ) {
+				continue;
+			}
+			$tokens[ $category ] = [];
+			foreach ( $theme[ $category ] as $key => $value ) {
+				$key = sanitize_key( str_replace( '_', '-', $key ) );
+				if ( 'colors' === $category ) {
+					$value = sanitize_hex_color( $value ) ?: sanitize_text_field( $value );
+				} elseif ( 'fonts' === $category ) {
+					$value = sanitize_text_field( $value );
+					// Append fallback only if not already present.
+					$fallback = ( 'mono' === $key ) ? 'monospace' : 'sans-serif';
+					if ( ! str_contains( strtolower( $value ), $fallback ) ) {
+						$value .= ', ' . $fallback;
+					}
+				} else {
+					$value = sanitize_text_field( $value );
+				}
+				$tokens[ $category ][ $key ] = $value;
+			}
 		}
 
-		// Fonts.
-		if ( ! empty( $fonts['body'] ) ) {
-			$tokens['--tekton-font-primary'] = sanitize_text_field( $fonts['body'] );
-		}
-		if ( ! empty( $fonts['heading'] ) ) {
-			$tokens['--tekton-font-heading'] = sanitize_text_field( $fonts['heading'] );
-		}
-
-		// Spacing.
-		if ( ! empty( $spacing['section_padding'] ) ) {
-			$tokens['--tekton-spacing-section'] = sanitize_text_field( $spacing['section_padding'] );
-		}
-		if ( ! empty( $spacing['content_gap'] ) ) {
-			$tokens['--tekton-spacing-gap'] = sanitize_text_field( $spacing['content_gap'] );
-		}
-		if ( ! empty( $spacing['container_max_width'] ) ) {
-			$tokens['--tekton-container-max-width'] = sanitize_text_field( $spacing['container_max_width'] );
+		// Derive primary-hover from primary.
+		if ( ! empty( $theme['colors']['primary'] ) ) {
+			$tokens['colors']['primary-hover'] = $this->darken_hex_color( $theme['colors']['primary'], 15 );
 		}
 
 		return $tokens;

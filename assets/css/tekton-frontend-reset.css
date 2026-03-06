@@ -21,10 +21,10 @@ html {
 body {
   min-height: 100vh;
   line-height: var(--tekton-line-height-base, 1.6);
-  font-family: var(--tekton-font-primary, system-ui, -apple-system, sans-serif);
-  font-size: var(--tekton-font-size-base, 1rem);
-  color: var(--tekton-text-primary, #1a1a2e);
-  background-color: var(--tekton-bg-primary, #ffffff);
+  font-family: var(--tekton-font-body, system-ui, -apple-system, sans-serif);
+  font-size: var(--tekton-size-base, 1rem);
+  color: var(--tekton-text, #1a1a2e);
+  background-color: var(--tekton-background, #ffffff);
 }
 
 img,
@@ -42,12 +42,12 @@ input, button, textarea, select {
 }
 
 a {
-  color: var(--tekton-accent, #2563eb);
+  color: var(--tekton-primary, #2563eb);
   text-decoration: none;
 }
 
 a:hover {
-  color: var(--tekton-accent-hover, #1d4ed8);
+  color: var(--tekton-primary-hover, #1d4ed8);
 }
 
 /* Tekton site wrapper — provides shared scroll context for sticky/fixed elements */
@@ -100,18 +100,18 @@ a:hover {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
-  background-color: var(--tekton-accent, #2563eb);
+  background-color: var(--tekton-primary, #2563eb);
   color: #ffffff;
 }
 
 .tekton-button:hover {
-  background-color: var(--tekton-accent-hover, #1d4ed8);
+  background-color: var(--tekton-primary-hover, #1d4ed8);
   color: #ffffff;
 }
 
 .tekton-divider {
   border: none;
-  border-top: 1px solid var(--tekton-border, #e2e8f0);
+  border-top: 1px solid var(--tekton-border, #e5e7eb);
 }
 
 .tekton-heading {

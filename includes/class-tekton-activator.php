@@ -63,7 +63,6 @@ class Tekton_Activator {
 			'tekton_ai_model'      => 'claude-sonnet-4-20250514',
 			'tekton_ai_max_tokens' => 8192,
 			'tekton_override_theme'=> true,
-			'tekton_design_tokens' => wp_json_encode( self::get_default_design_tokens() ),
 		];
 
 		foreach ( $defaults as $key => $value ) {
@@ -98,30 +97,4 @@ class Tekton_Activator {
 		}
 	}
 
-	public static function get_default_design_tokens(): array {
-		return [
-			'colors' => [
-				'bg-primary'     => '#ffffff',
-				'bg-secondary'   => '#f8f9fa',
-				'text-primary'   => '#1a1a2e',
-				'text-secondary' => '#4a4a68',
-				'accent'         => '#2563eb',
-				'accent-hover'   => '#1d4ed8',
-				'border'         => '#e2e8f0',
-			],
-			'typography' => [
-				'font-primary'     => 'system-ui, -apple-system, sans-serif',
-				'font-heading'     => 'inherit',
-				'font-size-base'   => '1rem',
-				'line-height-base' => '1.6',
-			],
-			'spacing' => [
-				'xs' => '0.25rem',
-				'sm' => '0.5rem',
-				'md' => '1rem',
-				'lg' => '2rem',
-				'xl' => '4rem',
-			],
-		];
-	}
 }

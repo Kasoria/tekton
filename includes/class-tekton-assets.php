@@ -26,6 +26,8 @@ class Tekton_Assets {
 			[],
 			TEKTON_VERSION
 		);
+
+		$this->enqueue_google_fonts();
 	}
 
 	public function inject_design_tokens(): void {
@@ -50,31 +52,62 @@ class Tekton_Assets {
 
 		$css = '';
 
-		if ( ! empty( $tokens['colors'] ) ) {
-			foreach ( $tokens['colors'] as $name => $value ) {
-				$name  = sanitize_key( $name );
-				$value = sanitize_text_field( $value );
-				$css  .= "  --tekton-{$name}: {$value};\n";
-			}
-		}
+		$prefixes = [
+			'colors'     => '--tekton-',
+			'fonts'      => '--tekton-font-',
+			'typography' => '--tekton-',
+			'spacing'    => '--tekton-spacing-',
+			'radii'      => '--tekton-radius-',
+			'shadows'    => '--tekton-shadow-',
+		];
 
-		if ( ! empty( $tokens['typography'] ) ) {
-			foreach ( $tokens['typography'] as $name => $value ) {
-				$name  = sanitize_key( $name );
-				$value = sanitize_text_field( $value );
-				$css  .= "  --tekton-{$name}: {$value};\n";
+		foreach ( $prefixes as $category => $prefix ) {
+			if ( empty( $tokens[ $category ] ) ) {
+				continue;
 			}
-		}
-
-		if ( ! empty( $tokens['spacing'] ) ) {
-			foreach ( $tokens['spacing'] as $name => $value ) {
+			foreach ( $tokens[ $category ] as $name => $value ) {
 				$name  = sanitize_key( $name );
 				$value = sanitize_text_field( $value );
-				$css  .= "  --tekton-spacing-{$name}: {$value};\n";
+				$css  .= "  {$prefix}{$name}: {$value};\n";
 			}
 		}
 
 		return $css;
+	}
+
+	public function get_google_fonts_url(): string {
+		$theme = get_option( 'tekton_theme', '' );
+		if ( is_string( $theme ) ) {
+			$theme = json_decode( $theme, true );
+		}
+		if ( ! is_array( $theme ) || empty( $theme['fonts'] ) ) {
+			return '';
+		}
+
+		$families = [];
+		foreach ( [ 'heading', 'body' ] as $key ) {
+			if ( ! empty( $theme['fonts'][ $key ] ) ) {
+				$family = sanitize_text_field( $theme['fonts'][ $key ] );
+				if ( preg_match( '/^(system-ui|inherit|sans-serif|serif|monospace|cursive|fantasy)/i', $family ) ) {
+					continue;
+				}
+				$families[] = str_replace( ' ', '+', $family ) . ':wght@300;400;500;600;700;800;900';
+			}
+		}
+
+		if ( empty( $families ) ) {
+			return '';
+		}
+
+		$families = array_unique( $families );
+		return 'https://fonts.googleapis.com/css2?' . implode( '&', array_map( fn( $f ) => 'family=' . $f, $families ) ) . '&display=swap';
+	}
+
+	private function enqueue_google_fonts(): void {
+		$url = $this->get_google_fonts_url();
+		if ( $url ) {
+			wp_enqueue_style( 'tekton-google-fonts', esc_url( $url ), [], null );
+		}
 	}
 
 	private function is_tekton_rendered_page(): bool {

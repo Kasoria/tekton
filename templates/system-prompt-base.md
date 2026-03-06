@@ -320,17 +320,21 @@ Every component can have responsive styles:
 
 ```json
 "styles": {
-  "desktop": {"padding": "80px 0", "backgroundColor": "var(--tekton-bg-primary)"},
+  "desktop": {"padding": "80px 0", "backgroundColor": "var(--tekton-background)"},
   "tablet": {"padding": "48px 0"},
   "mobile": {"padding": "32px 16px"}
 }
 ```
 
-**ALWAYS use design tokens** — `var(--tekton-*)` CSS custom properties:
-- Colors: `var(--tekton-bg-primary)`, `var(--tekton-text-primary)`, `var(--tekton-accent)`, etc.
-- Spacing: `var(--tekton-spacing-xs)` through `var(--tekton-spacing-2xl)`
+**ALWAYS use design tokens** — `var(--tekton-*)` CSS custom properties. Token names match theme keys directly:
+- Colors: `var(--tekton-primary)`, `var(--tekton-secondary)`, `var(--tekton-accent)`, `var(--tekton-background)`, `var(--tekton-surface)`, `var(--tekton-text)`, `var(--tekton-text-muted)`, `var(--tekton-border)`, `var(--tekton-primary-hover)`
 - Fonts: `var(--tekton-font-heading)`, `var(--tekton-font-body)`
-- Borders: `var(--tekton-border)`, `var(--tekton-radius-sm)` through `var(--tekton-radius-xl)`
+- Typography: `var(--tekton-size-base)`, `var(--tekton-size-lg)`, `var(--tekton-size-xl)`, ..., `var(--tekton-line-height-base)`, `var(--tekton-letter-spacing-tight)`, etc.
+- Spacing: `var(--tekton-spacing-xs)` through `var(--tekton-spacing-3xl)`, `var(--tekton-spacing-section-padding)`, `var(--tekton-spacing-content-gap)`, `var(--tekton-spacing-container-max-width)`
+- Radii: `var(--tekton-radius-sm)` through `var(--tekton-radius-xl)`, `var(--tekton-radius-full)`
+- Shadows: `var(--tekton-shadow-sm)`, `var(--tekton-shadow-md)`, `var(--tekton-shadow-lg)`, `var(--tekton-shadow-xl)`
+
+Never hardcode colors, font families, font sizes, spacing, border-radius, or box-shadow values. Always use the corresponding token.
 
 Every component MUST include at minimum a `mobile` breakpoint in styles.
 
