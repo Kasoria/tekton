@@ -115,8 +115,8 @@ Every component follows this structure:
 **Component IDs:** Always use the format `comp_` followed by 8 random alphanumeric characters. Generate unique IDs for every new component. NEVER reuse or regenerate IDs for existing components when modifying a page.
 
 **Available component types:**
-- `section` — Top-level page section (tag: section/div/main/aside/article)
-- `container` — Width-constrained wrapper (max-width set by `var(--tekton-spacing-container-max-width)`, auto margins, padding). Use ONLY for content containers, NOT for decorative/background layers.
+- `section` — Top-level page section (full-width, tag: section/div/main/aside/article). Sections span the entire viewport width and are used for backgrounds, overlays, and grouping content.
+- `container` — Width-constrained content wrapper. Automatically gets `max-width` from the theme's `container_max_width` token, centered with auto margins and inline padding. **Every piece of visible content must live inside a container.**
 - `div` — Plain div with no base styles. Use for decorative layers, background overlays, absolute-positioned elements, and any wrapper that should not have layout constraints.
 - `heading` — h1-h6 heading (level, content). **The `level` prop is a number (1-6) that controls the semantic tag.** Example: `"level": 2` → `<h2>`. Style with CSS — do not choose a heading level for its visual size.
 - `text` — Paragraph or text block (content, tagName: p/span/div)
@@ -131,6 +131,97 @@ Every component follows this structure:
 - `divider` — Horizontal rule (color, thickness)
 - `video` — Video embed (src, type: embed/video)
 - `icon` — Icon element (name, size)
+
+## Page Structure Rules
+
+**This is mandatory for every page, header, and footer you generate.**
+
+Every page follows a strict nesting pattern: **section → container → content**. This ensures consistent max-width alignment across the entire site.
+
+### The Pattern
+
+```
+section (full-width, holds background color/image)
+├── div (OPTIONAL — background overlay, decorative image, absolute-positioned element)
+└── container (max-width constrained, centers content)
+    ├── heading
+    ├── text
+    ├── grid / flex-row / flex-column
+    │   └── (cards, columns, content blocks...)
+    └── button
+```
+
+### Rules
+
+1. **Sections are always top-level.** They are direct children of the root `components` array. Never nest a section inside another section.
+2. **Every section must have exactly one `container` child** that wraps all its content. The container enforces the site-wide max-width and keeps content aligned across sections.
+3. **Decorative elements can be direct children of a section** — background overlays (`div` with absolute positioning), full-bleed background images, etc. These sit alongside the container, not inside it.
+4. **Content lives inside the container.** Headings, text, buttons, grids, flex layouts, images (content images, not backgrounds), lists — all go inside the container.
+5. **Never put content directly inside a section** without a container wrapper. Even a single heading needs a container around it.
+6. **Headers and footers follow the same pattern.** The nav, logo, links, copyright — all inside a container within a section.
+7. **Do NOT manually set `maxWidth` on containers** — the theme's `container_max_width` token is applied automatically via the `.tekton-container` CSS class.
+
+### Correct Example
+
+```json
+{
+  "type": "section",
+  "styles": {"desktop": {"backgroundColor": "var(--tekton-background)"}, "mobile": {}},
+  "children": [
+    {
+      "type": "container",
+      "children": [
+        {"type": "heading", "props": {"level": 2, "content": {"source": "field", "group": "about", "field": "title", "fallback": "About Us"}}},
+        {"type": "text", "props": {"content": {"source": "field", "group": "about", "field": "description", "fallback": "..."}}}
+      ]
+    }
+  ]
+}
+```
+
+### With Background Overlay
+
+```json
+{
+  "type": "section",
+  "styles": {"desktop": {"position": "relative", "overflow": "hidden"}, "mobile": {}},
+  "children": [
+    {
+      "type": "div",
+      "props": {"aria-hidden": "true"},
+      "styles": {"desktop": {"position": "absolute", "inset": "0", "backgroundColor": "rgba(0,0,0,0.5)", "zIndex": "0"}, "mobile": {}}
+    },
+    {
+      "type": "container",
+      "styles": {"desktop": {"position": "relative", "zIndex": "1"}, "mobile": {}},
+      "children": [
+        {"type": "heading", "props": {"level": 1, "content": {"source": "static", "value": "Welcome"}}}
+      ]
+    }
+  ]
+}
+```
+
+### ❌ Wrong — Content directly in section (no container)
+
+```json
+{
+  "type": "section",
+  "children": [
+    {"type": "heading", "props": {"level": 2, "content": "..."}},
+    {"type": "text", "props": {"content": "..."}}
+  ]
+}
+```
+
+### ❌ Wrong — Manual maxWidth on container
+
+```json
+{
+  "type": "container",
+  "styles": {"desktop": {"maxWidth": "1200px"}}
+}
+```
 
 ## Semantic HTML Rules
 
