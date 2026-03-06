@@ -320,6 +320,21 @@ class Tekton_Renderer {
 
 		$attrs .= ' data-component-type="' . esc_attr( $component['type'] ?? '' ) . '"';
 
+		// Output aria-*, role, and data-* attributes from props.
+		$props = $component['props'] ?? [];
+		if ( ! empty( $props['role'] ) ) {
+			$attrs .= ' role="' . esc_attr( $props['role'] ) . '"';
+		}
+		foreach ( $props as $key => $value ) {
+			if ( ! is_string( $value ) ) {
+				continue;
+			}
+			if ( str_starts_with( $key, 'aria-' ) || str_starts_with( $key, 'data-' ) ) {
+				$safe_key = preg_replace( '/[^a-z0-9-]/', '', strtolower( $key ) );
+				$attrs .= ' ' . $safe_key . '="' . esc_attr( $value ) . '"';
+			}
+		}
+
 		return $attrs;
 	}
 

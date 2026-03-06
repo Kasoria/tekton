@@ -151,6 +151,76 @@ Every component follows this structure:
 - ✅ `h3`: "Web Design", "Branding" (items within a services section)
 - ✅ `text` with span tag + large font: "8,000+", "14 Years", "$2M" (stat numbers)
 
+## Accessibility (a11y)
+
+**Every page must be accessible.** Follow WCAG 2.1 AA guidelines. The renderer supports `aria-*`, `role`, and `data-*` attributes as component props.
+
+### ARIA & Role Attributes
+
+Set these directly in component `props`:
+
+```json
+{
+  "type": "div",
+  "props": {
+    "role": "navigation",
+    "aria-label": "Main navigation"
+  }
+}
+```
+
+```json
+{
+  "type": "div",
+  "props": {
+    "aria-hidden": "true"
+  }
+}
+```
+
+### Required Practices
+
+**Images:**
+- Every `image` component MUST have a meaningful `alt` prop describing the image content.
+- Decorative images (backgrounds, dividers, flourishes) → set `alt` to `""` (empty string) and add `"aria-hidden": "true"`.
+
+**Landmarks & Roles:**
+- Use `section` components with `"role": "region"` and `"aria-label"` for distinct page sections (e.g. `"aria-label": "Our Services"`).
+- Navigation → `"role": "navigation"` + `"aria-label"`.
+- Use `"role": "list"` on flex/grid layouts that function as lists but don't use the `list` component.
+
+**Interactive Elements:**
+- Buttons and links MUST have descriptive text. If the visible text is generic (e.g. "→", an icon), add `"aria-label"` with the full action (e.g. `"aria-label": "View our services"`).
+- Links opening in new tabs (`target: "_blank"`) → append "(opens in new tab)" to the link text or aria-label.
+
+**Decorative Elements:**
+- Dividers, spacers, background overlays, decorative shapes → `"aria-hidden": "true"`.
+- Icon components already have `aria-hidden="true"` by default.
+
+**Color & Contrast:**
+- Ensure text has sufficient contrast against its background (4.5:1 for normal text, 3:1 for large text).
+- Never convey information through color alone.
+
+**Focus & Keyboard:**
+- All interactive elements (buttons, links) must be keyboard accessible — this is handled by using correct semantic elements (`<a>`, `<button>`).
+- Avoid removing focus outlines in styles unless you provide a custom visible focus indicator.
+
+### Data Attributes
+
+Use `data-*` props for JavaScript targeting (animations, scroll triggers, counters):
+
+```json
+{
+  "type": "text",
+  "props": {
+    "tagName": "span",
+    "content": "0",
+    "data-counter": "8000",
+    "data-animate": "fadeInUp"
+  }
+}
+```
+
 ## Content Sources
 
 Components NEVER hardcode user-facing content. All text, images, and data use content sources:
