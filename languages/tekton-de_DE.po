@@ -422,3 +422,63 @@ msgstr "Sprache"
 
 msgid "Auto (WordPress default)"
 msgstr "Automatisch (WordPress-Standard)"
+
+msgid "Welcome to Tekton"
+msgstr "Willkommen bei Tekton"
+
+msgid "AI-first WordPress site builder. Let's get you set up."
+msgstr "KI-basierter WordPress-Sitebuilder. Lass uns loslegen."
+
+msgid "Select provider..."
+msgstr "Anbieter wählen..."
+
+msgid "Continue"
+msgstr "Weiter"
+
+msgid "Skip setup"
+msgstr "Einrichtung überspringen"
+
+msgid "Back"
+msgstr "Zurück"
+
+msgid "Tell us about your site"
+msgstr "Erzähl uns von deiner Website"
+
+msgid "A sentence or two is enough. The AI will design a fitting theme."
+msgstr "Ein bis zwei Sätze reichen. Die KI erstellt ein passendes Design."
+
+msgid "e.g. A craft coffee roastery in Portland with an earthy, artisanal vibe..."
+msgstr "z.B. Eine handwerkliche Kaffeerösterei mit einem erdigen, authentischen Stil..."
+
+msgid "Generating..."
+msgstr "Wird generiert..."
+
+msgid "Generate Theme"
+msgstr "Theme generieren"
+
+msgid "Your Theme"
+msgstr "Dein Theme"
+
+msgid "Colors"
+msgstr "Farben"
+
+msgid "Typography"
+msgstr "Typografie"
+
+msgid "Regenerate"
+msgstr "Neu generieren"
+
+msgid "Use This Theme"
+msgstr "Dieses Theme verwenden"
+
+msgid "Theme"
+msgstr "Theme"
+
+msgid "Current theme configuration"
+msgstr "Aktuelle Theme-Konfiguration"
+
+msgid "Regenerate your site theme with AI based on a description of your site."
+msgstr "Generiere dein Website-Theme mit KI basierend auf einer Beschreibung deiner Website."
+
+msgid "Regenerate Theme"
+msgstr "Theme neu generieren"

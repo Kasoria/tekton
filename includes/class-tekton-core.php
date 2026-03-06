@@ -415,6 +415,32 @@ final class Tekton_Core {
 			// Language
 			'language'                  => __( 'Language', 'tekton' ),
 			'language_auto'             => __( 'Auto (WordPress default)', 'tekton' ),
+
+			// Onboarding
+			'onboarding_welcome'        => __( 'Welcome to Tekton', 'tekton' ),
+			'onboarding_welcome_sub'    => __( "AI-first WordPress site builder. Let's get you set up.", 'tekton' ),
+			'select_provider'           => __( 'Select provider...', 'tekton' ),
+			'api_key'                   => __( 'API Key', 'tekton' ),
+			'continue'                  => __( 'Continue', 'tekton' ),
+			'skip_setup'                => __( 'Skip setup', 'tekton' ),
+			'back'                      => __( 'Back', 'tekton' ),
+			'onboarding_describe'       => __( 'Tell us about your site', 'tekton' ),
+			'onboarding_describe_sub'   => __( 'A sentence or two is enough. The AI will design a fitting theme.', 'tekton' ),
+			'onboarding_describe_placeholder' => __( 'e.g. A craft coffee roastery in Portland with an earthy, artisanal vibe...', 'tekton' ),
+			'generating'                => __( 'Generating...', 'tekton' ),
+			'generating_theme'          => __( 'Generating...', 'tekton' ),
+			'generate_theme'            => __( 'Generate Theme', 'tekton' ),
+			'onboarding_theme'          => __( 'Your Theme', 'tekton' ),
+			'colors'                    => __( 'Colors', 'tekton' ),
+			'typography'                => __( 'Typography', 'tekton' ),
+			'regenerate'                => __( 'Regenerate', 'tekton' ),
+			'use_this_theme'            => __( 'Use This Theme', 'tekton' ),
+
+			// Theme (settings)
+			'theme'                     => __( 'Theme', 'tekton' ),
+			'theme_current'             => __( 'Current theme configuration', 'tekton' ),
+			'theme_desc'                => __( 'Regenerate your site theme with AI based on a description of your site.', 'tekton' ),
+			'regenerate_theme'          => __( 'Regenerate Theme', 'tekton' ),
 		];
 	}
 }
