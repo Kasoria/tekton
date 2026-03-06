@@ -10,12 +10,15 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 $bridge    = Tekton_Core::instance()->get_module( 'theme_bridge' );
 $renderer  = Tekton_Core::instance()->get_module( 'renderer' );
+$storage   = Tekton_Core::instance()->get_module( 'storage' );
 $structure = $bridge->get_structure_for_current();
 
 if ( ! $structure ) {
 	wp_safe_redirect( home_url() );
 	exit;
 }
+
+$template_key = $bridge->get_current_template_key();
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -28,9 +31,27 @@ if ( ! $structure ) {
 <?php wp_body_open(); ?>
 
 <?php
-// Renderer handles all escaping internally.
+// Render header (unless this IS the header template).
+if ( 'header' !== $template_key ) {
+	$header = $storage->get_structure( 'header' );
+	if ( $header && ! empty( $header['components'] ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $renderer->render_page( $header, get_the_ID() ?: 0 );
+	}
+}
+
+// Render the main page structure.
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 echo $renderer->render_page( $structure, get_the_ID() ?: 0 );
+
+// Render footer (unless this IS the footer template).
+if ( 'footer' !== $template_key ) {
+	$footer = $storage->get_structure( 'footer' );
+	if ( $footer && ! empty( $footer['components'] ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $renderer->render_page( $footer, get_the_ID() ?: 0 );
+	}
+}
 ?>
 
 <?php wp_footer(); ?>

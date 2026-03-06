@@ -22,6 +22,8 @@
   let newTemplateName = $state('');
   let showNewTemplate = $state(false);
 
+  const GLOBAL_TEMPLATES = ['header', 'footer'];
+
   let messagesEnd;
   let textareaEl;
 
@@ -145,6 +147,7 @@
   }
 
   function requestDeleteTemplate(templateKey) {
+    if (GLOBAL_TEMPLATES.includes(templateKey)) return;
     deleteConfirm = { open: true, key: templateKey };
   }
 
@@ -296,7 +299,27 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="fixed inset-0 z-[29]" onclick={() => (showPages = false)}></div>
           <div class="absolute top-[calc(100%+6px)] -left-1 w-[230px] z-30 bg-card-hover border border-dim rounded-[10px] p-[5px] shadow-[0_16px_48px_#00000060]">
-            {#each page.structures as p}
+            <!-- Global templates -->
+            {#each page.structures.filter(s => GLOBAL_TEMPLATES.includes(s.template_key)) as p}
+              <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''}">
+                <button
+                  class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"
+                  onclick={() => selectPage(p)}
+                >
+                  <span class="w-[5px] h-[5px] rounded-full bg-copper/60"></span>
+                  <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
+                  <span class="text-[9px] text-muted font-mono ml-auto">global</span>
+                </button>
+              </div>
+            {/each}
+
+            <!-- Separator -->
+            {#if page.structures.some(s => !GLOBAL_TEMPLATES.includes(s.template_key))}
+              <div class="h-px bg-border/30 my-1"></div>
+            {/if}
+
+            <!-- Page templates -->
+            {#each page.structures.filter(s => !GLOBAL_TEMPLATES.includes(s.template_key)) as p}
               <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''} group">
                 <button
                   class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"

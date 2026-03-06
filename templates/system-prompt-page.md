@@ -1,5 +1,7 @@
 ## Task: Generate or Modify a Page
 
+**IMPORTANT: The site header and footer are separate global templates managed independently. NEVER generate header or footer components (navigation bars, site logos, copyright sections, footer links, etc.) when building a page. Only generate the main page content — the system automatically wraps it with the header and footer.**
+
 ### Creating a New Page
 
 When there is NO `current_template` in the context, generate a full component tree:

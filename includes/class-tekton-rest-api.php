@@ -298,6 +298,12 @@ class Tekton_REST_API {
 
 	public function handle_delete_structure( \WP_REST_Request $request ): \WP_REST_Response {
 		$key = sanitize_key( $request['template_key'] );
+
+		// Prevent deletion of global templates.
+		if ( in_array( $key, Tekton_Activator::GLOBAL_TEMPLATES, true ) ) {
+			return new \WP_REST_Response( [ 'message' => 'Global templates cannot be deleted.' ], 403 );
+		}
+
 		/** @var Tekton_Storage $storage */
 		$storage = $this->core->get_module( 'storage' );
 
@@ -448,25 +454,55 @@ class Tekton_REST_API {
 		$renderer = $this->core->get_module( 'renderer' );
 		/** @var Tekton_Assets $assets */
 		$assets = $this->core->get_module( 'assets' );
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
 
 		$structure = [
 			'template_key' => $template_key,
 			'components'   => $components,
 		];
 
-		$rendered_html = $renderer->render_page( $structure );
-		$tokens_css    = $assets->get_design_tokens_css();
-		$reset_url     = esc_url( TEKTON_URL . 'assets/css/tekton-frontend-reset.css?v=' . TEKTON_VERSION );
+		$tokens_css = $assets->get_design_tokens_css();
+		$reset_url  = esc_url( TEKTON_URL . 'assets/css/tekton-frontend-reset.css?v=' . TEKTON_VERSION );
 
 		$html = '<!DOCTYPE html><html><head>';
 		$html .= '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
 		$html .= '<link rel="stylesheet" href="' . $reset_url . '">';
 		$html .= '<style>:root{' . "\n" . $tokens_css . '}</style>';
 		$html .= '</head><body class="tekton-preview">';
-		$html .= $rendered_html;
+
+		// Render header (unless we're previewing the header itself).
+		if ( 'header' !== $template_key ) {
+			$header_html = $this->render_global_template( $storage, $renderer, 'header' );
+			if ( $header_html ) {
+				$html .= $header_html;
+			}
+		}
+
+		$html .= $renderer->render_page( $structure );
+
+		// Render footer (unless we're previewing the footer itself).
+		if ( 'footer' !== $template_key ) {
+			$footer_html = $this->render_global_template( $storage, $renderer, 'footer' );
+			if ( $footer_html ) {
+				$html .= $footer_html;
+			}
+		}
+
 		$html .= '</body></html>';
 
 		return new \WP_REST_Response( [ 'html' => $html ] );
+	}
+
+	/**
+	 * Render a global template (header/footer) if it has components.
+	 */
+	private function render_global_template( Tekton_Storage $storage, Tekton_Renderer $renderer, string $key ): string {
+		$structure = $storage->get_structure( $key );
+		if ( ! $structure || empty( $structure['components'] ) ) {
+			return '';
+		}
+		return $renderer->render_page( $structure );
 	}
 
 	// ─── Dashboard ─────────────────────────────────────────────────────

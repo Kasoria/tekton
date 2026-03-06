@@ -10,10 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class Tekton_Activator {
 
+	/** Global template keys that exist on every install. */
+	public const GLOBAL_TEMPLATES = [ 'header', 'footer' ];
+
 	public static function activate(): void {
 		self::create_tables();
 		self::install_bridge_theme();
 		self::set_default_options();
+		self::create_global_templates();
 		flush_rewrite_rules();
 	}
 
@@ -65,6 +69,31 @@ class Tekton_Activator {
 		foreach ( $defaults as $key => $value ) {
 			if ( false === get_option( $key ) ) {
 				add_option( $key, $value );
+			}
+		}
+	}
+
+	private static function create_global_templates(): void {
+		global $wpdb;
+		$table = $wpdb->prefix . 'tekton_structures';
+
+		$templates = [
+			'header' => 'Header',
+			'footer' => 'Footer',
+		];
+
+		foreach ( $templates as $key => $title ) {
+			$exists = $wpdb->get_var(
+				$wpdb->prepare( "SELECT id FROM {$table} WHERE template_key = %s", $key )
+			);
+			if ( ! $exists ) {
+				$wpdb->insert( $table, [
+					'template_key' => $key,
+					'title'        => $title,
+					'components'   => '[]',
+					'styles'       => '{}',
+					'status'       => 'draft',
+				] );
 			}
 		}
 	}

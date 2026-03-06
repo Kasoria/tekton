@@ -10,6 +10,8 @@
 
   let { onOpenBuilder, onOpenTemplate } = $props();
 
+  const GLOBAL_TEMPLATES = ['header', 'footer'];
+
   let tab = $state('overview');
   let deleteConfirm = $state({ open: false, key: '' });
 
@@ -103,6 +105,7 @@
   ]);
 
   function requestDeleteTemplate(templateKey) {
+    if (GLOBAL_TEMPLATES.includes(templateKey)) return;
     deleteConfirm = { open: true, key: templateKey };
   }
 
@@ -252,14 +255,18 @@
                     <div class="flex items-center gap-4">
                       <span class="text-[11px] text-dim">{t.component_count || 0} comp</span>
                       <span class="text-[11px] text-dim">{relativeTime(t.updated_at)}</span>
-                      <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
-                        {t.status === 'published' ? 'LIVE' : 'DRAFT'}
-                      </span>
-                      <button
-                        class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[11px] bg-transparent border-none cursor-pointer transition-opacity"
-                        onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
-                        title="Delete"
-                      >×</button>
+                      {#if GLOBAL_TEMPLATES.includes(t.template_key)}
+                        <span class="text-[9px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                      {:else}
+                        <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
+                          {t.status === 'published' ? 'LIVE' : 'DRAFT'}
+                        </span>
+                        <button
+                          class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[11px] bg-transparent border-none cursor-pointer transition-opacity"
+                          onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
+                          title="Delete"
+                        >×</button>
+                      {/if}
                     </div>
                   </div>
                 {/each}
@@ -326,13 +333,15 @@
         <div class="grid grid-cols-3 gap-3.5">
           {#each dashboard.templates as t}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <Card class="cursor-pointer transition-colors hover:border-dim group relative" onclick={() => onOpenTemplate?.(t.template_key)}>
-              <!-- Delete button -->
-              <button
-                class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-background/80 border border-border text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all z-10"
-                onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
-                title="Delete template"
-              >×</button>
+            <Card class="cursor-pointer transition-colors hover:border-dim group relative {GLOBAL_TEMPLATES.includes(t.template_key) ? 'border-copper/20' : ''}" onclick={() => onOpenTemplate?.(t.template_key)}>
+              <!-- Delete button (not for globals) -->
+              {#if !GLOBAL_TEMPLATES.includes(t.template_key)}
+                <button
+                  class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-background/80 border border-border text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all z-10"
+                  onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
+                  title="Delete template"
+                >×</button>
+              {/if}
               <!-- Skeleton preview -->
               <div class="h-[90px] bg-background m-2.5 rounded-md flex flex-col p-2 gap-1 border border-border-subtle">
                 <div class="h-[5px] w-3/5 bg-border rounded-sm"></div>
@@ -347,9 +356,13 @@
               <div class="px-3.5 pb-3.5 pt-2">
                 <div class="flex items-center justify-between">
                   <span class="text-sm font-semibold">{t.title || t.template_key}</span>
-                  <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
-                    {t.status === 'published' ? 'LIVE' : 'DRAFT'}
-                  </span>
+                  {#if GLOBAL_TEMPLATES.includes(t.template_key)}
+                    <span class="text-[9px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                  {:else}
+                    <span class="text-[10px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
+                      {t.status === 'published' ? 'LIVE' : 'DRAFT'}
+                    </span>
+                  {/if}
                 </div>
                 <div class="text-[10px] text-muted font-mono mt-[3px]">{t.template_key}</div>
                 <div class="flex gap-2.5 mt-2 text-[11px] text-dim">

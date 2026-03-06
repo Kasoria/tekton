@@ -73,6 +73,32 @@ final class Tekton_Core {
 		$this->modules['assets']         = new Tekton_Assets();
 		$this->modules['ai_engine']      = new Tekton_AI_Engine( $this->modules['security'] );
 		$this->modules['rest_api']       = new Tekton_REST_API( $this );
+
+		$this->ensure_global_templates();
+	}
+
+	/**
+	 * Ensure global templates (header, footer) exist. Runs on every init
+	 * so they are created even without reactivation.
+	 */
+	private function ensure_global_templates(): void {
+		global $wpdb;
+		$table = $wpdb->prefix . 'tekton_structures';
+
+		foreach ( Tekton_Activator::GLOBAL_TEMPLATES as $key ) {
+			$exists = $wpdb->get_var(
+				$wpdb->prepare( "SELECT id FROM {$table} WHERE template_key = %s", $key )
+			);
+			if ( ! $exists ) {
+				$wpdb->insert( $table, [
+					'template_key' => $key,
+					'title'        => ucfirst( $key ),
+					'components'   => '[]',
+					'styles'       => '{}',
+					'status'       => 'draft',
+				] );
+			}
+		}
 	}
 
 	private function register_hooks(): void {
