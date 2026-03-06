@@ -68,7 +68,7 @@ a:hover {
 
 .tekton-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: var(--tekton-spacing-container-max-width, 1200px);
   margin-inline: auto;
   padding-inline: var(--tekton-spacing-md, 1rem);
 }
