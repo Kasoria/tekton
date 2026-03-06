@@ -4,6 +4,7 @@
   import { createChatStore } from '$lib/stores/chat.svelte.js';
   import { createPageStore } from '$lib/stores/page.svelte.js';
   import { api } from '$lib/api.js';
+  import { t } from '$lib/i18n.svelte.js';
 
   let { onBack, initialTemplateKey = null } = $props();
 
@@ -395,12 +396,12 @@
 
   const vw = { desktop: '100%', tablet: '768px', mobile: '375px' };
 
-  const sidebarLabels = {
-    tree: 'Component Tree',
-    versions: 'Version History',
-    fields: 'Field Groups',
-    plugins: 'Generated Plugins',
-  };
+  const sidebarLabels = $derived({
+    tree: t('component_tree', 'Component Tree'),
+    versions: t('version_history', 'Version History'),
+    fields: t('field_groups', 'Field Groups'),
+    plugins: t('generated_plugins', 'Generated Plugins'),
+  });
 
   // Extract just the natural language part from the streaming text (hide JSON).
   let streamingDisplay = $derived(() => {
@@ -461,8 +462,8 @@
           class="flex items-center gap-[7px] px-2 py-1 bg-transparent border-none rounded-[5px] text-foreground cursor-pointer text-[13px] font-medium font-body"
           onclick={() => (showPages = !showPages)}
         >
-          <span class="text-muted text-[12px]">editing</span>
-          <span>{currentPage?.title || currentPage?.template_key || 'Select page'}</span>
+          <span class="text-muted text-[12px]">{t('editing', 'editing')}</span>
+          <span>{currentPage?.title || currentPage?.template_key || t('select_page', 'Select page')}</span>
           {#if currentPage}
             <span class="w-[5px] h-[5px] rounded-full {currentPage.status === 'published' ? 'bg-green' : 'bg-gold'}"></span>
           {/if}
@@ -484,7 +485,7 @@
                 >
                   <span class="w-[5px] h-[5px] rounded-full bg-copper/60"></span>
                   <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
-                  <span class="text-[12px] text-muted font-mono ml-auto">global</span>
+                  <span class="text-[12px] text-muted font-mono ml-auto">{t('global', 'global')}</span>
                 </button>
               </div>
             {/each}
@@ -520,14 +521,14 @@
                     type="text"
                     bind:value={newTemplateName}
                     onkeydown={(e) => { if (e.key === 'Enter') createTemplate(); if (e.key === 'Escape') { showNewTemplate = false; newTemplateName = ''; } }}
-                    placeholder="Template name..."
+                    placeholder={t('template_name', 'Template name...')}
                     class="flex-1 px-2 py-[6px] bg-background border border-border/50 rounded-[5px] text-[12px] font-body text-foreground outline-none placeholder:text-dim"
                     autofocus
                   />
                   <button
                     class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-background text-[12px] font-medium font-body cursor-pointer"
                     onclick={createTemplate}
-                  >Add</button>
+                  >{t('add', 'Add')}</button>
                 </div>
               {:else}
                 <button
@@ -535,7 +536,7 @@
                   onclick={() => (showNewTemplate = true)}
                 >
                   <span class="text-[14px] leading-none">+</span>
-                  <span>New template</span>
+                  <span>{t('new_template', 'New template')}</span>
                 </button>
               {/if}
             </div>
@@ -549,8 +550,8 @@
       <!-- View mode toggle -->
       <div class="flex gap-px bg-card-hover rounded-md p-0.5">
         {#each [
-          { key: 'preview', label: 'Preview' },
-          { key: 'code', label: 'Code' },
+          { key: 'preview', label: t('preview', 'Preview') },
+          { key: 'code', label: t('code', 'Code') },
         ] as v}
           <button
             class="px-2.5 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {viewMode === v.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
@@ -581,10 +582,10 @@
       <!-- Sidebar toggles -->
       <div class="flex gap-px bg-card-hover rounded-md p-0.5">
         {#each [
-          { key: 'tree', label: 'Tree' },
-          { key: 'versions', label: 'History' },
-          { key: 'fields', label: 'Fields' },
-          { key: 'plugins', label: 'Plugins' },
+          { key: 'tree', label: t('tree', 'Tree') },
+          { key: 'versions', label: t('history', 'History') },
+          { key: 'fields', label: t('fields', 'Fields') },
+          { key: 'plugins', label: t('plugins', 'Plugins') },
         ] as s}
           <button
             class="px-3 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {sidebar === s.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
@@ -603,19 +604,19 @@
         <button
           class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
           onclick={handlePreview}
-        >Preview ↗</button>
+        >{t('preview_link', 'Preview ↗')}</button>
       {/if}
       {#if currentPage?.status === 'published'}
         <button
           class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
           onclick={handleUnpublish}
-        >Unpublish</button>
+        >{t('unpublish', 'Unpublish')}</button>
         <button
           class="px-3 py-[5px] bg-transparent border border-copper/30 rounded-md text-copper cursor-pointer text-xs font-body font-medium hover:border-copper/60 hover:bg-copper/5 transition-colors"
           onclick={viewPage}
-        >View ↗</button>
+        >{t('view_link', 'View ↗')}</button>
       {:else}
-        <Button onclick={handlePublish}>Publish</Button>
+        <Button onclick={handlePublish}>{t('publish', 'Publish')}</Button>
       {/if}
     </div>
   </header>
@@ -631,8 +632,8 @@
           {#each chat.messages as m}
             <div class="flex flex-col gap-[5px]">
               <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 {m.role === 'user' ? 'text-muted' : 'text-copper'}">
-                {m.role === 'user' ? 'You' : 'Tekton'}
-                {#if m.is_summary}<span class="text-[12px] text-muted-foreground font-normal normal-case tracking-normal ml-1">· summary of previous session</span>{/if}
+                {m.role === 'user' ? t('you', 'You') : t('tekton', 'Tekton')}
+                {#if m.is_summary}<span class="text-[12px] text-muted-foreground font-normal normal-case tracking-normal ml-1">· {t('summary_of_previous', 'summary of previous session')}</span>{/if}
               </span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 {m.role === 'user' ? 'bg-card-hover text-foreground border-l-2 border-dim' : 'bg-card text-foreground/75 border-l-2 border-copper/20'}">
                 {#if m.images?.length}
@@ -647,7 +648,7 @@
                 {#if m.structure}
                   <div class="inline-flex items-center gap-[5px] mt-2.5 px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.5L4 7.5L8 3" stroke="#7dab6e" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span class="text-[12px] text-green font-medium">Preview updated</span>
+                    <span class="text-[12px] text-green font-medium">{t('preview_updated', 'Preview updated')}</span>
                   </div>
                 {/if}
               </div>
@@ -657,7 +658,7 @@
           <!-- Streaming indicator -->
           {#if chat.isStreaming}
             <div class="flex flex-col gap-[5px]">
-              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">Tekton</span>
+              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">{t('tekton', 'Tekton')}</span>
               <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 bg-card text-foreground/75 border-l-2 border-copper/20">
                 {#if streamingDisplay()}
                   <div class="whitespace-pre-wrap">{streamingDisplay()}</div>
@@ -667,12 +668,12 @@
                     <div class="tk-cooking flex gap-[3px]">
                       <span></span><span></span><span></span>
                     </div>
-                    <span class="text-[12px] text-copper/80 font-medium">Generating structure…</span>
+                    <span class="text-[12px] text-copper/80 font-medium">{t('generating_structure', 'Generating structure…')}</span>
                   </div>
                 {:else if !streamingDisplay()}
                   <div class="flex items-center gap-2">
                     <div class="tk-ember w-[7px] h-[7px] rounded-full bg-copper shrink-0"></div>
-                    <span class="text-muted">Thinking...</span>
+                    <span class="text-muted">{t('thinking', 'Thinking...')}</span>
                   </div>
                 {/if}
               </div>
@@ -730,7 +731,7 @@
             onkeydown={handleKeydown}
             oninput={autoResize}
             onpaste={handlePaste}
-            placeholder="Describe what to build or change..."
+            placeholder={t('describe_prompt', 'Describe what to build or change...')}
             rows="1"
             class="flex-1 bg-transparent border-none text-foreground text-[13px] leading-[1.5] resize-none outline-none font-body min-h-[20px] max-h-[100px] placeholder:text-dim"
           ></textarea>
@@ -759,7 +760,7 @@
               <button
                 class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[12px] font-body transition-colors hover:text-muted hover:border-dim {isClearing ? 'opacity-50 pointer-events-none' : ''}"
                 onclick={() => (showClearMenu = !showClearMenu)}
-              >{isClearing ? 'Clearing...' : 'Clear chat'}</button>
+              >{isClearing ? t('clearing', 'Clearing...') : t('clear_chat', 'Clear chat')}</button>
               {#if showClearMenu}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="fixed inset-0 z-[29]" onclick={() => (showClearMenu = false)}></div>
@@ -768,21 +769,21 @@
                     class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
                     onclick={() => clearChat(true)}
                   >
-                    <span class="text-[12px] text-foreground font-medium">Clear with summary</span>
-                    <span class="text-[12px] text-muted leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
+                    <span class="text-[12px] text-foreground font-medium">{t('clear_with_summary', 'Clear with summary')}</span>
+                    <span class="text-[12px] text-muted leading-tight mt-0.5">{t('clear_with_summary_desc', 'AI summarizes the conversation, then clears')}</span>
                   </button>
                   <button
                     class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
                     onclick={() => clearChat(false)}
                   >
-                    <span class="text-[12px] text-foreground font-medium">Clear all</span>
-                    <span class="text-[12px] text-muted leading-tight mt-0.5">Remove entire chat history</span>
+                    <span class="text-[12px] text-foreground font-medium">{t('clear_all', 'Clear all')}</span>
+                    <span class="text-[12px] text-muted leading-tight mt-0.5">{t('clear_all_desc', 'Remove entire chat history')}</span>
                   </button>
                 </div>
               {/if}
             </div>
           {:else}
-            <span class="ml-auto text-[12px] text-muted">shift+enter for newline</span>
+            <span class="ml-auto text-[12px] text-muted">{t('shift_enter_newline', 'shift+enter for newline')}</span>
           {/if}
         </div>
       </div>
@@ -795,8 +796,8 @@
           <!-- Code view toolbar -->
           <div class="flex items-center border-b border-border shrink-0">
             {#each [
-              { key: 'structure', label: 'Structure JSON' },
-              { key: 'html', label: 'Rendered HTML' },
+              { key: 'structure', label: t('structure_json', 'Structure JSON') },
+              { key: 'html', label: t('rendered_html', 'Rendered HTML') },
             ] as t}
               <button
                 class="px-4 py-2 border-none cursor-pointer text-[12px] font-medium font-body transition-colors {codeViewTab === t.key ? 'text-foreground border-b-2 border-copper -mb-px' : 'text-muted bg-transparent'}"
@@ -812,12 +813,12 @@
                 <button
                   class="px-2.5 py-1 bg-transparent border border-border rounded text-[12px] text-muted cursor-pointer hover:text-foreground hover:border-dim transition-colors"
                   onclick={resetCodeEditor}
-                >Discard</button>
+                >{t('discard', 'Discard')}</button>
                 <button
                   class="px-2.5 py-1 bg-copper border-none rounded text-[12px] text-background font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50"
                   onclick={saveCodeEdits}
                   disabled={codeSaving}
-                >{codeSaving ? 'Saving...' : 'Save'}</button>
+                >{codeSaving ? t('saving', 'Saving...') : t('save', 'Save')}</button>
               {:else}
                 <button
                   class="px-2 py-1 bg-transparent border border-border rounded text-[12px] text-muted cursor-pointer hover:text-foreground hover:border-dim transition-colors"
@@ -825,7 +826,7 @@
                     const text = codeViewTab === 'structure' ? codeEditorValue : previewHtml;
                     navigator.clipboard.writeText(text);
                   }}
-                >Copy</button>
+                >{t('copy', 'Copy')}</button>
               {/if}
             </div>
           </div>
@@ -855,11 +856,11 @@
               }}
             ></textarea>
           {:else}
-            <pre class="flex-1 overflow-auto m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground whitespace-pre-wrap break-words" style="background: #0d0c0b;">{previewHtml || 'No preview HTML generated yet.'}</pre>
+            <pre class="flex-1 overflow-auto m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground whitespace-pre-wrap break-words" style="background: #0d0c0b;">{previewHtml || t('no_preview_html', 'No preview HTML generated yet.')}</pre>
           {/if}
         {:else}
           <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
-            No template selected.
+            {t('no_template_selected', 'No template selected.')}
           </div>
         {/if}
       </div>
@@ -881,12 +882,12 @@
             ></iframe>
           {:else if page.currentStructure}
             <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Loading preview...
+              {t('loading_preview', 'Loading preview...')}
             </div>
           {:else}
             <div class="flex flex-col items-center justify-center h-full gap-3 text-center px-8 text-muted-foreground" style="font-family: 'Outfit', sans-serif;">
-              <div style="font-size: 14px;">No template selected</div>
-              <div style="font-size: 12px;" class="text-muted">Use the chat to generate a page, or select a template from the dropdown above.</div>
+              <div style="font-size: 14px;">{t('no_template_selected', 'No template selected')}</div>
+              <div style="font-size: 12px;" class="text-muted">{t('no_template_hint', 'Use the chat to generate a page, or select a template from the dropdown above.')}</div>
             </div>
           {/if}
         </div>
@@ -914,7 +915,7 @@
       <!-- Tree -->
       {#if sidebar === 'tree'}
         {#if tree.length === 0}
-          <div class="text-xs text-muted text-center py-4">No components yet.</div>
+          <div class="text-xs text-muted text-center py-4">{t('no_components_yet', 'No components yet.')}</div>
         {:else}
           <div class="flex flex-col gap-px">
             {#each tree as n}
@@ -937,7 +938,7 @@
       <!-- Versions -->
       {:else if sidebar === 'versions'}
         {#if versions.length === 0}
-          <div class="text-xs text-muted text-center py-4">No versions yet.</div>
+          <div class="text-xs text-muted text-center py-4">{t('no_versions_yet', 'No versions yet.')}</div>
         {:else}
           <div class="flex flex-col gap-0.5">
             {#each versions as v}
@@ -948,11 +949,11 @@
                     <span class="text-[12px] text-copper/70 font-medium truncate max-w-[100px]">{v.label}</span>
                   {/if}
                   {#if v.is_active}
-                    <span class="text-[12px] text-green font-semibold">CURRENT</span>
+                    <span class="text-[12px] text-green font-semibold">{t('current', 'CURRENT')}</span>
                   {/if}
                   <span class="ml-auto text-[12px] text-muted shrink-0">{relativeTime(v.created_at)}</span>
                 </div>
-                <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || { ai_generate: 'AI generated', manual: 'Manual edit', rollback: 'Restored', publish: 'Published' }[v.change_type] || v.change_type}</div>
+                <div class="text-xs text-muted-foreground leading-[1.4]">{v.change_summary || { ai_generate: t('ai_generate', 'AI generated'), manual: t('manual_edit', 'Manual edit'), rollback: t('restored', 'Restored'), publish: t('published', 'Published') }[v.change_type] || v.change_type}</div>
 
                 {#if editingVersion === v.version_number}
                   <div class="flex items-center gap-1 mt-1.5">
@@ -960,14 +961,14 @@
                       type="text"
                       bind:value={editingLabel}
                       onkeydown={(e) => { if (e.key === 'Enter') saveVersionLabel(v.version_number); if (e.key === 'Escape') editingVersion = null; }}
-                      placeholder="Version label..."
+                      placeholder={t('version_label', 'Version label...')}
                       class="flex-1 px-1.5 py-[3px] bg-background border border-border/50 rounded text-[12px] font-body text-foreground outline-none placeholder:text-dim"
                       autofocus
                     />
                     <button
                       class="px-1.5 py-[3px] border-none rounded bg-copper text-background text-[12px] font-medium cursor-pointer"
                       onclick={() => saveVersionLabel(v.version_number)}
-                    >Save</button>
+                    >{t('save', 'Save')}</button>
                     <button
                       class="px-1.5 py-[3px] border-none rounded bg-transparent text-dim text-[12px] cursor-pointer hover:text-muted"
                       onclick={() => (editingVersion = null)}
@@ -979,12 +980,12 @@
                       <button
                         class="px-2.5 py-[3px] bg-transparent border border-border rounded text-muted cursor-pointer text-[12px] font-body hover:border-dim hover:text-foreground transition-colors"
                         onclick={() => handleRollback(v.version_number)}
-                      >Restore</button>
+                      >{t('restore', 'Restore')}</button>
                     {/if}
                     <button
                       class="px-2 py-[3px] bg-transparent border-none text-dim cursor-pointer text-[12px] font-body opacity-0 group-hover/ver:opacity-100 transition-opacity hover:text-muted"
                       onclick={() => startRenameVersion(v)}
-                    >{v.label ? 'Rename' : 'Label'}</button>
+                    >{v.label ? t('rename', 'Rename') : t('label', 'Label')}</button>
                   </div>
                 {/if}
               </div>
@@ -995,7 +996,7 @@
       <!-- Fields -->
       {:else if sidebar === 'fields'}
         {#if fieldGroups.length === 0}
-          <div class="text-xs text-muted text-center py-4">No field groups yet.</div>
+          <div class="text-xs text-muted text-center py-4">{t('no_field_groups_sidebar', 'No field groups yet.')}</div>
         {:else}
           <div class="flex flex-col gap-2">
             {#each fieldGroups as g}
@@ -1016,8 +1017,8 @@
       <!-- Plugins -->
       {:else if sidebar === 'plugins'}
         <div class="text-xs text-muted text-center py-4">
-          <div class="mb-2">Generated plugins will appear here.</div>
-          <div class="text-dim">Use <span class="font-mono">/plugin</span> in the chat to generate one.</div>
+          <div class="mb-2">{t('plugins_hint', 'Generated plugins will appear here.')}</div>
+          <div class="text-dim">{t('plugins_hint_cmd', 'Use /plugin in the chat to generate one.')}</div>
         </div>
       {/if}
     </div>
@@ -1025,9 +1026,9 @@
 
   <ConfirmDialog
     open={deleteConfirm.open}
-    title="Delete template"
-    description="This will permanently delete &ldquo;{deleteConfirm.key}&rdquo; and all its versions. This cannot be undone."
-    confirmLabel="Delete"
+    title={t('delete_template', 'Delete template')}
+    description={t('delete_template_desc', 'This will permanently delete the template and all its versions. This cannot be undone.')}
+    confirmLabel={t('delete', 'Delete')}
     onconfirm={confirmDeleteTemplate}
     oncancel={() => (deleteConfirm = { open: false, key: '' })}
   />

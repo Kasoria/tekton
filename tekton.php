@@ -30,6 +30,7 @@ require_once TEKTON_DIR . 'includes/class-tekton-core.php';
  * Boot the plugin.
  */
 function tekton_init(): void {
+	load_plugin_textdomain( 'tekton', false, dirname( TEKTON_BASENAME ) . '/languages/' );
 	Tekton_Core::instance();
 }
 add_action( 'plugins_loaded', 'tekton_init' );

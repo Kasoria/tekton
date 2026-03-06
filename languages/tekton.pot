@@ -1,0 +1,422 @@
+# Copyright (C) 2024 Kasoria
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Tekton 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/kasoria/tekton/issues\n"
+"POT-Creation-Date: 2026-03-06 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/class-tekton-core.php
+msgid "Settings"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Saving..."
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Discard"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Create"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Templates"
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Post Types"
+msgstr ""
+
+msgid "live"
+msgstr ""
+
+msgid "Field Groups"
+msgstr ""
+
+msgid "entries"
+msgstr ""
+
+msgid "Plugins"
+msgstr ""
+
+msgid "active"
+msgstr ""
+
+msgid "View all →"
+msgstr ""
+
+msgid "No templates yet. Open the builder to create one."
+msgstr ""
+
+msgid "comp"
+msgstr ""
+
+msgid "Global"
+msgstr ""
+
+msgid "LIVE"
+msgstr ""
+
+msgid "DRAFT"
+msgstr ""
+
+msgid "Activity"
+msgstr ""
+
+msgid "No activity yet."
+msgstr ""
+
+msgid "Quick Actions"
+msgstr ""
+
+msgid "Build a Page"
+msgstr ""
+
+msgid "Start from a natural language prompt"
+msgstr ""
+
+msgid "Full-Stack Generate"
+msgstr ""
+
+msgid "CPT + Fields + Template in one shot"
+msgstr ""
+
+msgid "Create Plugin"
+msgstr ""
+
+msgid "Generate a server-side feature"
+msgstr ""
+
+msgid "New Template"
+msgstr ""
+
+msgid "components"
+msgstr ""
+
+msgid "Page and archive templates managed by Tekton"
+msgstr ""
+
+msgid "+ New Template"
+msgstr ""
+
+msgid "Content structure — Tekton's built-in field engine"
+msgstr ""
+
+msgid "No field groups yet. They'll be created automatically when the AI generates templates that need custom fields."
+msgstr ""
+
+msgid "Custom Post Types"
+msgstr ""
+
+msgid "No custom post types yet. They'll be created when the AI generates full-stack features."
+msgstr ""
+
+msgid "API Keys"
+msgstr ""
+
+msgid "AI"
+msgstr ""
+
+msgid "Provider"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Custom model..."
+msgstr ""
+
+msgid "Custom model ID"
+msgstr ""
+
+msgid "Max tokens"
+msgstr ""
+
+msgid "Not set"
+msgstr ""
+
+msgid "Enter API key..."
+msgstr ""
+
+msgid "Rendering"
+msgstr ""
+
+msgid "Optional"
+msgstr ""
+
+msgid "Override theme"
+msgstr ""
+
+msgid "Disable Gutenberg"
+msgstr ""
+
+msgid "Cache HTML"
+msgstr ""
+
+msgid "Minify output"
+msgstr ""
+
+msgid "ACF compatibility"
+msgstr ""
+
+msgid "Plugin Mode"
+msgstr ""
+
+msgid "Debug mode"
+msgstr ""
+
+msgid "API Connected"
+msgstr ""
+
+msgid "No API Key"
+msgstr ""
+
+msgid "Open Builder"
+msgstr ""
+
+msgid "Delete template"
+msgstr ""
+
+msgid "This will permanently delete the template and all its versions. This cannot be undone."
+msgstr ""
+
+msgid "editing"
+msgstr ""
+
+msgid "Select page"
+msgstr ""
+
+msgid "Template name..."
+msgstr ""
+
+msgid "Preview"
+msgstr ""
+
+msgid "Code"
+msgstr ""
+
+msgid "Tree"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "Component Tree"
+msgstr ""
+
+msgid "Version History"
+msgstr ""
+
+msgid "Generated Plugins"
+msgstr ""
+
+msgid "Preview ↗"
+msgstr ""
+
+msgid "Unpublish"
+msgstr ""
+
+msgid "View ↗"
+msgstr ""
+
+msgid "Publish"
+msgstr ""
+
+msgid "You"
+msgstr ""
+
+msgid "Tekton"
+msgstr ""
+
+msgid "summary of previous session"
+msgstr ""
+
+msgid "Preview updated"
+msgstr ""
+
+msgid "Generating structure…"
+msgstr ""
+
+msgid "Thinking..."
+msgstr ""
+
+msgid "Describe what to build or change..."
+msgstr ""
+
+msgid "Clear chat"
+msgstr ""
+
+msgid "Clearing..."
+msgstr ""
+
+msgid "Clear with summary"
+msgstr ""
+
+msgid "AI summarizes the conversation, then clears"
+msgstr ""
+
+msgid "Clear all"
+msgstr ""
+
+msgid "Remove entire chat history"
+msgstr ""
+
+msgid "shift+enter for newline"
+msgstr ""
+
+msgid "Structure JSON"
+msgstr ""
+
+msgid "Rendered HTML"
+msgstr ""
+
+msgid "No preview HTML generated yet."
+msgstr ""
+
+msgid "No template selected."
+msgstr ""
+
+msgid "Loading preview..."
+msgstr ""
+
+msgid "Use the chat to generate a page, or select a template from the dropdown above."
+msgstr ""
+
+msgid "No components yet."
+msgstr ""
+
+msgid "No versions yet."
+msgstr ""
+
+msgid "No field groups yet."
+msgstr ""
+
+msgid "Generated plugins will appear here."
+msgstr ""
+
+msgid "Use /plugin in the chat to generate one."
+msgstr ""
+
+msgid "CURRENT"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Rename"
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Version label..."
+msgstr ""
+
+msgid "AI generated"
+msgstr ""
+
+msgid "Manual edit"
+msgstr ""
+
+msgid "Restored"
+msgstr ""
+
+msgid "Published"
+msgstr ""
+
+msgid "just now"
+msgstr ""
+
+msgid "Attach image"
+msgstr ""
+
+msgid "Send message"
+msgstr ""
+
+msgid "Tekton Builder"
+msgstr ""
+
+msgid "Describe the page you want to build."
+msgstr ""
+
+msgid "Try: \"Create a landing page with a hero section, features grid, and call to action\""
+msgstr ""
+
+msgid "Describe what you want to build..."
+msgstr ""
+
+msgid "Select template..."
+msgstr ""
+
+msgid "Front Page"
+msgstr ""
+
+msgid "template-key"
+msgstr ""
+
+msgid "No preview yet. Start by describing a page in the chat."
+msgstr ""
+
+msgid "Preview error:"
+msgstr ""
+
+msgid "Page Preview"
+msgstr ""
+
+msgid "AI Provider"
+msgstr ""
+
+msgid "API Key"
+msgstr ""
+
+msgid "Select provider and enter API key to load models"
+msgstr ""
+
+msgid "Settings saved."
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "API keys are encrypted and stored in your WordPress database. They are never sent to the frontend."
+msgstr ""
+
+msgid "If your WordPress security salts are regenerated, you will need to re-enter your API keys."
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Auto (WordPress default)"
+msgstr ""

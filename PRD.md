@@ -757,13 +757,6 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 - [x] Stores: `chat.svelte.js`, `page.svelte.js`, `settings.svelte.js`, `dashboard.svelte.js`
 - [x] `api.js` — full REST API wrapper with SSE streaming
 
-### Missing — Phase 1 gaps
-
-- [ ] Component library JSON files (`component-library/core/*.json`, `layout/*.json`, etc.) — types are registered in PHP schema but no standalone JSON definitions
-- [ ] Stores listed in PRD but not yet created: `editor.svelte.js`, `versions.svelte.js`, `plugins.svelte.js`
-- [ ] JS helpers listed in PRD: `schema.js`, `diff.js`, `context.js`
-- [ ] Old components still in repo (unused): `ChatPanel.svelte`, `PreviewPanel.svelte`, `PageSelector.svelte`, `SettingsPanel.svelte` — should be cleaned up
-
 ### Missing — Phase 2 (Field Engine & Content Sources)
 
 - [ ] **Field Engine core** — `includes/field-engine/` directory entirely missing:
@@ -809,15 +802,13 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 
 ## 10. Implementation Phases
 
-### Phase 1 — Foundation (MVP) — ~85% complete
+### Phase 1 — Foundation (MVP) — COMPLETE
 
 Prompt → AI generates page → page renders on frontend.
 
-**Deliverables:** Plugin bootstrap, DB tables, bridge theme (auto-installed on activation), theme bridge, core component schema + renderer (section, container, heading, text, image, button, grid, flex-row, flex-column, link, list, spacer, divider, video, icon), storage (CRUD, basic versioning), multi-provider AI engine with SSE streaming (Anthropic, OpenAI, Google Gemini, OpenRouter), context builder (basic), REST API (generate/stream, structures, preview, settings, models), Svelte 5 builder UI (chat + preview + page selector + settings), design tokens, frontend CSS reset, Gutenberg fully disabled.
+**Deliverables:** Plugin bootstrap, DB tables, bridge theme (auto-installed on activation), theme bridge, core component schema + renderer (section, container, heading, text, image, button, grid, flex-row, flex-column, link, list, spacer, divider, video, icon), storage (CRUD, basic versioning), multi-provider AI engine with SSE streaming (Anthropic, OpenAI, Google Gemini, OpenRouter), context builder (basic), REST API (generate/stream, structures, preview, settings, models), Svelte 5 builder UI (chat + preview + page selector + settings), AI system prompt templates (base, page, fullstack, plugin, component, context), operations-based patching, design tokens, frontend CSS reset, Gutenberg fully disabled.
 
-**Remaining:** AI system prompt templates, component library JSON files, cleanup unused old components.
-
-**Exit criteria:** User types "Create a landing page with hero, features grid, and CTA" → sees it rendered. "Make the hero dark" → sees update.
+**Exit criteria:** User types "Create a landing page with hero, features grid, and CTA" → sees it rendered. "Make the hero dark" → sees update. ✅ Working.
 
 ### Phase 2 — Field Engine & Content Sources — not started
 

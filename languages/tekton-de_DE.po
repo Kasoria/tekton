@@ -1,0 +1,424 @@
+# German translation for Tekton
+# Copyright (C) 2024 Kasoria
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Tekton 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/kasoria/tekton/issues\n"
+"POT-Creation-Date: 2026-03-06 00:00+0000\n"
+"PO-Revision-Date: 2026-03-06 00:00+0000\n"
+"Last-Translator: Kasoria <info@kasoria.com>\n"
+"Language-Team: German\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Loading..."
+msgstr "Laden..."
+
+msgid "Saving..."
+msgstr "Speichern..."
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Discard"
+msgstr "Verwerfen"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Create"
+msgstr "Erstellen"
+
+msgid "Overview"
+msgstr "Übersicht"
+
+msgid "Templates"
+msgstr "Vorlagen"
+
+msgid "Fields"
+msgstr "Felder"
+
+msgid "Post Types"
+msgstr "Inhaltstypen"
+
+msgid "live"
+msgstr "live"
+
+msgid "Field Groups"
+msgstr "Feldgruppen"
+
+msgid "entries"
+msgstr "Einträge"
+
+msgid "Plugins"
+msgstr "Plugins"
+
+msgid "active"
+msgstr "aktiv"
+
+msgid "View all →"
+msgstr "Alle anzeigen →"
+
+msgid "No templates yet. Open the builder to create one."
+msgstr "Noch keine Vorlagen. Öffne den Builder, um eine zu erstellen."
+
+msgid "comp"
+msgstr "Komp."
+
+msgid "Global"
+msgstr "Global"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "DRAFT"
+msgstr "ENTWURF"
+
+msgid "Activity"
+msgstr "Aktivität"
+
+msgid "No activity yet."
+msgstr "Noch keine Aktivität."
+
+msgid "Quick Actions"
+msgstr "Schnellaktionen"
+
+msgid "Build a Page"
+msgstr "Seite erstellen"
+
+msgid "Start from a natural language prompt"
+msgstr "Starte mit einer natürlichen Sprachanweisung"
+
+msgid "Full-Stack Generate"
+msgstr "Full-Stack generieren"
+
+msgid "CPT + Fields + Template in one shot"
+msgstr "CPT + Felder + Vorlage in einem Schritt"
+
+msgid "Create Plugin"
+msgstr "Plugin erstellen"
+
+msgid "Generate a server-side feature"
+msgstr "Serverseitige Funktion generieren"
+
+msgid "New Template"
+msgstr "Neue Vorlage"
+
+msgid "components"
+msgstr "Komponenten"
+
+msgid "Page and archive templates managed by Tekton"
+msgstr "Seiten- und Archivvorlagen, verwaltet von Tekton"
+
+msgid "+ New Template"
+msgstr "+ Neue Vorlage"
+
+msgid "Content structure — Tekton's built-in field engine"
+msgstr "Inhaltsstruktur — Tektons integrierte Feld-Engine"
+
+msgid "No field groups yet. They'll be created automatically when the AI generates templates that need custom fields."
+msgstr "Noch keine Feldgruppen. Sie werden automatisch erstellt, wenn die KI Vorlagen generiert, die benutzerdefinierte Felder benötigen."
+
+msgid "Custom Post Types"
+msgstr "Benutzerdefinierte Inhaltstypen"
+
+msgid "No custom post types yet. They'll be created when the AI generates full-stack features."
+msgstr "Noch keine benutzerdefinierten Inhaltstypen. Sie werden erstellt, wenn die KI Full-Stack-Funktionen generiert."
+
+msgid "API Keys"
+msgstr "API-Schlüssel"
+
+msgid "AI"
+msgstr "KI"
+
+msgid "Provider"
+msgstr "Anbieter"
+
+msgid "Model"
+msgstr "Modell"
+
+msgid "Custom model..."
+msgstr "Benutzerdefiniertes Modell..."
+
+msgid "Custom model ID"
+msgstr "Benutzerdefinierte Modell-ID"
+
+msgid "Max tokens"
+msgstr "Max. Tokens"
+
+msgid "Not set"
+msgstr "Nicht gesetzt"
+
+msgid "Enter API key..."
+msgstr "API-Schlüssel eingeben..."
+
+msgid "Rendering"
+msgstr "Darstellung"
+
+msgid "Optional"
+msgstr "Optional"
+
+msgid "Override theme"
+msgstr "Theme überschreiben"
+
+msgid "Disable Gutenberg"
+msgstr "Gutenberg deaktivieren"
+
+msgid "Cache HTML"
+msgstr "HTML cachen"
+
+msgid "Minify output"
+msgstr "Ausgabe minimieren"
+
+msgid "ACF compatibility"
+msgstr "ACF-Kompatibilität"
+
+msgid "Plugin Mode"
+msgstr "Plugin-Modus"
+
+msgid "Debug mode"
+msgstr "Debug-Modus"
+
+msgid "API Connected"
+msgstr "API verbunden"
+
+msgid "No API Key"
+msgstr "Kein API-Schlüssel"
+
+msgid "Open Builder"
+msgstr "Builder öffnen"
+
+msgid "Delete template"
+msgstr "Vorlage löschen"
+
+msgid "This will permanently delete the template and all its versions. This cannot be undone."
+msgstr "Dies löscht die Vorlage und alle Versionen dauerhaft. Dies kann nicht rückgängig gemacht werden."
+
+msgid "editing"
+msgstr "bearbeite"
+
+msgid "Select page"
+msgstr "Seite auswählen"
+
+msgid "Template name..."
+msgstr "Vorlagenname..."
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Tree"
+msgstr "Baum"
+
+msgid "History"
+msgstr "Verlauf"
+
+msgid "Component Tree"
+msgstr "Komponentenbaum"
+
+msgid "Version History"
+msgstr "Versionsverlauf"
+
+msgid "Generated Plugins"
+msgstr "Generierte Plugins"
+
+msgid "Preview ↗"
+msgstr "Vorschau ↗"
+
+msgid "Unpublish"
+msgstr "Veröffentlichung aufheben"
+
+msgid "View ↗"
+msgstr "Ansehen ↗"
+
+msgid "Publish"
+msgstr "Veröffentlichen"
+
+msgid "You"
+msgstr "Du"
+
+msgid "Tekton"
+msgstr "Tekton"
+
+msgid "summary of previous session"
+msgstr "Zusammenfassung der vorherigen Sitzung"
+
+msgid "Preview updated"
+msgstr "Vorschau aktualisiert"
+
+msgid "Generating structure…"
+msgstr "Struktur wird generiert…"
+
+msgid "Thinking..."
+msgstr "Denke nach..."
+
+msgid "Describe what to build or change..."
+msgstr "Beschreibe, was erstellt oder geändert werden soll..."
+
+msgid "Clear chat"
+msgstr "Chat leeren"
+
+msgid "Clearing..."
+msgstr "Wird geleert..."
+
+msgid "Clear with summary"
+msgstr "Mit Zusammenfassung leeren"
+
+msgid "AI summarizes the conversation, then clears"
+msgstr "KI fasst das Gespräch zusammen und leert dann"
+
+msgid "Clear all"
+msgstr "Alles leeren"
+
+msgid "Remove entire chat history"
+msgstr "Gesamten Chatverlauf entfernen"
+
+msgid "shift+enter for newline"
+msgstr "Shift+Enter für neue Zeile"
+
+msgid "Structure JSON"
+msgstr "Struktur-JSON"
+
+msgid "Rendered HTML"
+msgstr "Gerendertes HTML"
+
+msgid "No preview HTML generated yet."
+msgstr "Noch kein Vorschau-HTML generiert."
+
+msgid "No template selected."
+msgstr "Keine Vorlage ausgewählt."
+
+msgid "Loading preview..."
+msgstr "Vorschau wird geladen..."
+
+msgid "Use the chat to generate a page, or select a template from the dropdown above."
+msgstr "Nutze den Chat, um eine Seite zu generieren, oder wähle eine Vorlage aus dem Dropdown oben."
+
+msgid "No components yet."
+msgstr "Noch keine Komponenten."
+
+msgid "No versions yet."
+msgstr "Noch keine Versionen."
+
+msgid "No field groups yet."
+msgstr "Noch keine Feldgruppen."
+
+msgid "Generated plugins will appear here."
+msgstr "Generierte Plugins werden hier angezeigt."
+
+msgid "Use /plugin in the chat to generate one."
+msgstr "Verwende /plugin im Chat, um eins zu generieren."
+
+msgid "CURRENT"
+msgstr "AKTUELL"
+
+msgid "Restore"
+msgstr "Wiederherstellen"
+
+msgid "Rename"
+msgstr "Umbenennen"
+
+msgid "Label"
+msgstr "Bezeichnung"
+
+msgid "Version label..."
+msgstr "Versionsbezeichnung..."
+
+msgid "AI generated"
+msgstr "KI-generiert"
+
+msgid "Manual edit"
+msgstr "Manuell bearbeitet"
+
+msgid "Restored"
+msgstr "Wiederhergestellt"
+
+msgid "Published"
+msgstr "Veröffentlicht"
+
+msgid "just now"
+msgstr "gerade eben"
+
+msgid "Attach image"
+msgstr "Bild anhängen"
+
+msgid "Send message"
+msgstr "Nachricht senden"
+
+msgid "Tekton Builder"
+msgstr "Tekton Builder"
+
+msgid "Describe the page you want to build."
+msgstr "Beschreibe die Seite, die du erstellen möchtest."
+
+msgid "Try: \"Create a landing page with a hero section, features grid, and call to action\""
+msgstr "Versuche: \"Erstelle eine Landingpage mit Hero-Bereich, Feature-Raster und Call-to-Action\""
+
+msgid "Describe what you want to build..."
+msgstr "Beschreibe, was du erstellen möchtest..."
+
+msgid "Select template..."
+msgstr "Vorlage auswählen..."
+
+msgid "Front Page"
+msgstr "Startseite"
+
+msgid "template-key"
+msgstr "vorlagen-schlüssel"
+
+msgid "No preview yet. Start by describing a page in the chat."
+msgstr "Noch keine Vorschau. Beschreibe eine Seite im Chat, um zu beginnen."
+
+msgid "Preview error:"
+msgstr "Vorschaufehler:"
+
+msgid "Page Preview"
+msgstr "Seitenvorschau"
+
+msgid "AI Provider"
+msgstr "KI-Anbieter"
+
+msgid "API Key"
+msgstr "API-Schlüssel"
+
+msgid "Select provider and enter API key to load models"
+msgstr "Anbieter auswählen und API-Schlüssel eingeben, um Modelle zu laden"
+
+msgid "Settings saved."
+msgstr "Einstellungen gespeichert."
+
+msgid "Save Settings"
+msgstr "Einstellungen speichern"
+
+msgid "API keys are encrypted and stored in your WordPress database. They are never sent to the frontend."
+msgstr "API-Schlüssel werden verschlüsselt in deiner WordPress-Datenbank gespeichert. Sie werden nie an das Frontend gesendet."
+
+msgid "If your WordPress security salts are regenerated, you will need to re-enter your API keys."
+msgstr "Wenn deine WordPress-Sicherheits-Salts neu generiert werden, musst du deine API-Schlüssel erneut eingeben."
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "Auto (WordPress default)"
+msgstr "Automatisch (WordPress-Standard)"

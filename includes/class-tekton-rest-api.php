@@ -624,6 +624,7 @@ class Tekton_REST_API {
 			'tekton_plugin_mode_enabled',
 			'tekton_design_tokens',
 			'tekton_debug_mode',
+			'tekton_locale',
 		];
 
 		foreach ( $allowed_keys as $key ) {

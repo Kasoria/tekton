@@ -3,10 +3,12 @@
   import { Card } from '$lib/components/ui/card/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Switch } from '$lib/components/ui/switch/index.js';
+  import { Select } from '$lib/components/ui/select/index.js';
   import { ConfirmDialog } from '$lib/components/ui/dialog/index.js';
   import { createDashboardStore } from '$lib/stores/dashboard.svelte.js';
   import { createSettingsStore } from '$lib/stores/settings.svelte.js';
   import { api } from '$lib/api.js';
+  import { t } from '$lib/i18n.svelte.js';
 
   let { onOpenBuilder, onOpenTemplate } = $props();
 
@@ -30,30 +32,30 @@
     tokens: 'bg-slate',
   };
 
-  const tabs = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'templates', label: 'Templates' },
-    { key: 'fields', label: 'Fields' },
-    { key: 'cpts', label: 'Post Types' },
-    { key: 'settings', label: 'Settings' },
-  ];
+  const tabs = $derived([
+    { key: 'overview', label: t('overview', 'Overview') },
+    { key: 'templates', label: t('templates', 'Templates') },
+    { key: 'fields', label: t('fields', 'Fields') },
+    { key: 'cpts', label: t('post_types', 'Post Types') },
+    { key: 'settings', label: t('settings', 'Settings') },
+  ]);
 
   let publishedCount = $derived(dashboard.templates.filter(t => t.status === 'published').length);
   let totalFields = $derived(dashboard.fieldGroups.reduce((a, f) => a + (f.field_count || 0), 0));
   let totalEntries = $derived(dashboard.postTypes.reduce((a, c) => a + (c.entry_count || 0), 0));
 
   const stats = $derived([
-    { n: dashboard.templates.length, label: 'Templates', sub: `${publishedCount} live` },
-    { n: dashboard.fieldGroups.length, label: 'Field Groups', sub: `${totalFields} fields` },
-    { n: dashboard.postTypes.length, label: 'Post Types', sub: `${totalEntries} entries` },
-    { n: dashboard.pluginStats.count, label: 'Plugins', sub: `${dashboard.pluginStats.active} active` },
+    { n: dashboard.templates.length, label: t('templates', 'Templates'), sub: `${publishedCount} ${t('live', 'live')}` },
+    { n: dashboard.fieldGroups.length, label: t('field_groups', 'Field Groups'), sub: `${totalFields} ${t('fields', 'fields')}` },
+    { n: dashboard.postTypes.length, label: t('post_types', 'Post Types'), sub: `${totalEntries} ${t('entries', 'entries')}` },
+    { n: dashboard.pluginStats.count, label: t('plugins', 'Plugins'), sub: `${dashboard.pluginStats.active} ${t('active', 'active')}` },
   ]);
 
-  const quickActions = [
-    { label: 'Build a Page', desc: 'Start from a natural language prompt', badge: 'AI' },
-    { label: 'Full-Stack Generate', desc: 'CPT + Fields + Template in one shot', badge: 'AI' },
-    { label: 'Create Plugin', desc: 'Generate a server-side feature', badge: 'Plugin Mode' },
-  ];
+  const quickActions = $derived([
+    { label: t('build_a_page', 'Build a Page'), desc: t('build_a_page_desc', 'Start from a natural language prompt'), badge: 'AI' },
+    { label: t('fullstack_generate', 'Full-Stack Generate'), desc: t('fullstack_generate_desc', 'CPT + Fields + Template in one shot'), badge: 'AI' },
+    { label: t('create_plugin', 'Create Plugin'), desc: t('create_plugin_desc', 'Generate a server-side feature'), badge: t('plugin_mode', 'Plugin Mode') },
+  ]);
 
   function relativeTime(dateStr) {
     if (!dateStr) return '';
@@ -86,23 +88,102 @@
   let saveMessage = $state('');
 
   const settingSections = $derived([
-    { title: 'AI', rows: [
-      { key: 'tekton_ai_provider', label: 'Provider', type: 'text' },
-      { key: 'tekton_ai_model', label: 'Model', type: 'text' },
-      { key: 'tekton_ai_max_tokens', label: 'Max tokens', type: 'text' },
+    { title: t('rendering', 'Rendering'), rows: [
+      { key: 'tekton_override_theme', label: t('override_theme', 'Override theme'), type: 'bool' },
+      { key: 'tekton_disable_gutenberg', label: t('disable_gutenberg', 'Disable Gutenberg'), type: 'bool' },
+      { key: 'tekton_cache_enabled', label: t('cache_html', 'Cache HTML'), type: 'bool' },
+      { key: 'tekton_minify_output', label: t('minify_output', 'Minify output'), type: 'bool' },
     ]},
-    { title: 'Rendering', rows: [
-      { key: 'tekton_override_theme', label: 'Override theme', type: 'bool' },
-      { key: 'tekton_disable_gutenberg', label: 'Disable Gutenberg', type: 'bool' },
-      { key: 'tekton_cache_enabled', label: 'Cache HTML', type: 'bool' },
-      { key: 'tekton_minify_output', label: 'Minify output', type: 'bool' },
-    ]},
-    { title: 'Optional', rows: [
-      { key: 'tekton_acf_compat', label: 'ACF compatibility', type: 'bool' },
-      { key: 'tekton_plugin_mode_enabled', label: 'Plugin Mode', type: 'bool' },
-      { key: 'tekton_debug_mode', label: 'Debug mode', type: 'bool' },
+    { title: t('optional', 'Optional'), rows: [
+      { key: 'tekton_acf_compat', label: t('acf_compatibility', 'ACF compatibility'), type: 'bool' },
+      { key: 'tekton_plugin_mode_enabled', label: t('plugin_mode', 'Plugin Mode'), type: 'bool' },
+      { key: 'tekton_debug_mode', label: t('debug_mode', 'Debug mode'), type: 'bool' },
     ]},
   ]);
+
+  // AI settings state
+  let aiProvider = $state('');
+  let aiModel = $state('');
+  let useCustomModel = $state(false);
+  let customModelId = $state('');
+
+  $effect(() => {
+    const s = settingsStore.settings;
+    if (s.tekton_ai_provider && !aiProvider) aiProvider = s.tekton_ai_provider;
+    if (s.tekton_ai_model && !aiModel) aiModel = s.tekton_ai_model;
+  });
+
+  $effect(() => {
+    if (aiProvider) {
+      settingsStore.loadModels(aiProvider);
+    }
+  });
+
+  let providerOptions = $derived(
+    Object.entries(getProviders()).map(([slug, info]) => ({ value: slug, label: info.name || slug }))
+  );
+
+  let modelOptions = $derived([
+    ...settingsStore.models.map(m => ({ value: m.id, label: m.name })),
+    { value: '__custom__', label: t('custom_model', 'Custom model...') },
+  ]);
+
+  const languageOptions = [
+    { value: '', label: t('language_auto', 'Auto (WordPress default)') },
+    { value: 'en_US', label: 'English' },
+    { value: 'de_DE', label: 'Deutsch' },
+  ];
+
+  async function handleProviderChange(val) {
+    aiProvider = val;
+    useCustomModel = false;
+    customModelId = '';
+    await updateSetting('tekton_ai_provider', aiProvider);
+    await settingsStore.loadModels(val);
+    // Auto-select first model for the new provider
+    if (settingsStore.models.length > 0) {
+      aiModel = settingsStore.models[0].id;
+      await updateSetting('tekton_ai_model', aiModel);
+    } else {
+      aiModel = '';
+    }
+  }
+
+  async function handleModelChange(val) {
+    if (val === '__custom__') {
+      useCustomModel = true;
+      customModelId = '';
+    } else {
+      useCustomModel = false;
+      customModelId = '';
+      aiModel = val;
+      await updateSetting('tekton_ai_model', val);
+    }
+  }
+
+  async function handleCustomModelSave() {
+    const id = customModelId.trim();
+    if (!id) return;
+    aiModel = id;
+    await updateSetting('tekton_ai_model', id);
+    // Stay in custom mode since this model won't be in the dropdown list
+  }
+
+  function handleCustomModelCancel() {
+    useCustomModel = false;
+    customModelId = '';
+    // Revert to first model in list if available
+    if (settingsStore.models.length > 0) {
+      aiModel = settingsStore.models[0].id;
+      updateSetting('tekton_ai_model', aiModel);
+    }
+  }
+
+  async function handleLocaleChange(val) {
+    await updateSetting('tekton_locale', val);
+    // Reload the page to apply the new locale translations
+    window.location.reload();
+  }
 
   function requestDeleteTemplate(templateKey) {
     if (GLOBAL_TEMPLATES.includes(templateKey)) return;
@@ -181,15 +262,15 @@
         {#if getMaskedKey(getSettingValue('tekton_ai_provider') || 'anthropic')}
           <div class="flex items-center gap-[5px] px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
             <div class="w-[5px] h-[5px] rounded-full bg-green"></div>
-            <span class="text-[12px] text-green font-medium">API Connected</span>
+            <span class="text-[12px] text-green font-medium">{t('api_connected', 'API Connected')}</span>
           </div>
         {:else}
           <div class="flex items-center gap-[5px] px-2.5 py-1 rounded-[5px] bg-gold/5 border border-gold/10">
             <div class="w-[5px] h-[5px] rounded-full bg-gold"></div>
-            <span class="text-[12px] text-gold font-medium">No API Key</span>
+            <span class="text-[12px] text-gold font-medium">{t('no_api_key', 'No API Key')}</span>
           </div>
         {/if}
-        <Button onclick={onOpenBuilder}>Open Builder</Button>
+        <Button onclick={onOpenBuilder}>{t('open_builder', 'Open Builder')}</Button>
       </div>
     </div>
   </header>
@@ -197,18 +278,18 @@
   <div class="max-w-[1120px] mx-auto px-10">
     <!-- Nav Tabs -->
     <nav class="flex gap-0 border-b border-border mb-8 pt-1">
-      {#each tabs as t}
+      {#each tabs as tb}
         <button
-          class="px-5 py-3 bg-transparent border-none text-[13px] font-medium cursor-pointer font-body transition-all -mb-px {tab === t.key ? 'border-b-2 border-copper text-foreground' : 'border-b-2 border-transparent text-muted'}"
-          onclick={() => (tab = t.key)}
+          class="px-5 py-3 bg-transparent border-none text-[13px] font-medium cursor-pointer font-body transition-all -mb-px {tab === tb.key ? 'border-b-2 border-copper text-foreground' : 'border-b-2 border-transparent text-muted'}"
+          onclick={() => (tab = tb.key)}
         >
-          {t.label}
+          {tb.label}
         </button>
       {/each}
     </nav>
 
     {#if dashboard.loading}
-      <div class="flex items-center justify-center py-20 text-muted text-sm">Loading...</div>
+      <div class="flex items-center justify-center py-20 text-muted text-sm">{t('loading', 'Loading...')}</div>
     {:else if dashboard.error}
       <div class="flex items-center justify-center py-20 text-gold text-sm">{dashboard.error}</div>
 
@@ -231,40 +312,40 @@
         <div class="grid grid-cols-[1fr_340px] gap-5 mb-8">
           <div>
             <div class="flex items-baseline justify-between mb-3.5">
-              <h2 class="font-heading text-xl font-bold tracking-tight">Templates</h2>
+              <h2 class="font-heading text-xl font-bold tracking-tight">{t('templates', 'Templates')}</h2>
               {#if dashboard.templates.length > 0}
-                <button class="bg-transparent border-none text-copper cursor-pointer text-xs font-medium font-body" onclick={() => (tab = 'templates')}>View all →</button>
+                <button class="bg-transparent border-none text-copper cursor-pointer text-xs font-medium font-body" onclick={() => (tab = 'templates')}>{t('view_all', 'View all →')}</button>
               {/if}
             </div>
             {#if dashboard.templates.length === 0}
               <Card class="p-8 text-center">
-                <div class="text-muted text-sm">No templates yet. Open the builder to create one.</div>
+                <div class="text-muted text-sm">{t('no_templates_yet', 'No templates yet. Open the builder to create one.')}</div>
               </Card>
             {:else}
               <Card>
-                {#each dashboard.templates.slice(0, 6) as t, i}
+                {#each dashboard.templates.slice(0, 6) as tpl, i}
                   <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div class="flex items-center justify-between px-[18px] py-3 cursor-pointer transition-colors hover:bg-card-hover group {i < Math.min(dashboard.templates.length, 6) - 1 ? 'border-b border-border-subtle' : ''}" onclick={() => onOpenTemplate?.(t.template_key)}>
+                  <div class="flex items-center justify-between px-[18px] py-3 cursor-pointer transition-colors hover:bg-card-hover group {i < Math.min(dashboard.templates.length, 6) - 1 ? 'border-b border-border-subtle' : ''}" onclick={() => onOpenTemplate?.(tpl.template_key)}>
                     <div class="flex items-center gap-3.5">
-                      <div class="w-[3px] h-7 rounded-sm {t.status === 'published' ? 'bg-copper' : 'bg-border'}"></div>
+                      <div class="w-[3px] h-7 rounded-sm {tpl.status === 'published' ? 'bg-copper' : 'bg-border'}"></div>
                       <div>
-                        <div class="text-[13px] font-medium">{t.title || t.template_key}</div>
-                        <div class="text-[12px] text-muted font-mono mt-px">{t.template_key}</div>
+                        <div class="text-[13px] font-medium">{tpl.title || tpl.template_key}</div>
+                        <div class="text-[12px] text-muted font-mono mt-px">{tpl.template_key}</div>
                       </div>
                     </div>
                     <div class="flex items-center gap-4">
-                      <span class="text-[12px] text-dim">{t.component_count || 0} comp</span>
-                      <span class="text-[12px] text-dim">{relativeTime(t.updated_at)}</span>
-                      {#if GLOBAL_TEMPLATES.includes(t.template_key)}
-                        <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                      <span class="text-[12px] text-dim">{tpl.component_count || 0} {t('comp', 'comp')}</span>
+                      <span class="text-[12px] text-dim">{relativeTime(tpl.updated_at)}</span>
+                      {#if GLOBAL_TEMPLATES.includes(tpl.template_key)}
+                        <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">{t('global', 'Global')}</span>
                       {:else}
-                        <span class="text-[12px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
-                          {t.status === 'published' ? 'LIVE' : 'DRAFT'}
+                        <span class="text-[12px] font-semibold {tpl.status === 'published' ? 'text-green' : 'text-gold'}">
+                          {tpl.status === 'published' ? t('status_live', 'LIVE') : t('status_draft', 'DRAFT')}
                         </span>
                         <button
                           class="opacity-0 group-hover:opacity-100 text-dim hover:text-gold text-[12px] bg-transparent border-none cursor-pointer transition-opacity"
-                          onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
-                          title="Delete"
+                          onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(tpl.template_key); }}
+                          title={t('delete', 'Delete')}
                         >×</button>
                       {/if}
                     </div>
@@ -276,10 +357,10 @@
 
           <!-- Activity -->
           <div>
-            <h2 class="font-heading text-xl font-bold tracking-tight mb-3.5">Activity</h2>
+            <h2 class="font-heading text-xl font-bold tracking-tight mb-3.5">{t('activity', 'Activity')}</h2>
             {#if dashboard.activity.length === 0}
               <Card class="p-8 text-center">
-                <div class="text-muted text-sm">No activity yet.</div>
+                <div class="text-muted text-sm">{t('no_activity_yet', 'No activity yet.')}</div>
               </Card>
             {:else}
               <Card class="py-2">
@@ -303,7 +384,7 @@
 
         <!-- Quick Actions -->
         <div>
-          <h2 class="font-heading text-xl font-bold tracking-tight mb-3.5">Quick Actions</h2>
+          <h2 class="font-heading text-xl font-bold tracking-tight mb-3.5">{t('quick_actions', 'Quick Actions')}</h2>
           <div class="grid grid-cols-3 gap-3.5">
             {#each quickActions as a}
               <button class="p-[24px_22px] rounded-[10px] text-left border border-border bg-card cursor-pointer transition-colors hover:border-dim relative overflow-hidden" onclick={onOpenBuilder}>
@@ -324,22 +405,22 @@
       <div class="pb-15">
         <div class="flex justify-between items-baseline mb-6">
           <div>
-            <h2 class="font-heading text-2xl font-extrabold tracking-tight">Templates</h2>
-            <p class="text-[13px] text-muted mt-1">Page and archive templates managed by Tekton</p>
+            <h2 class="font-heading text-2xl font-extrabold tracking-tight">{t('templates_heading', 'Templates')}</h2>
+            <p class="text-[13px] text-muted mt-1">{t('templates_desc', 'Page and archive templates managed by Tekton')}</p>
           </div>
-          <Button onclick={onOpenBuilder}>+ New Template</Button>
+          <Button onclick={onOpenBuilder}>{t('new_template_btn', '+ New Template')}</Button>
         </div>
 
         <div class="grid grid-cols-3 gap-3.5">
-          {#each dashboard.templates as t}
+          {#each dashboard.templates as tpl}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <Card class="cursor-pointer transition-colors hover:border-dim group relative {GLOBAL_TEMPLATES.includes(t.template_key) ? 'border-copper/20' : ''}" onclick={() => onOpenTemplate?.(t.template_key)}>
+            <Card class="cursor-pointer transition-colors hover:border-dim group relative {GLOBAL_TEMPLATES.includes(tpl.template_key) ? 'border-copper/20' : ''}" onclick={() => onOpenTemplate?.(tpl.template_key)}>
               <!-- Delete button (not for globals) -->
-              {#if !GLOBAL_TEMPLATES.includes(t.template_key)}
+              {#if !GLOBAL_TEMPLATES.includes(tpl.template_key)}
                 <button
                   class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-background/80 border border-border text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all z-10"
-                  onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(t.template_key); }}
-                  title="Delete template"
+                  onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(tpl.template_key); }}
+                  title={t('delete_template', 'Delete template')}
                 >×</button>
               {/if}
               <!-- Skeleton preview -->
@@ -355,22 +436,22 @@
               </div>
               <div class="px-3.5 pb-3.5 pt-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm font-semibold">{t.title || t.template_key}</span>
-                  {#if GLOBAL_TEMPLATES.includes(t.template_key)}
-                    <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">Global</span>
+                  <span class="text-sm font-semibold">{tpl.title || tpl.template_key}</span>
+                  {#if GLOBAL_TEMPLATES.includes(tpl.template_key)}
+                    <span class="text-[12px] font-semibold text-copper/70 uppercase tracking-wider">{t('global', 'Global')}</span>
                   {:else}
-                    <span class="text-[12px] font-semibold {t.status === 'published' ? 'text-green' : 'text-gold'}">
-                      {t.status === 'published' ? 'LIVE' : 'DRAFT'}
+                    <span class="text-[12px] font-semibold {tpl.status === 'published' ? 'text-green' : 'text-gold'}">
+                      {tpl.status === 'published' ? t('status_live', 'LIVE') : t('status_draft', 'DRAFT')}
                     </span>
                   {/if}
                 </div>
-                <div class="text-[12px] text-muted font-mono mt-[3px]">{t.template_key}</div>
+                <div class="text-[12px] text-muted font-mono mt-[3px]">{tpl.template_key}</div>
                 <div class="flex gap-2.5 mt-2 text-[12px] text-dim">
-                  <span>v{t.version || 1}</span>
+                  <span>v{tpl.version || 1}</span>
                   <span>·</span>
-                  <span>{t.component_count || 0} components</span>
+                  <span>{tpl.component_count || 0} {t('components', 'components')}</span>
                   <span>·</span>
-                  <span>{relativeTime(t.updated_at)}</span>
+                  <span>{relativeTime(tpl.updated_at)}</span>
                 </div>
               </div>
             </Card>
@@ -378,7 +459,7 @@
           <!-- New template card -->
           <button class="rounded-[10px] border border-dashed border-border min-h-[170px] flex flex-col items-center justify-center gap-2 cursor-pointer bg-transparent" onclick={onOpenBuilder}>
             <div class="w-9 h-9 rounded-lg bg-card-hover flex items-center justify-center text-muted text-lg">+</div>
-            <span class="text-xs text-muted">New Template</span>
+            <span class="text-xs text-muted">{t('new_template', 'New Template')}</span>
           </button>
         </div>
       </div>
@@ -388,14 +469,14 @@
       <div class="pb-15">
         <div class="flex justify-between items-baseline mb-6">
           <div>
-            <h2 class="font-heading text-2xl font-extrabold tracking-tight">Field Groups</h2>
-            <p class="text-[13px] text-muted mt-1">Content structure — Tekton's built-in field engine</p>
+            <h2 class="font-heading text-2xl font-extrabold tracking-tight">{t('field_groups_heading', 'Field Groups')}</h2>
+            <p class="text-[13px] text-muted mt-1">{t('field_groups_desc', "Content structure — Tekton's built-in field engine")}</p>
           </div>
         </div>
 
         {#if dashboard.fieldGroups.length === 0}
           <Card class="p-8 text-center">
-            <div class="text-muted text-sm">No field groups yet. They'll be created automatically when the AI generates templates that need custom fields.</div>
+            <div class="text-muted text-sm">{t('no_field_groups_yet', "No field groups yet. They'll be created automatically when the AI generates templates that need custom fields.")}</div>
           </Card>
         {:else}
           <div class="flex flex-col gap-2">
@@ -415,7 +496,7 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
-                  <span class="text-xs text-muted">{fg.field_count || 0} fields</span>
+                  <span class="text-xs text-muted">{fg.field_count || 0} {t('fields', 'fields')}</span>
                   <Badge variant={fg.source === 'ai' ? 'ai' : 'manual'}>{fg.source}</Badge>
                 </div>
               </Card>
@@ -427,10 +508,10 @@
     <!-- POST TYPES TAB -->
     {:else if tab === 'cpts'}
       <div class="pb-15">
-        <h2 class="font-heading text-2xl font-extrabold tracking-tight mb-6">Custom Post Types</h2>
+        <h2 class="font-heading text-2xl font-extrabold tracking-tight mb-6">{t('custom_post_types', 'Custom Post Types')}</h2>
         {#if dashboard.postTypes.length === 0}
           <Card class="p-8 text-center">
-            <div class="text-muted text-sm">No custom post types yet. They'll be created when the AI generates full-stack features.</div>
+            <div class="text-muted text-sm">{t('no_post_types_yet', "No custom post types yet. They'll be created when the AI generates full-stack features.")}</div>
           </Card>
         {:else}
           <div class="grid grid-cols-3 gap-3.5">
@@ -442,10 +523,10 @@
                 </div>
                 <div class="text-[12px] text-muted font-mono mb-2.5">{c.slug}</div>
                 <div class="flex gap-2 text-xs text-muted-foreground">
-                  <span>{c.entry_count || 0} entries</span>
+                  <span>{c.entry_count || 0} {t('entries', 'entries')}</span>
                   {#if c.taxonomies && c.taxonomies.length > 0}
                     <span class="text-dim">·</span>
-                    <span>{c.taxonomies.map(t => t.slug || t).join(', ')}</span>
+                    <span>{c.taxonomies.map(tx => tx.slug || tx).join(', ')}</span>
                   {/if}
                 </div>
               </Card>
@@ -457,36 +538,87 @@
     <!-- SETTINGS TAB -->
     {:else if tab === 'settings'}
       <div class="max-w-[560px] pb-15">
-        <h2 class="font-heading text-2xl font-extrabold tracking-tight mb-6">Settings</h2>
+        <h2 class="font-heading text-2xl font-extrabold tracking-tight mb-6">{t('settings', 'Settings')}</h2>
 
         <!-- API Keys Section -->
         <Card class="mb-4">
           <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
-            API Keys
+            {t('api_keys', 'API Keys')}
           </div>
           {#each Object.entries(getProviders()) as [slug, providerInfo], i}
             <div class="flex items-center justify-between px-[18px] py-2.5 {i < Object.keys(getProviders()).length - 1 ? 'border-b border-border-subtle' : ''}">
               <span class="text-[13px] text-foreground/80">{providerInfo.name || slug}</span>
               <div class="flex items-center gap-2">
-                {#if apiKeyEditing[slug]}
+                {#if apiKeyEditing[slug] || !getMaskedKey(slug)}
                   <input
                     type="password"
                     class="text-xs text-foreground font-mono px-2.5 py-1 bg-background rounded-[5px] border border-border w-48 outline-none focus:border-copper"
-                    placeholder="Enter API key..."
+                    placeholder={t('enter_api_key', 'Enter API key...')}
                     bind:value={apiKeyInputs[slug]}
                     onkeydown={(e) => e.key === 'Enter' && saveApiKey(slug)}
                   />
-                  <Button size="sm" onclick={() => saveApiKey(slug)}>Save</Button>
-                  <Button size="sm" variant="ghost" onclick={() => (apiKeyEditing[slug] = false)}>Cancel</Button>
+                  <Button size="sm" onclick={() => saveApiKey(slug)}>{t('save', 'Save')}</Button>
+                  {#if getMaskedKey(slug)}
+                    <Button size="sm" variant="ghost" onclick={() => (apiKeyEditing[slug] = false)}>{t('cancel', 'Cancel')}</Button>
+                  {/if}
                 {:else}
                   <span class="text-xs text-muted font-mono px-2.5 py-1 bg-background rounded-[5px] border border-border">
-                    {getMaskedKey(slug) || 'Not set'}
+                    {getMaskedKey(slug)}
                   </span>
-                  <Button size="sm" variant="ghost" onclick={() => startEditingKey(slug)}>Edit</Button>
+                  <Button size="sm" variant="ghost" onclick={() => startEditingKey(slug)}>{t('edit', 'Edit')}</Button>
                 {/if}
               </div>
             </div>
           {/each}
+        </Card>
+
+        <!-- AI Settings -->
+        <Card class="mb-4">
+          <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
+            {t('ai', 'AI')}
+          </div>
+          <!-- Provider -->
+          <div class="flex items-center justify-between px-[18px] py-2.5 border-b border-border-subtle">
+            <span class="text-[13px] text-foreground/80">{t('provider', 'Provider')}</span>
+            <Select
+              bind:value={aiProvider}
+              options={providerOptions}
+              onchange={handleProviderChange}
+            />
+          </div>
+          <!-- Model -->
+          <div class="flex items-center justify-between px-[18px] py-2.5 border-b border-border-subtle">
+            <span class="text-[13px] text-foreground/80">{t('model', 'Model')}</span>
+            <div class="flex items-center gap-2">
+              {#if useCustomModel}
+                <input
+                  type="text"
+                  class="text-xs text-foreground font-mono px-2.5 py-1 bg-background rounded-[5px] border border-border w-48 outline-none focus:border-copper text-right"
+                  placeholder={t('custom_model_id', 'Custom model ID')}
+                  bind:value={customModelId}
+                  onkeydown={(e) => e.key === 'Enter' && handleCustomModelSave()}
+                />
+                <Button size="sm" onclick={handleCustomModelSave}>{t('save', 'Save')}</Button>
+                <Button size="sm" variant="ghost" onclick={handleCustomModelCancel}>{t('cancel', 'Cancel')}</Button>
+              {:else}
+                <Select
+                  bind:value={aiModel}
+                  options={modelOptions}
+                  onchange={handleModelChange}
+                />
+              {/if}
+            </div>
+          </div>
+          <!-- Max tokens -->
+          <div class="flex items-center justify-between px-[18px] py-2.5">
+            <span class="text-[13px] text-foreground/80">{t('max_tokens', 'Max tokens')}</span>
+            <input
+              type="text"
+              class="text-xs text-muted font-body px-2.5 py-1 bg-background rounded-[5px] border border-border outline-none focus:border-copper w-48 text-right"
+              value={getSettingValue('tekton_ai_max_tokens')}
+              onchange={(e) => handleSettingInput('tekton_ai_max_tokens', e)}
+            />
+          </div>
         </Card>
 
         {#each settingSections as sec}
@@ -514,6 +646,21 @@
             {/each}
           </Card>
         {/each}
+
+        <!-- Language -->
+        <Card class="mb-4">
+          <div class="px-[18px] py-2.5 border-b border-border text-[12px] font-semibold uppercase tracking-[1.5px] text-muted">
+            {t('language', 'Language')}
+          </div>
+          <div class="flex items-center justify-between px-[18px] py-2.5">
+            <span class="text-[13px] text-foreground/80">{t('language', 'Language')}</span>
+            <Select
+              value={getSettingValue('tekton_locale') || ''}
+              options={languageOptions}
+              onchange={handleLocaleChange}
+            />
+          </div>
+        </Card>
       </div>
     {/if}
   </div>
@@ -521,9 +668,9 @@
 
 <ConfirmDialog
   open={deleteConfirm.open}
-  title="Delete template"
-  description="This will permanently delete &ldquo;{deleteConfirm.key}&rdquo; and all its versions. This cannot be undone."
-  confirmLabel="Delete"
+  title={t('delete_template', 'Delete template')}
+  description={t('delete_template_desc', 'This will permanently delete the template and all its versions. This cannot be undone.')}
+  confirmLabel={t('delete', 'Delete')}
   onconfirm={confirmDeleteTemplate}
   oncancel={() => (deleteConfirm = { open: false, key: '' })}
 />
