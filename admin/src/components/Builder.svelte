@@ -699,14 +699,14 @@
                     onclick={() => clearChat(true)}
                   >
                     <span class="text-[12px] text-foreground font-medium">Clear with summary</span>
-                    <span class="text-[10px] text-dim leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
+                    <span class="text-[10px] text-muted leading-tight mt-0.5">AI summarizes the conversation, then clears</span>
                   </button>
                   <button
                     class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
                     onclick={() => clearChat(false)}
                   >
                     <span class="text-[12px] text-foreground font-medium">Clear all</span>
-                    <span class="text-[10px] text-dim leading-tight mt-0.5">Remove entire chat history</span>
+                    <span class="text-[10px] text-muted leading-tight mt-0.5">Remove entire chat history</span>
                   </button>
                 </div>
               {/if}
