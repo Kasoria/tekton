@@ -242,16 +242,21 @@ class Tekton_Storage {
 			ARRAY_A
 		);
 
+		if ( ! $rows ) {
+			return [];
+		}
+
 		// Decode metadata JSON for each row.
-		foreach ( ( $rows ?: [] ) as &$row ) {
+		foreach ( $rows as &$row ) {
 			if ( ! empty( $row['metadata'] ) ) {
 				$row['metadata'] = json_decode( $row['metadata'], true ) ?: null;
 			} else {
 				$row['metadata'] = null;
 			}
 		}
+		unset( $row );
 
-		return $rows ?: [];
+		return $rows;
 	}
 
 	public function add_chat_message( string $template_key, string $role, string $content, ?array $metadata = null ): int {
