@@ -102,8 +102,9 @@ class Tekton_Renderer {
 	}
 
 	private function render_heading( array $c, int $post_id ): string {
-		$level   = (int) ( $c['props']['level'] ?? 2 );
-		$level   = max( 1, min( 6, $level ) );
+		$raw     = $c['props']['level'] ?? 2;
+		$level   = (int) preg_replace( '/[^0-9]/', '', (string) $raw );
+		$level   = max( 1, min( 6, $level ?: 2 ) );
 		$tag     = 'h' . $level;
 		$attrs   = $this->build_attributes( $c, 'tekton-heading' );
 		$content = $this->resolve_prop_content( $c, 'content', $post_id );

@@ -111,7 +111,7 @@ Every component follows this structure:
 - `section` — Top-level page section (tag: section/div/main/aside/article)
 - `container` — Width-constrained wrapper (max-width: 1200px, auto margins, padding). Use ONLY for content containers, NOT for decorative/background layers.
 - `div` — Plain div with no base styles. Use for decorative layers, background overlays, absolute-positioned elements, and any wrapper that should not have layout constraints.
-- `heading` — h1-h6 heading (level, content). **The `level` prop controls the semantic tag (h1-h6).** Style with CSS — do not choose a heading level for its visual size.
+- `heading` — h1-h6 heading (level, content). **The `level` prop is a number (1-6) that controls the semantic tag.** Example: `"level": 2` → `<h2>`. Style with CSS — do not choose a heading level for its visual size.
 - `text` — Paragraph or text block (content, tagName: p/span/div)
 - `image` — Image element (src, alt, caption)
 - `button` — Clickable button/link (text, href, target, rel)
