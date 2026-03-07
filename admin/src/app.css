@@ -1,6 +1,49 @@
 @import "tailwindcss";
 
 @theme {
+  --color-background: #f8f6f3;
+  --color-foreground: #1a1816;
+  --color-card: #ffffff;
+  --color-card-hover: #f0ede8;
+  --color-border: #e2ddd6;
+  --color-border-subtle: #e2ddd640;
+  --color-copper: #b8702f;
+  --color-gold: #a8872e;
+  --color-green: #5a8a4a;
+  --color-slate: #5a6d7a;
+  --color-muted: #8a847e;
+  --color-muted-foreground: #6b655f;
+  --color-dim: #b0a99f;
+  --color-code-bg: #f0ede8;
+  --color-preview-bg: #e8e4de;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+  --font-heading: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+/* Light mode (default) */
+#tekton-app {
+  --color-background: #f8f6f3;
+  --color-foreground: #1a1816;
+  --color-card: #ffffff;
+  --color-card-hover: #f0ede8;
+  --color-border: #e2ddd6;
+  --color-border-subtle: #e2ddd640;
+  --color-copper: #b8702f;
+  --color-gold: #a8872e;
+  --color-green: #5a8a4a;
+  --color-slate: #5a6d7a;
+  --color-muted: #8a847e;
+  --color-muted-foreground: #6b655f;
+  --color-dim: #b0a99f;
+  --color-code-bg: #f0ede8;
+  --color-preview-bg: #e8e4de;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode */
+#tekton-app.dark {
   --color-background: #1a1816;
   --color-foreground: #ede8e3;
   --color-card: #1e1c19;
@@ -14,9 +57,9 @@
   --color-muted: #7a746e;
   --color-muted-foreground: #a09a93;
   --color-dim: #5c5753;
-  --font-heading: 'Bricolage Grotesque', sans-serif;
-  --font-body: 'Outfit', sans-serif;
-  --font-mono: 'Fira Code', monospace;
+  --color-code-bg: #0d0c0b;
+  --color-preview-bg: #151311;
+  --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
 /*
@@ -71,7 +114,6 @@
 /* Buttons — WP sets all sorts of button styles */
 #tekton-app button {
   font-family: var(--font-body);
-  color: inherit;
   line-height: inherit;
 }
 

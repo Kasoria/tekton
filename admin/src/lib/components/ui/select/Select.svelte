@@ -203,7 +203,7 @@
     border: 1px solid var(--color-dim);
     border-radius: 8px;
     padding: 3px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 40px var(--color-shadow);
   }
 
   .tk-select-search {
@@ -256,7 +256,7 @@
   }
 
   .tk-select-option:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-card-hover);
     color: var(--color-foreground);
   }
 

@@ -5,8 +5,11 @@
   import { createPageStore } from '$lib/stores/page.svelte.js';
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
+  import { createThemeStore } from '$lib/stores/theme.svelte.js';
 
   let { onBack, initialTemplateKey = null } = $props();
+
+  const theme = createThemeStore();
 
   const chat = createChatStore();
   const page = createPageStore();
@@ -23,6 +26,7 @@
   let newTemplateName = $state('');
   let showNewTemplate = $state(false);
   let attachedImages = $state([]);
+  let imageWarning = $state('');
   let fileInputEl;
   let showClearMenu = $state(false);
   let isClearing = $state(false);
@@ -133,11 +137,19 @@
     }
   }
 
+  function showImageWarning(msg) {
+    imageWarning = msg;
+    setTimeout(() => { imageWarning = ''; }, 4000);
+  }
+
   function handleImageUpload(e) {
     const files = Array.from(e.target.files || []);
     for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
-      if (file.size > 5 * 1024 * 1024) continue; // 5MB limit
+      if (file.size > 20 * 1024 * 1024) {
+        showImageWarning(t('image_too_large', 'Image too large (max 20 MB)'));
+        continue;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result.split(',')[1];
@@ -318,7 +330,11 @@
       if (!item.type.startsWith('image/')) continue;
       e.preventDefault();
       const file = item.getAsFile();
-      if (!file || file.size > 5 * 1024 * 1024) continue;
+      if (!file) continue;
+      if (file.size > 20 * 1024 * 1024) {
+        showImageWarning(t('image_too_large', 'Image too large (max 20 MB)'));
+        continue;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result.split(',')[1];
@@ -475,7 +491,7 @@
         {#if showPages}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="fixed inset-0 z-[29]" onclick={() => (showPages = false)}></div>
-          <div class="absolute top-[calc(100%+6px)] -left-1 w-[230px] z-30 bg-card-hover border border-dim rounded-[10px] p-[5px] shadow-[0_16px_48px_#00000060]">
+          <div class="absolute top-[calc(100%+6px)] -left-1 w-[230px] z-30 bg-card-hover border border-dim rounded-[10px] p-[5px] shadow-[0_16px_48px_var(--color-shadow)]">
             <!-- Global templates -->
             {#each page.structures.filter(s => GLOBAL_TEMPLATES.includes(s.template_key)) as p}
               <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''}">
@@ -526,7 +542,7 @@
                     autofocus
                   />
                   <button
-                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-background text-[12px] font-medium font-body cursor-pointer"
+                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-white text-[12px] font-medium font-body cursor-pointer"
                     onclick={createTemplate}
                   >{t('add', 'Add')}</button>
                 </div>
@@ -597,6 +613,20 @@
 
     <!-- Right: actions -->
     <div class="flex items-center gap-2">
+      <button
+        class="w-7 h-6 flex items-center justify-center rounded bg-transparent border-none text-muted hover:text-foreground cursor-pointer transition-colors"
+        onclick={() => theme.toggle()}
+        title={theme.mode === 'system' ? 'Theme: System' : theme.mode === 'light' ? 'Theme: Light' : 'Theme: Dark'}
+      >
+        {#if theme.mode === 'system'}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="15" x2="11" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        {:else if theme.resolved === 'light'}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.75 3.75l1.06 1.06M11.19 11.19l1.06 1.06M12.25 3.75l-1.06 1.06M4.81 11.19l-1.06 1.06" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5a5.5 5.5 0 01-7-7 5.5 5.5 0 107 7z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {/if}
+      </button>
+      <div class="w-px h-4 bg-border"></div>
       {#if currentPage}
         <span class="text-[12px] text-muted-foreground font-mono">v{versions[0]?.version_number || '–'}</span>
       {/if}
@@ -685,6 +715,10 @@
 
       <!-- Input area -->
       <div class="p-4 pt-2 border-t border-border">
+        <!-- Image warning -->
+        {#if imageWarning}
+          <div class="text-[12px] text-red-400 mb-1.5 px-1">{imageWarning}</div>
+        {/if}
         <!-- Image thumbnails -->
         {#if attachedImages.length > 0}
           <div class="flex gap-1.5 mb-2 flex-wrap">
@@ -742,7 +776,7 @@
             aria-label="Send message"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#1a1816' : '#7a746e'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#ffffff' : 'var(--color-muted)'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </div>
@@ -765,7 +799,7 @@
               {#if showClearMenu}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="fixed inset-0 z-[29]" onclick={() => (showClearMenu = false)}></div>
-                <div class="absolute bottom-[calc(100%+6px)] right-0 w-[200px] z-30 bg-card-hover border border-dim rounded-[8px] p-1 shadow-[0_12px_40px_#00000060]">
+                <div class="absolute bottom-[calc(100%+6px)] right-0 w-[200px] z-30 bg-card-hover border border-dim rounded-[8px] p-1 shadow-[0_12px_40px_var(--color-shadow)]">
                   <button
                     class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
                     onclick={() => clearChat(true)}
@@ -792,7 +826,7 @@
 
     <!-- CENTER: PREVIEW / CODE -->
     {#if viewMode === 'code'}
-      <div class="flex-1 flex flex-col overflow-hidden" style="background: #0d0c0b;">
+      <div class="flex-1 flex flex-col overflow-hidden" style="background: var(--color-code-bg);">
         {#if page.currentStructure}
           <!-- Code view toolbar -->
           <div class="flex items-center border-b border-border shrink-0">
@@ -835,7 +869,7 @@
           {#if codeViewTab === 'structure'}
             <textarea
               class="tk-code-editor flex-1 m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground border-none outline-none resize-none"
-              style="background: #0d0c0b; tab-size: 2;"
+              style="background: var(--color-code-bg); tab-size: 2;"
               spellcheck="false"
               value={codeEditorValue}
               oninput={(e) => { codeEditorValue = e.target.value; codeEditorDirty = true; codeEditorError = ''; }}
@@ -857,7 +891,7 @@
               }}
             ></textarea>
           {:else}
-            <pre class="flex-1 overflow-auto m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground whitespace-pre-wrap break-words" style="background: #0d0c0b;">{previewHtml || t('no_preview_html', 'No preview HTML generated yet.')}</pre>
+            <pre class="flex-1 overflow-auto m-0 p-4 text-[13px] leading-[1.6] font-mono text-muted-foreground whitespace-pre-wrap break-words" style="background: var(--color-code-bg);">{previewHtml || t('no_preview_html', 'No preview HTML generated yet.')}</pre>
           {/if}
         {:else}
           <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -868,11 +902,11 @@
     {:else}
       <div
         class="flex-1 flex items-stretch justify-center overflow-auto transition-all duration-300"
-        style="padding: {viewport === 'desktop' ? '0' : '24px'}; background: #151311; background-image: {viewport !== 'desktop' ? 'radial-gradient(#2a272518 1px, transparent 1px)' : 'none'}; background-size: 20px 20px;"
+        style="padding: {viewport === 'desktop' ? '0' : '24px'}; background: var(--color-preview-bg); background-image: {viewport !== 'desktop' ? 'radial-gradient(var(--color-border-subtle) 1px, transparent 1px)' : 'none'}; background-size: 20px 20px;"
       >
         <div
           class="bg-white overflow-auto transition-all duration-300"
-          style="width: {vw[viewport]}; max-width: 100%; {viewport === 'desktop' ? 'height: 100%;' : 'min-height: 600px;'} border-radius: {viewport === 'desktop' ? '0' : '8px'}; box-shadow: {viewport !== 'desktop' ? '0 8px 60px #00000050' : 'none'};"
+          style="width: {vw[viewport]}; max-width: 100%; {viewport === 'desktop' ? 'height: 100%;' : 'min-height: 600px;'} border-radius: {viewport === 'desktop' ? '0' : '8px'}; box-shadow: {viewport !== 'desktop' ? '0 8px 60px var(--color-shadow)' : 'none'};"
         >
           {#if previewHtml}
             <iframe
@@ -967,7 +1001,7 @@
                       autofocus
                     />
                     <button
-                      class="px-1.5 py-[3px] border-none rounded bg-copper text-background text-[12px] font-medium cursor-pointer"
+                      class="px-1.5 py-[3px] border-none rounded bg-copper text-white text-[12px] font-medium cursor-pointer"
                       onclick={() => saveVersionLabel(v.version_number)}
                     >{t('save', 'Save')}</button>
                     <button

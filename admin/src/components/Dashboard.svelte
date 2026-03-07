@@ -9,7 +9,10 @@
   import { createSettingsStore } from '$lib/stores/settings.svelte.js';
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
+  import { createThemeStore } from '$lib/stores/theme.svelte.js';
   import OnboardingFlow from './OnboardingFlow.svelte';
+
+  const theme = createThemeStore();
 
   let { onOpenBuilder, onOpenTemplate } = $props();
 
@@ -275,6 +278,19 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <button
+          class="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent border border-border text-muted-foreground hover:text-foreground hover:border-dim cursor-pointer transition-colors"
+          onclick={() => theme.toggle()}
+          title={theme.mode === 'system' ? 'Theme: System' : theme.mode === 'light' ? 'Theme: Light' : 'Theme: Dark'}
+        >
+          {#if theme.mode === 'system'}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="15" x2="11" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          {:else if theme.resolved === 'light'}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.75 3.75l1.06 1.06M11.19 11.19l1.06 1.06M12.25 3.75l-1.06 1.06M4.81 11.19l-1.06 1.06" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5a5.5 5.5 0 01-7-7 5.5 5.5 0 107 7z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {/if}
+        </button>
         {#if getMaskedKey(getSettingValue('tekton_ai_provider') || 'anthropic')}
           <div class="flex items-center gap-[5px] px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
             <div class="w-[5px] h-[5px] rounded-full bg-green"></div>

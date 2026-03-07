@@ -29,7 +29,7 @@
     ></div>
 
     <!-- Content -->
-    <div class="relative z-10 w-full max-w-[400px] mx-4 bg-card border border-border rounded-xl shadow-[0_24px_80px_#00000070] p-5">
+    <div class="relative z-10 w-full max-w-[400px] mx-4 bg-card border border-border rounded-xl shadow-[0_24px_80px_var(--color-shadow)] p-5">
       {@render children()}
     </div>
   </div>

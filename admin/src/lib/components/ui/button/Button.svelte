@@ -10,7 +10,7 @@
   } = $props();
 
   const variants = {
-    default: 'bg-copper text-background hover:bg-copper/90',
+    default: 'bg-copper text-white hover:bg-copper/90',
     secondary: 'bg-card text-muted-foreground hover:bg-card/80 border border-border',
     ghost: 'hover:bg-card text-muted-foreground',
     link: 'text-copper underline-offset-4 hover:underline',
