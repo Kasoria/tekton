@@ -1101,3 +1101,155 @@ msgstr "%s-Listennavigation"
 
 msgid "%s list"
 msgstr "%s-Liste"
+
+#: admin/src/components/PropertyPanel.svelte (via class-tekton-i18n.php)
+msgid "Content"
+msgstr "Inhalt"
+
+msgid "Dynamic"
+msgstr "Dynamisch"
+
+msgid "Fallback"
+msgstr "Fallback"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Link URL"
+msgstr "Link-URL"
+
+msgid "Target"
+msgstr "Ziel"
+
+msgid "Same window"
+msgstr "Gleiches Fenster"
+
+msgid "New tab"
+msgstr "Neuer Tab"
+
+msgid "Size"
+msgstr "Größe"
+
+msgid "Weight"
+msgstr "Stärke"
+
+msgid "Line Height"
+msgstr "Zeilenhöhe"
+
+msgid "Letter Spacing"
+msgstr "Zeichenabstand"
+
+msgid "Align"
+msgstr "Ausrichtung"
+
+msgid "Color"
+msgstr "Farbe"
+
+msgid "Spacing"
+msgstr "Abstände"
+
+msgid "Padding"
+msgstr "Innenabstand"
+
+msgid "Margin"
+msgstr "Außenabstand"
+
+msgid "Gap"
+msgstr "Lücke"
+
+msgid "All sides, e.g. 20px"
+msgstr "Alle Seiten, z.B. 20px"
+
+msgid "All sides, e.g. 0 auto"
+msgstr "Alle Seiten, z.B. 0 auto"
+
+msgid "Top"
+msgstr "Oben"
+
+msgid "Right"
+msgstr "Rechts"
+
+msgid "Bottom"
+msgstr "Unten"
+
+msgid "Left"
+msgstr "Links"
+
+msgid "Padding Top"
+msgstr "Innenabstand oben"
+
+msgid "Padding Right"
+msgstr "Innenabstand rechts"
+
+msgid "Padding Bottom"
+msgstr "Innenabstand unten"
+
+msgid "Padding Left"
+msgstr "Innenabstand links"
+
+msgid "Margin Top"
+msgstr "Außenabstand oben"
+
+msgid "Margin Right"
+msgstr "Außenabstand rechts"
+
+msgid "Margin Bottom"
+msgstr "Außenabstand unten"
+
+msgid "Margin Left"
+msgstr "Außenabstand links"
+
+msgid "Background & Border"
+msgstr "Hintergrund & Rahmen"
+
+msgid "Background"
+msgstr "Hintergrund"
+
+msgid "Border"
+msgstr "Rahmen"
+
+msgid "Radius"
+msgstr "Radius"
+
+msgid "Size & Layout"
+msgstr "Größe & Layout"
+
+msgid "Width"
+msgstr "Breite"
+
+msgid "Height"
+msgstr "Höhe"
+
+msgid "Min Width"
+msgstr "Min. Breite"
+
+msgid "Max Width"
+msgstr "Max. Breite"
+
+msgid "Display"
+msgstr "Anzeige"
+
+msgid "Overflow"
+msgstr "Überlauf"
+
+msgid "Opacity"
+msgstr "Deckkraft"
+
+msgid "Desktop"
+msgstr "Desktop"
+
+msgid "Tablet"
+msgstr "Tablet"
+
+msgid "Mobile"
+msgstr "Mobil"
+
+#: admin/src/components/Builder.svelte (edit mode)
+msgid "Editing"
+msgstr "Bearbeitung"
+
+msgid "Enter edit mode"
+msgstr "Bearbeitungsmodus starten"
+
+msgid "Exit edit mode"
+msgstr "Bearbeitungsmodus beenden"

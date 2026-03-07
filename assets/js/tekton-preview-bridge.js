@@ -15,6 +15,7 @@
     selectedId: null,
     hoveredId: null,
     editingId: null,
+    enabled: false,
   };
 
   // ─── Overlay Elements ────────────────────────────────────────────
@@ -133,6 +134,7 @@
   var hoverRaf = null;
 
   document.addEventListener('mouseover', function (e) {
+    if (!state.enabled) return;
     if (state.editingId) return;
     if (hoverRaf) return;
     hoverRaf = requestAnimationFrame(function () {
@@ -163,6 +165,7 @@
   });
 
   document.addEventListener('mouseout', function (e) {
+    if (!state.enabled) return;
     if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
       state.hoveredId = null;
       hideOverlay(hoverOverlay);
@@ -177,6 +180,7 @@
     var link = e.target.closest('a, button');
     if (link) e.preventDefault();
 
+    if (!state.enabled) return;
     if (state.editingId) return;
 
     var compEl = getComponentEl(e.target);
@@ -218,6 +222,7 @@
   // ─── Inline Editing ──────────────────────────────────────────────
 
   document.addEventListener('dblclick', function (e) {
+    if (!state.enabled) return;
     var target = e.target;
     // Walk up to find an editable element
     while (target && target !== document.body) {
@@ -392,6 +397,15 @@
         break;
       case 'tekton:scrollTo':
         handleScrollTo(payload.componentId);
+        break;
+      case 'tekton:enableEditor':
+        state.enabled = true;
+        break;
+      case 'tekton:disableEditor':
+        state.enabled = false;
+        deselectCurrent();
+        hideOverlay(hoverOverlay);
+        state.hoveredId = null;
         break;
     }
   });

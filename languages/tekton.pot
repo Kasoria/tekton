@@ -1039,3 +1039,155 @@ msgstr ""
 
 msgid "%s list"
 msgstr ""
+
+#: admin/src/components/PropertyPanel.svelte (via class-tekton-i18n.php)
+msgid "Content"
+msgstr ""
+
+msgid "Dynamic"
+msgstr ""
+
+msgid "Fallback"
+msgstr ""
+
+msgid "Text"
+msgstr ""
+
+msgid "Link URL"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid "Same window"
+msgstr ""
+
+msgid "New tab"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Weight"
+msgstr ""
+
+msgid "Line Height"
+msgstr ""
+
+msgid "Letter Spacing"
+msgstr ""
+
+msgid "Align"
+msgstr ""
+
+msgid "Color"
+msgstr ""
+
+msgid "Spacing"
+msgstr ""
+
+msgid "Padding"
+msgstr ""
+
+msgid "Margin"
+msgstr ""
+
+msgid "Gap"
+msgstr ""
+
+msgid "All sides, e.g. 20px"
+msgstr ""
+
+msgid "All sides, e.g. 0 auto"
+msgstr ""
+
+msgid "Top"
+msgstr ""
+
+msgid "Right"
+msgstr ""
+
+msgid "Bottom"
+msgstr ""
+
+msgid "Left"
+msgstr ""
+
+msgid "Padding Top"
+msgstr ""
+
+msgid "Padding Right"
+msgstr ""
+
+msgid "Padding Bottom"
+msgstr ""
+
+msgid "Padding Left"
+msgstr ""
+
+msgid "Margin Top"
+msgstr ""
+
+msgid "Margin Right"
+msgstr ""
+
+msgid "Margin Bottom"
+msgstr ""
+
+msgid "Margin Left"
+msgstr ""
+
+msgid "Background & Border"
+msgstr ""
+
+msgid "Background"
+msgstr ""
+
+msgid "Border"
+msgstr ""
+
+msgid "Radius"
+msgstr ""
+
+msgid "Size & Layout"
+msgstr ""
+
+msgid "Width"
+msgstr ""
+
+msgid "Height"
+msgstr ""
+
+msgid "Min Width"
+msgstr ""
+
+msgid "Max Width"
+msgstr ""
+
+msgid "Display"
+msgstr ""
+
+msgid "Overflow"
+msgstr ""
+
+msgid "Opacity"
+msgstr ""
+
+msgid "Desktop"
+msgstr ""
+
+msgid "Tablet"
+msgstr ""
+
+msgid "Mobile"
+msgstr ""
+
+#: admin/src/components/Builder.svelte (edit mode)
+msgid "Editing"
+msgstr ""
+
+msgid "Enter edit mode"
+msgstr ""
+
+msgid "Exit edit mode"
+msgstr ""

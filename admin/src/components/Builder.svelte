@@ -40,6 +40,7 @@
   let fileInputEl;
   let showClearMenu = $state(false);
   let isClearing = $state(false);
+  let editMode = $state(false);
   let viewMode = $state('preview'); // 'preview' | 'code'
   let codeViewTab = $state('structure'); // 'structure' | 'html'
   let codeEditorValue = $state('');
@@ -90,6 +91,12 @@
     editor.setBreakpoint(viewport);
   });
 
+  // Sync edit mode with iframe bridge
+  $effect(() => {
+    if (!bridge) return;
+    bridge.send(editMode ? 'tekton:enableEditor' : 'tekton:disableEditor');
+  });
+
   // Initialize bridge when iframe loads
   function handleIframeLoad() {
     if (bridge) bridge.destroy();
@@ -97,7 +104,9 @@
     bridge = createBridge(iframeEl);
 
     bridge.on('tekton:ready', () => {
-      // Re-select component if one was selected before re-render
+      if (editMode) {
+        bridge.send('tekton:enableEditor');
+      }
       if (editor.selectedComponentId) {
         bridge.send('tekton:select', { componentId: editor.selectedComponentId });
       }
@@ -632,6 +641,23 @@
 
       <div class="w-px h-4 bg-border"></div>
 
+      <!-- Edit mode toggle -->
+      <button
+        class="px-2.5 py-1 rounded cursor-pointer text-[12px] font-medium font-body transition-all {editMode ? 'bg-copper border border-copper text-white' : 'bg-transparent border border-border text-muted hover:text-foreground hover:border-dim'}"
+        onclick={() => {
+          editMode = !editMode;
+          if (!editMode) {
+            editor.deselectComponent();
+            selectedComp = null;
+          }
+        }}
+        title={editMode ? t('exit_edit_mode', 'Exit edit mode') : t('enter_edit_mode', 'Enter edit mode')}
+      >
+        {editMode ? t('editing_mode', 'Editing') : t('edit', 'Edit')}
+      </button>
+
+      <div class="w-px h-4 bg-border"></div>
+
       <!-- Viewport -->
       <div class="flex gap-px bg-card-hover rounded-md p-0.5">
         {#each [
@@ -1115,8 +1141,8 @@
     </div>
   </div>
 
-  <!-- PROPERTY PANEL (slides in from right when component selected) -->
-  {#if editor.selectedComponentId && !sidebar}
+  <!-- PROPERTY PANEL (slides in from right when component selected, only in edit mode) -->
+  {#if editMode && editor.selectedComponentId && !sidebar}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="tk-drawer-backdrop tk-drawer-open"
@@ -1220,7 +1246,6 @@
     box-shadow: none;
     outline: none;
   }
-
   @keyframes ember {
     0%, 100% { opacity: 0.35; transform: scale(0.85); }
     50% { opacity: 1; transform: scale(1.15); }

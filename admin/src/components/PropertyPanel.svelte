@@ -58,10 +58,30 @@
     editor.updateProp(name, value);
   }
 
+  // Batch-set all sides for padding/margin
+  function setAllPadding(value) {
+    for (const p of ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft']) setStyle(p, value);
+  }
+
+  function setAllMargin(value) {
+    for (const p of ['marginTop', 'marginRight', 'marginBottom', 'marginLeft']) setStyle(p, value);
+  }
+
+  // Derived "all sides" values — show value when all 4 sides match, empty otherwise
+  let paddingAll = $derived.by(() => {
+    const vals = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'].map(p => getStyle(p));
+    return vals[0] && vals.every(v => v === vals[0]) ? vals[0] : '';
+  });
+
+  let marginAll = $derived.by(() => {
+    const vals = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].map(p => getStyle(p));
+    return vals[0] && vals.every(v => v === vals[0]) ? vals[0] : '';
+  });
+
   const breakpoints = [
-    { key: 'desktop', label: 'Desktop', icon: 'D' },
-    { key: 'tablet', label: 'Tablet', icon: 'T' },
-    { key: 'mobile', label: 'Mobile', icon: 'M' },
+    { key: 'desktop', label: t('pp_desktop', 'Desktop') },
+    { key: 'tablet', label: t('pp_tablet', 'Tablet') },
+    { key: 'mobile', label: t('pp_mobile', 'Mobile') },
   ];
 
   const fontWeights = [
@@ -115,18 +135,18 @@
     {#if hasContent}
       <div class="tk-pp-section">
         <button class="tk-pp-section-header" onclick={() => toggle('content')}>
-          <span>{t('content', 'Content')}</span>
+          <span>{t('pp_content', 'Content')}</span>
           <span class="tk-pp-chevron {openSections.content ? 'open' : ''}">&#9656;</span>
         </button>
         {#if openSections.content}
           <div class="tk-pp-section-body">
             {#if isContentSource}
               <div class="tk-pp-source-badge">
-                Dynamic: {contentSourceLabel}
+                {t('pp_dynamic', 'Dynamic')}: {contentSourceLabel}
               </div>
             {/if}
             <div>
-              <label class="tk-pp-label">{isContentSource ? t('fallback', 'Fallback') : t('text', 'Text')}</label>
+              <label class="tk-pp-label">{isContentSource ? t('pp_fallback', 'Fallback') : t('pp_text', 'Text')}</label>
               {#if compType === 'text'}
                 <textarea
                   class="tk-pp-input tk-pp-textarea"
@@ -145,7 +165,7 @@
 
             {#if hasHref}
               <div>
-                <label class="tk-pp-label">{t('link_url', 'Link URL')}</label>
+                <label class="tk-pp-label">{t('pp_link_url', 'Link URL')}</label>
                 <input
                   type="text"
                   class="tk-pp-input"
@@ -155,14 +175,14 @@
                 />
               </div>
               <div>
-                <label class="tk-pp-label">{t('target', 'Target')}</label>
+                <label class="tk-pp-label">{t('pp_target', 'Target')}</label>
                 <select
                   class="tk-pp-select"
                   value={comp?.props?.target || '_self'}
                   onchange={(e) => setProp('target', e.target.value)}
                 >
-                  <option value="_self">Same window</option>
-                  <option value="_blank">New tab</option>
+                  <option value="_self">{t('pp_same_window', 'Same window')}</option>
+                  <option value="_blank">{t('pp_new_tab', 'New tab')}</option>
                 </select>
               </div>
             {/if}
@@ -174,14 +194,14 @@
     <!-- Typography Section -->
     <div class="tk-pp-section">
       <button class="tk-pp-section-header" onclick={() => toggle('typography')}>
-        <span>{t('typography', 'Typography')}</span>
+        <span>{t('pp_typography', 'Typography')}</span>
         <span class="tk-pp-chevron {openSections.typography ? 'open' : ''}">&#9656;</span>
       </button>
       {#if openSections.typography}
         <div class="tk-pp-section-body">
           <div class="tk-pp-row">
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('font_size', 'Size')}</label>
+              <label class="tk-pp-label">{t('pp_font_size', 'Size')}</label>
               <input
                 type="text"
                 class="tk-pp-input"
@@ -191,7 +211,7 @@
               />
             </div>
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('font_weight', 'Weight')}</label>
+              <label class="tk-pp-label">{t('pp_font_weight', 'Weight')}</label>
               <select
                 class="tk-pp-select"
                 value={getStyle('fontWeight') || ''}
@@ -207,7 +227,7 @@
 
           <div class="tk-pp-row">
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('line_height', 'Line H.')}</label>
+              <label class="tk-pp-label">{t('pp_line_height', 'Line Height')}</label>
               <input
                 type="text"
                 class="tk-pp-input"
@@ -217,7 +237,7 @@
               />
             </div>
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('letter_spacing', 'Spacing')}</label>
+              <label class="tk-pp-label">{t('pp_letter_spacing', 'Letter Spacing')}</label>
               <input
                 type="text"
                 class="tk-pp-input"
@@ -229,20 +249,20 @@
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('text_align', 'Align')}</label>
+            <label class="tk-pp-label">{t('pp_text_align', 'Align')}</label>
             <div class="tk-pp-align-group">
               {#each textAlignOptions as align}
                 <button
                   class="tk-pp-align-btn {getStyle('textAlign') === align ? 'active' : ''}"
                   onclick={() => setStyle('textAlign', align)}
                   title={align}
-                >{align[0].toUpperCase()}</button>
+                >{align.charAt(0).toUpperCase() + align.slice(1)}</button>
               {/each}
             </div>
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('color', 'Color')}</label>
+            <label class="tk-pp-label">{t('pp_color', 'Color')}</label>
             <div class="tk-pp-color-row">
             <input
               type="color"
@@ -266,41 +286,50 @@
     <!-- Spacing Section -->
     <div class="tk-pp-section">
       <button class="tk-pp-section-header" onclick={() => toggle('spacing')}>
-        <span>{t('spacing', 'Spacing')}</span>
+        <span>{t('pp_spacing', 'Spacing')}</span>
         <span class="tk-pp-chevron {openSections.spacing ? 'open' : ''}">&#9656;</span>
       </button>
       {#if openSections.spacing}
         <div class="tk-pp-section-body">
+          <!-- Padding -->
           <div>
-            <label class="tk-pp-label">{t('padding', 'Padding')}</label>
+            <label class="tk-pp-label">{t('pp_padding', 'Padding')}</label>
+            <input
+              type="text"
+              class="tk-pp-input"
+              value={paddingAll}
+              oninput={(e) => setAllPadding(e.target.value)}
+              placeholder={t('pp_all_sides_padding', 'All sides, e.g. 20px')}
+            />
             <div class="tk-pp-spacing-grid">
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingTop')} oninput={(e) => setStyle('paddingTop', e.target.value)} placeholder="T" title="Padding Top" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingRight')} oninput={(e) => setStyle('paddingRight', e.target.value)} placeholder="R" title="Padding Right" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingBottom')} oninput={(e) => setStyle('paddingBottom', e.target.value)} placeholder="B" title="Padding Bottom" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingLeft')} oninput={(e) => setStyle('paddingLeft', e.target.value)} placeholder="L" title="Padding Left" />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingTop')} oninput={(e) => setStyle('paddingTop', e.target.value)} placeholder={t('pp_top', 'Top')} title={t('pp_padding_top', 'Padding Top')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingRight')} oninput={(e) => setStyle('paddingRight', e.target.value)} placeholder={t('pp_right', 'Right')} title={t('pp_padding_right', 'Padding Right')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingBottom')} oninput={(e) => setStyle('paddingBottom', e.target.value)} placeholder={t('pp_bottom', 'Bottom')} title={t('pp_padding_bottom', 'Padding Bottom')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('paddingLeft')} oninput={(e) => setStyle('paddingLeft', e.target.value)} placeholder={t('pp_left', 'Left')} title={t('pp_padding_left', 'Padding Left')} />
             </div>
           </div>
-          <div>
-            <label class="tk-pp-label">{t('padding_shorthand', 'All sides')}</label>
-            <input type="text" class="tk-pp-input" value={getStyle('padding')} oninput={(e) => setStyle('padding', e.target.value)} placeholder="e.g. 20px 40px" />
-          </div>
 
+          <!-- Margin -->
           <div>
-            <label class="tk-pp-label">{t('margin', 'Margin')}</label>
+            <label class="tk-pp-label">{t('pp_margin', 'Margin')}</label>
+            <input
+              type="text"
+              class="tk-pp-input"
+              value={marginAll}
+              oninput={(e) => setAllMargin(e.target.value)}
+              placeholder={t('pp_all_sides_margin', 'All sides, e.g. 0 auto')}
+            />
             <div class="tk-pp-spacing-grid">
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginTop')} oninput={(e) => setStyle('marginTop', e.target.value)} placeholder="T" title="Margin Top" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginRight')} oninput={(e) => setStyle('marginRight', e.target.value)} placeholder="R" title="Margin Right" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginBottom')} oninput={(e) => setStyle('marginBottom', e.target.value)} placeholder="B" title="Margin Bottom" />
-              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginLeft')} oninput={(e) => setStyle('marginLeft', e.target.value)} placeholder="L" title="Margin Left" />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginTop')} oninput={(e) => setStyle('marginTop', e.target.value)} placeholder={t('pp_top', 'Top')} title={t('pp_margin_top', 'Margin Top')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginRight')} oninput={(e) => setStyle('marginRight', e.target.value)} placeholder={t('pp_right', 'Right')} title={t('pp_margin_right', 'Margin Right')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginBottom')} oninput={(e) => setStyle('marginBottom', e.target.value)} placeholder={t('pp_bottom', 'Bottom')} title={t('pp_margin_bottom', 'Margin Bottom')} />
+              <input type="text" class="tk-pp-input tk-pp-spacing-input" value={getStyle('marginLeft')} oninput={(e) => setStyle('marginLeft', e.target.value)} placeholder={t('pp_left', 'Left')} title={t('pp_margin_left', 'Margin Left')} />
             </div>
           </div>
-          <div>
-            <label class="tk-pp-label">{t('margin_shorthand', 'All sides')}</label>
-            <input type="text" class="tk-pp-input" value={getStyle('margin')} oninput={(e) => setStyle('margin', e.target.value)} placeholder="e.g. 0 auto" />
-          </div>
 
+          <!-- Gap -->
           <div>
-            <label class="tk-pp-label">{t('gap', 'Gap')}</label>
+            <label class="tk-pp-label">{t('pp_gap', 'Gap')}</label>
             <input type="text" class="tk-pp-input" value={getStyle('gap')} oninput={(e) => setStyle('gap', e.target.value)} placeholder="16px" />
           </div>
         </div>
@@ -310,13 +339,13 @@
     <!-- Background & Border Section -->
     <div class="tk-pp-section">
       <button class="tk-pp-section-header" onclick={() => toggle('background')}>
-        <span>{t('background_border', 'Background & Border')}</span>
+        <span>{t('pp_background_border', 'Background & Border')}</span>
         <span class="tk-pp-chevron {openSections.background ? 'open' : ''}">&#9656;</span>
       </button>
       {#if openSections.background}
         <div class="tk-pp-section-body">
           <div>
-            <label class="tk-pp-label">{t('background_color', 'Background')}</label>
+            <label class="tk-pp-label">{t('pp_background', 'Background')}</label>
             <div class="tk-pp-color-row">
               <input
                 type="color"
@@ -335,7 +364,7 @@
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('border', 'Border')}</label>
+            <label class="tk-pp-label">{t('pp_border', 'Border')}</label>
             <div class="tk-pp-row">
               <div class="tk-pp-field">
                 <input type="text" class="tk-pp-input" value={getStyle('borderWidth')} oninput={(e) => setStyle('borderWidth', e.target.value)} placeholder="0px" />
@@ -357,7 +386,7 @@
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('border_radius', 'Radius')}</label>
+            <label class="tk-pp-label">{t('pp_border_radius', 'Radius')}</label>
             <input type="text" class="tk-pp-input" value={getStyle('borderRadius')} oninput={(e) => setStyle('borderRadius', e.target.value)} placeholder="0px" />
           </div>
         </div>
@@ -367,34 +396,48 @@
     <!-- Size Section -->
     <div class="tk-pp-section">
       <button class="tk-pp-section-header" onclick={() => toggle('size')}>
-        <span>{t('size_layout', 'Size & Layout')}</span>
+        <span>{t('pp_size_layout', 'Size & Layout')}</span>
         <span class="tk-pp-chevron {openSections.size ? 'open' : ''}">&#9656;</span>
       </button>
       {#if openSections.size}
         <div class="tk-pp-section-body">
           <div class="tk-pp-row">
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('width', 'Width')}</label>
+              <label class="tk-pp-label">{t('pp_width', 'Width')}</label>
               <input type="text" class="tk-pp-input" value={getStyle('width')} oninput={(e) => setStyle('width', e.target.value)} placeholder="auto" />
             </div>
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('height', 'Height')}</label>
+              <label class="tk-pp-label">{t('pp_height', 'Height')}</label>
               <input type="text" class="tk-pp-input" value={getStyle('height')} oninput={(e) => setStyle('height', e.target.value)} placeholder="auto" />
             </div>
           </div>
           <div class="tk-pp-row">
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('min_width', 'Min W')}</label>
+              <label class="tk-pp-label">{t('pp_min_width', 'Min Width')}</label>
               <input type="text" class="tk-pp-input" value={getStyle('minWidth')} oninput={(e) => setStyle('minWidth', e.target.value)} placeholder="0" />
             </div>
             <div class="tk-pp-field">
-              <label class="tk-pp-label">{t('max_width', 'Max W')}</label>
+              <label class="tk-pp-label">{t('pp_max_width', 'Max Width')}</label>
               <input type="text" class="tk-pp-input" value={getStyle('maxWidth')} oninput={(e) => setStyle('maxWidth', e.target.value)} placeholder="none" />
             </div>
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('overflow', 'Overflow')}</label>
+            <label class="tk-pp-label">{t('pp_display', 'Display')}</label>
+            <select class="tk-pp-select" value={getStyle('display') || ''} onchange={(e) => setStyle('display', e.target.value)}>
+              <option value="">-</option>
+              <option value="block">Block</option>
+              <option value="flex">Flex</option>
+              <option value="grid">Grid</option>
+              <option value="inline">Inline</option>
+              <option value="inline-block">Inline Block</option>
+              <option value="inline-flex">Inline Flex</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="tk-pp-label">{t('pp_overflow', 'Overflow')}</label>
             <select class="tk-pp-select" value={getStyle('overflow') || ''} onchange={(e) => setStyle('overflow', e.target.value)}>
               <option value="">-</option>
               <option value="visible">Visible</option>
@@ -405,7 +448,7 @@
           </div>
 
           <div>
-            <label class="tk-pp-label">{t('opacity', 'Opacity')}</label>
+            <label class="tk-pp-label">{t('pp_opacity', 'Opacity')}</label>
             <div class="flex items-center gap-2">
               <input
                 type="range"
@@ -425,7 +468,7 @@
   <!-- Dirty indicator -->
   {#if editor.dirty}
     <div class="tk-pp-dirty">
-      <span class="text-[10px] text-copper">{t('unsaved_changes', 'Saving...')}</span>
+      <span class="text-[10px] text-copper">{t('pp_unsaved', 'Saving...')}</span>
     </div>
   {/if}
 </div>
@@ -509,7 +552,7 @@
     background: transparent;
     border: none;
     color: var(--color-foreground);
-    font-size: 11px;
+    font-size: 12px !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -535,12 +578,12 @@
 
   .tk-pp-label {
     display: block;
-    font-size: 9px;
+    font-size: 10px !important;
     font-weight: 500;
     color: var(--color-dim);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 3px;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
     font-family: var(--font-body);
   }
 
@@ -638,10 +681,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 4px;
+    margin-top: 6px;
   }
   .tk-pp-spacing-input {
     text-align: center;
     padding: 5px 2px;
+    font-size: 11px;
   }
 
   .tk-pp-source-badge {
