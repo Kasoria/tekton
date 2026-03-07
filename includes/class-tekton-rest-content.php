@@ -152,9 +152,11 @@ class Tekton_REST_Content {
 				return new \WP_REST_Response( [ 'message' => 'Too many fields (max 100).' ], 400 );
 			}
 			$valid_field_types = [
-				'text', 'textarea', 'number', 'email', 'url', 'select',
-				'checkbox', 'radio', 'true_false', 'image', 'date',
-				'color', 'repeater', 'relationship',
+				'text', 'textarea', 'wysiwyg', 'number', 'email', 'url',
+				'password', 'select', 'checkbox', 'radio', 'true_false',
+				'image', 'gallery', 'file', 'date', 'datetime', 'time',
+				'color', 'range', 'repeater', 'group', 'flexible_content',
+				'relationship', 'post_object', 'taxonomy', 'code',
 			];
 			foreach ( $data['fields'] as $i => $field ) {
 				if ( ! is_array( $field ) ) {
