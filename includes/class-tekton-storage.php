@@ -546,6 +546,78 @@ class Tekton_Storage {
 		return (bool) $wpdb->delete( $wpdb->prefix . 'tekton_post_types', [ 'id' => $id ] );
 	}
 
+	// ─── Options Pages ────────────────────────────────────────────────
+
+	/**
+	 * List all options pages.
+	 *
+	 * @return array<int, array>
+	 */
+	public function list_options_pages(): array {
+		$pages = get_option( 'tekton_options_pages', [] );
+		return is_array( $pages ) ? $pages : [];
+	}
+
+	/**
+	 * Get a single options page by slug.
+	 */
+	public function get_options_page( string $slug ): ?array {
+		foreach ( $this->list_options_pages() as $page ) {
+			if ( ( $page['slug'] ?? '' ) === $slug ) {
+				return $page;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Save (create or update) an options page.
+	 */
+	public function save_options_page( array $data ): bool {
+		$slug = sanitize_key( $data['slug'] ?? '' );
+		if ( '' === $slug ) {
+			return false;
+		}
+
+		$page = [
+			'slug'        => $slug,
+			'title'       => sanitize_text_field( $data['title'] ?? $slug ),
+			'menu_title'  => sanitize_text_field( $data['menu_title'] ?? $data['title'] ?? $slug ),
+			'parent_slug' => sanitize_key( $data['parent_slug'] ?? 'tekton' ),
+			'capability'  => sanitize_key( $data['capability'] ?? 'manage_options' ),
+			'icon'        => sanitize_text_field( $data['icon'] ?? '' ),
+			'position'    => isset( $data['position'] ) ? (int) $data['position'] : null,
+			'description' => sanitize_text_field( $data['description'] ?? '' ),
+		];
+
+		$pages = $this->list_options_pages();
+		$found = false;
+
+		foreach ( $pages as &$existing ) {
+			if ( ( $existing['slug'] ?? '' ) === $slug ) {
+				$existing = array_merge( $existing, $page );
+				$found    = true;
+				break;
+			}
+		}
+		unset( $existing );
+
+		if ( ! $found ) {
+			$pages[] = $page;
+		}
+
+		return update_option( 'tekton_options_pages', $pages );
+	}
+
+	/**
+	 * Delete an options page by slug.
+	 */
+	public function delete_options_page( string $slug ): bool {
+		$pages = $this->list_options_pages();
+		$pages = array_filter( $pages, fn( $p ) => ( $p['slug'] ?? '' ) !== $slug );
+		return update_option( 'tekton_options_pages', array_values( $pages ) );
+	}
+
 	// ─── Activity ──────────────────────────────────────────────────────
 
 	/**

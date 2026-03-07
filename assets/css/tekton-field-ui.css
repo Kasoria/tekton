@@ -162,3 +162,125 @@
   cursor: pointer;
   font-size: 13px;
 }
+
+/* Gallery field */
+.tekton-gallery-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tekton-gallery-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  border: 1px solid #dcdcde;
+  overflow: hidden;
+}
+
+.tekton-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* File field */
+.tekton-file-info {
+  margin-bottom: 8px;
+}
+
+.tekton-file-name {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+/* Range field */
+.tekton-range-input {
+  vertical-align: middle;
+}
+
+.tekton-range-value {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d2327;
+  vertical-align: middle;
+}
+
+/* Code field */
+.tekton-code {
+  font-family: monospace;
+  font-size: 13px;
+  tab-size: 4;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+/* Flexible Content */
+.tekton-fc-rows {
+  margin-bottom: 8px;
+}
+
+.tekton-fc-row {
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background: #f6f7f7;
+}
+
+.tekton-fc-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dcdcde;
+  background: #e8eaed;
+  border-radius: 4px 4px 0 0;
+}
+
+.tekton-fc-row-label {
+  font-weight: 600;
+  font-size: 12px;
+  color: #1d2327;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tekton-fc-remove {
+  color: #d63638;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tekton-fc-row-fields {
+  padding: 12px;
+}
+
+.tekton-fc-layout-picker {
+  margin-top: 6px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Options page sections */
+.tekton-options-section {
+  margin-bottom: 24px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+.tekton-options-section h2 {
+  margin-top: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f1;
+}

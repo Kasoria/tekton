@@ -63,6 +63,30 @@ When the user asks you to create posts with specific content (e.g. "add 4 team m
 
 Posts with duplicate titles in the same post type are skipped (meta is updated on the existing post).
 
+### Options Pages
+
+You can also create options pages for global settings (not tied to a specific post):
+
+```json
+{
+  "optionsPages": [{
+    "slug": "site_settings",
+    "title": "Site Settings",
+    "menu_title": "Site Settings",
+    "parent_slug": "tekton",
+    "description": "Global site configuration"
+  }]
+}
+```
+
+Field groups target options pages via location rules: `[{"param": "options_page", "operator": "==", "value": "site_settings"}]`
+
+Option values are read using `{"source": "option", "key": "_tekton_opt_site_settings_field_name"}`.
+
+### Available Field Types
+
+text, textarea, wysiwyg, number, email, url, password, select, checkbox, radio, true_false, image, gallery, file, date, datetime, time, color, range, repeater, group, flexible_content, relationship, post_object, taxonomy, code
+
 ### Rules
 
 - The template components MUST reference the fields you create using `{"source": "field", "group": "slug", "field": "name"}`.

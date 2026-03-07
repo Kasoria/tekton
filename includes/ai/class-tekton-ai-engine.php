@@ -221,7 +221,8 @@ class Tekton_AI_Engine {
 			|| isset( $data['type'] )
 			|| isset( $data['posts'] )
 			|| isset( $data['postTypes'] )
-			|| isset( $data['fieldGroups'] );
+			|| isset( $data['fieldGroups'] )
+			|| isset( $data['optionsPages'] );
 	}
 
 	/**

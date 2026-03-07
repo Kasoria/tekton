@@ -760,22 +760,25 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 - [x] `theme.svelte.js` store — mode cycling (system → light → dark), OS preference listener, `.dark` class strategy
 - [x] Full CSS custom property theming — light and dark palettes, no hardcoded colors
 
-### Missing — Phase 2 (Field Engine & Content Sources)
+### Done — Phase 2 (Field Engine & Content Sources)
 
-- [ ] **Field Engine core** — `includes/field-engine/` directory entirely missing:
-  - [ ] `class-tekton-field-engine.php` — orchestrator
-  - [ ] `class-tekton-field-registry.php` — field type registry
-  - [ ] `class-tekton-field-group.php` — group definition & CRUD
-  - [ ] `class-tekton-field-renderer.php` — meta box rendering UI
-  - [ ] `class-tekton-field-storage.php` — read/write field values (`wp_postmeta`)
-  - [ ] `class-tekton-cpt-manager.php` — register CPTs and taxonomies from DB
-  - [ ] `class-tekton-options-page.php` — options pages
-  - [ ] `class-tekton-acf-compat.php` — ACF read-only compatibility
-- [ ] **Individual field types** — `includes/field-engine/fields/` (26 types: text, textarea, wysiwyg, number, email, url, password, image, gallery, file, select, checkbox, radio, true_false, date, datetime, time, color, range, repeater, group, flexible_content, relationship, post_object, taxonomy, code)
-- [ ] Content source resolution in renderer (currently renders component types but doesn't resolve `source: "field"` etc.)
-- [ ] Full-stack generation mode (AI generates CPT + fields + template in one shot, backend processes all three)
-- [ ] WordPress-specific components (post-loop, post-title, post-content, post-meta, featured-image, menu, tekton-field, search-form)
-- [ ] REST endpoints for field engine CRUD (field-groups create/update/delete, post-types create/update/delete)
+- [x] **Field Engine core:**
+  - [x] `class-tekton-field-engine.php` — orchestrator with meta box rendering and save
+  - [x] `class-tekton-field-registry.php` — field type registry
+  - [x] `class-tekton-field-type.php` — abstract base class
+  - [x] `class-tekton-cpt-manager.php` — register CPTs and taxonomies from DB on `init`
+  - [x] `class-tekton-options-page.php` — options pages with admin UI and field rendering
+  - [x] `class-tekton-acf-compat.php` — ACF read-only compatibility
+  - [x] `functions-tekton-fields.php` — public API (`tekton_get_field()`, `tekton_get_fields()`)
+- [x] **All 26 field types** — text, textarea, wysiwyg, number, email, url, password, image, gallery, file, select, checkbox, radio, true_false, date, datetime, time, color, range, repeater, group, flexible_content, relationship, post_object, taxonomy, code
+- [x] Content source resolution in renderer — field, post, acf, menu, computed, option, static; CPT post queries with `post_type` + `post_index`; custom meta field auto-detection
+- [x] Full-stack generation mode — AI generates CPT + fields + template + posts in one shot, backend processes all in any response mode
+- [x] WordPress-specific components — post-loop, post-title, post-content, post-meta, featured-image, menu, tekton-field, search-form
+- [x] REST endpoints — field-groups CRUD, post-types CRUD, options-pages CRUD (split into dedicated controllers)
+- [x] AI post creation — creates WordPress posts with Tekton custom field values populated
+- [x] JSON parsing robustness — repair for trailing commas, control chars; data-only response handling
+- [x] Script/keyframe merge — operations and full-gen both merge instead of replacing
+- [x] i18n — full translation support for admin UI and field engine
 
 ### Missing — Phase 3 (Editing, Versions & Plugin Mode)
 
@@ -813,13 +816,13 @@ Prompt → AI generates page → page renders on frontend.
 
 **Exit criteria:** User types "Create a landing page with hero, features grid, and CTA" → sees it rendered. "Make the hero dark" → sees update. ✅ Working.
 
-### Phase 2 — Field Engine & Content Sources — not started
+### Phase 2 — Field Engine & Content Sources — COMPLETE
 
 Full content separation. AI generates data models + templates together.
 
 **Deliverables:** Complete Field Engine (all field types, groups, meta box rendering), CPT Manager, Options Pages, all content source types in renderer, full-stack generation mode, WordPress components (post-loop, post-title, post-content, post-meta, featured-image, menu, tekton-field, search-form), ACF compat layer, Field Groups panel in UI, REST endpoints for field engine.
 
-**Exit criteria:** "Create a team page with name, role, photo, LinkedIn" → creates CPT + fields + archive template. Add team member in wp-admin → appears on frontend.
+**Exit criteria:** "Create a team page with name, role, photo, LinkedIn" → creates CPT + fields + archive template. Add team member in wp-admin → appears on frontend. ✅ Working.
 
 ### Phase 3 — Manual Editing, Versions & Plugin Mode — not started
 

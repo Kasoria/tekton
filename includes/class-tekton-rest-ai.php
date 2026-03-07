@@ -226,7 +226,8 @@ class Tekton_REST_AI {
 				if ( ! $structure && $current_structure ) {
 					$has_data_keys = ! empty( $json_data['posts'] )
 						|| ! empty( $json_data['postTypes'] )
-						|| ! empty( $json_data['fieldGroups'] );
+						|| ! empty( $json_data['fieldGroups'] )
+						|| ! empty( $json_data['optionsPages'] );
 					if ( $has_data_keys ) {
 						$structure = $storage->get_structure( $template_key );
 					}
@@ -367,7 +368,7 @@ class Tekton_REST_AI {
 	 * @return bool Whether any data model changes were made.
 	 */
 	private function process_fullstack_data( array $json ): bool {
-		$has_data = ! empty( $json['postTypes'] ) || ! empty( $json['fieldGroups'] ) || ! empty( $json['posts'] );
+		$has_data = ! empty( $json['postTypes'] ) || ! empty( $json['fieldGroups'] ) || ! empty( $json['posts'] ) || ! empty( $json['optionsPages'] );
 		if ( ! $has_data ) {
 			return false;
 		}
@@ -394,6 +395,14 @@ class Tekton_REST_AI {
 			foreach ( $json['fieldGroups'] as $fg ) {
 				if ( ! empty( $fg['slug'] ) ) {
 					$storage->save_field_group( $fg );
+				}
+			}
+		}
+
+		if ( ! empty( $json['optionsPages'] ) && is_array( $json['optionsPages'] ) ) {
+			foreach ( $json['optionsPages'] as $op ) {
+				if ( ! empty( $op['slug'] ) ) {
+					$storage->save_options_page( $op );
 				}
 			}
 		}

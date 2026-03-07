@@ -95,10 +95,88 @@ jQuery(function($){
     var $count=$rep.find('.tekton-repeater-count');
     var c=parseInt($count.val())||1;
     $count.val(Math.max(0,c-1));
-    // Re-index row numbers
     $rep.find('.tekton-repeater-row').each(function(i){
       $(this).find('.tekton-repeater-row-num').text(i+1);
     });
+  });
+  // Gallery field: add
+  $(document).on('click','.tekton-gallery-add',function(e){
+    e.preventDefault();
+    var $wrap=$(this).closest('.tekton-gallery-field');
+    var frame=wp.media({title:'Add to Gallery',multiple:true,library:{type:'image'}});
+    frame.on('select',function(){
+      var sel=frame.state().get('selection').toJSON();
+      var $input=$wrap.find('input[type=hidden]');
+      var cur=$input.val();
+      var ids=cur?cur.split(','):[];
+      var $preview=$wrap.find('.tekton-gallery-preview');
+      $.each(sel,function(i,a){
+        ids.push(a.id);
+        var url=a.sizes&&a.sizes.thumbnail?a.sizes.thumbnail.url:a.url;
+        $preview.append('<div class="tekton-gallery-thumb" data-id="'+a.id+'"><img src="'+url+'" alt=""></div>');
+      });
+      $input.val(ids.join(','));
+      $wrap.find('.tekton-gallery-clear').show();
+    });
+    frame.open();
+  });
+  // Gallery field: clear
+  $(document).on('click','.tekton-gallery-clear',function(e){
+    e.preventDefault();
+    var $wrap=$(this).closest('.tekton-gallery-field');
+    $wrap.find('input[type=hidden]').val('');
+    $wrap.find('.tekton-gallery-preview').html('');
+    $(this).hide();
+  });
+  // File field: select
+  $(document).on('click','.tekton-file-select',function(e){
+    e.preventDefault();
+    var $wrap=$(this).closest('.tekton-file-field');
+    var frame=wp.media({title:'Select File',multiple:false});
+    frame.on('select',function(){
+      var a=frame.state().get('selection').first().toJSON();
+      $wrap.find('input[type=hidden]').val(a.id);
+      $wrap.find('.tekton-file-info').html('<span class="tekton-file-name">'+a.filename+'</span>').show();
+      $wrap.find('.tekton-file-remove').show();
+    });
+    frame.open();
+  });
+  // File field: remove
+  $(document).on('click','.tekton-file-remove',function(e){
+    e.preventDefault();
+    var $wrap=$(this).closest('.tekton-file-field');
+    $wrap.find('input[type=hidden]').val('');
+    $wrap.find('.tekton-file-info').hide().html('');
+    $(this).hide();
+  });
+  // Flexible Content: toggle layout picker
+  $(document).on('click','.tekton-fc-add-btn',function(){
+    $(this).siblings('.tekton-fc-layout-picker').toggle();
+  });
+  // Flexible Content: pick layout
+  $(document).on('click','.tekton-fc-pick-layout',function(){
+    var $fc=$(this).closest('.tekton-flexible-content');
+    var layout=$(this).data('layout');
+    var $rows=$fc.find('.tekton-fc-rows');
+    var $count=$fc.find('.tekton-fc-count');
+    var count=parseInt($count.val())||0;
+    var tmpl=$fc.find('template.tekton-fc-template[data-layout="'+layout+'"]').html();
+    tmpl=tmpl.replace(/\{\{INDEX\}\}/g,count);
+    $rows.append(tmpl);
+    $count.val(count+1);
+    $(this).closest('.tekton-fc-layout-picker').hide();
+  });
+  // Flexible Content: remove row
+  $(document).on('click','.tekton-fc-remove',function(){
+    var $fc=$(this).closest('.tekton-flexible-content');
+    $(this).closest('.tekton-fc-row').remove();
+    var $count=$fc.find('.tekton-fc-count');
+    var c=parseInt($count.val())||1;
+    $count.val(Math.max(0,c-1));
+  });
+  // Range field: update display
+  $(document).on('input','.tekton-range-input',function(){
+    $(this).siblings('.tekton-range-value').text($(this).val());
   });
 });
 JS;
@@ -301,7 +379,7 @@ JS;
 		$raw = get_post_meta( $post_id, $meta_key, true );
 
 		// Decode JSON for array field types
-		$array_types = [ 'repeater', 'checkbox', 'relationship' ];
+		$array_types = [ 'repeater', 'checkbox', 'relationship', 'gallery', 'group', 'flexible_content', 'taxonomy' ];
 		if ( in_array( $field['type'] ?? '', $array_types, true ) && is_string( $raw ) && $raw !== '' ) {
 			$decoded = json_decode( $raw, true );
 			if ( is_array( $decoded ) ) {

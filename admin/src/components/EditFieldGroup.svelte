@@ -75,18 +75,30 @@
   const fieldTypes = [
     { value: 'text', label: 'Text' },
     { value: 'textarea', label: 'Textarea' },
+    { value: 'wysiwyg', label: 'WYSIWYG Editor' },
     { value: 'number', label: 'Number' },
     { value: 'email', label: 'Email' },
     { value: 'url', label: 'URL' },
+    { value: 'password', label: 'Password' },
     { value: 'select', label: 'Select' },
     { value: 'checkbox', label: 'Checkbox' },
     { value: 'radio', label: 'Radio' },
     { value: 'true_false', label: 'True / False' },
     { value: 'image', label: 'Image' },
+    { value: 'gallery', label: 'Gallery' },
+    { value: 'file', label: 'File' },
     { value: 'date', label: 'Date' },
+    { value: 'datetime', label: 'Date & Time' },
+    { value: 'time', label: 'Time' },
     { value: 'color', label: 'Color' },
+    { value: 'range', label: 'Range' },
     { value: 'repeater', label: 'Repeater' },
+    { value: 'group', label: 'Group' },
+    { value: 'flexible_content', label: 'Flexible Content' },
     { value: 'relationship', label: 'Relationship' },
+    { value: 'post_object', label: 'Post Object' },
+    { value: 'taxonomy', label: 'Taxonomy' },
+    { value: 'code', label: 'Code' },
   ];
 
   function addField() {
@@ -142,31 +154,31 @@
   }
 
   function hasMaxlength(type) {
-    return ['text', 'textarea', 'email', 'url'].includes(type);
+    return ['text', 'textarea', 'email', 'url', 'password'].includes(type);
   }
 
   function hasRows(type) {
-    return type === 'textarea';
+    return ['textarea', 'wysiwyg', 'code'].includes(type);
   }
 
   function hasMinMax(type) {
-    return type === 'number';
+    return ['number', 'range'].includes(type);
   }
 
   function hasPreviewSize(type) {
-    return type === 'image';
+    return ['image', 'gallery'].includes(type);
   }
 
   function hasReturnFormat(type) {
-    return ['select', 'checkbox', 'radio', 'image', 'relationship'].includes(type);
+    return ['select', 'checkbox', 'radio', 'image', 'gallery', 'file', 'relationship', 'post_object', 'taxonomy'].includes(type);
   }
 
   function hasPostTypeFilter(type) {
-    return type === 'relationship';
+    return ['relationship', 'post_object'].includes(type);
   }
 
   function hasRepeaterConfig(type) {
-    return type === 'repeater';
+    return ['repeater', 'group', 'flexible_content'].includes(type);
   }
 
   const sections = [

@@ -41,6 +41,7 @@ class Tekton_Context_Builder {
 			'taxonomies'      => $this->get_taxonomies(),
 			'menus'           => $this->get_menus(),
 			'field_groups'    => $this->get_tekton_field_groups(),
+			'options_pages'   => $this->get_options_pages(),
 			'templates'       => $this->get_existing_templates(),
 			'design_tokens'   => $this->get_design_tokens(),
 			'active_plugins'  => $this->get_active_plugins(),
@@ -86,6 +87,11 @@ class Tekton_Context_Builder {
 		if ( ! empty( $context['field_groups'] ) ) {
 			$groups = array_map( fn( $g ) => $g['title'] . ' (' . $g['slug'] . ')', $context['field_groups'] );
 			$lines[] = 'Field groups: ' . implode( ', ', $groups );
+		}
+
+		if ( ! empty( $context['options_pages'] ) ) {
+			$pages = array_map( fn( $p ) => $p['title'] . ' (' . $p['slug'] . ')', $context['options_pages'] );
+			$lines[] = 'Options pages: ' . implode( ', ', $pages );
 		}
 
 		if ( ! empty( $context['templates'] ) ) {
@@ -224,6 +230,10 @@ class Tekton_Context_Builder {
 				'location_rules' => json_decode( $row['location_rules'], true ) ?? [],
 			];
 		}, $rows ?: [] );
+	}
+
+	private function get_options_pages(): array {
+		return $this->storage->list_options_pages();
 	}
 
 	private function get_existing_templates(): array {

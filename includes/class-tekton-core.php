@@ -67,6 +67,7 @@ final class Tekton_Core {
 		require_once $fe_dir . 'class-tekton-field-registry.php';
 		require_once $fe_dir . 'class-tekton-field-engine.php';
 		require_once $fe_dir . 'class-tekton-acf-compat.php';
+		require_once $fe_dir . 'class-tekton-options-page.php';
 		require_once $fe_dir . 'functions-tekton-fields.php';
 
 		require_once $dir . 'ai/interface-tekton-ai-provider.php';
@@ -108,6 +109,8 @@ final class Tekton_Core {
 		$this->modules['field_engine']->init();
 		$this->modules['cpt_manager']    = new Tekton_CPT_Manager( $this->modules['storage'] );
 		$this->modules['cpt_manager']->init();
+		$this->modules['options_page']   = new Tekton_Options_Page( $this->modules['storage'], $this->modules['field_registry'] );
+		$this->modules['options_page']->init();
 
 		$this->modules['rest_api']       = new Tekton_REST_API( $this );
 

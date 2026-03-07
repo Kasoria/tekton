@@ -89,6 +89,28 @@ class Tekton_REST_Content {
 				'permission_callback' => [ Tekton_REST_API::class, 'check_permission' ],
 			],
 		] );
+
+		// Options Pages.
+		register_rest_route( $ns, '/options-pages', [
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_list_options_pages' ],
+				'permission_callback' => [ Tekton_REST_API::class, 'check_permission' ],
+			],
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_save_options_page' ],
+				'permission_callback' => [ Tekton_REST_API::class, 'check_permission' ],
+			],
+		] );
+
+		register_rest_route( $ns, '/options-pages/(?P<slug>[a-z0-9_]+)', [
+			[
+				'methods'             => 'DELETE',
+				'callback'            => [ $this, 'handle_delete_options_page' ],
+				'permission_callback' => [ Tekton_REST_API::class, 'check_permission' ],
+			],
+		] );
 	}
 
 	// ─── Field Groups ───────────────────────────────────────────────────
@@ -252,6 +274,57 @@ class Tekton_REST_Content {
 		$deleted = $storage->delete_post_type( (int) $request->get_param( 'id' ) );
 
 		delete_transient( 'tekton_cpt_hash' );
+		$this->core->get_module( 'context' )->flush_cache();
+
+		return new \WP_REST_Response( [ 'deleted' => $deleted ] );
+	}
+
+	// ─── Options Pages ──────────────────────────────────────────────────
+
+	public function handle_list_options_pages(): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+		return new \WP_REST_Response( $storage->list_options_pages() );
+	}
+
+	public function handle_save_options_page( \WP_REST_Request $request ): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+		$data    = $request->get_json_params();
+
+		if ( empty( $data['slug'] ) || empty( $data['title'] ) ) {
+			return new \WP_REST_Response( [ 'message' => 'Slug and title are required.' ], 400 );
+		}
+
+		if ( ! preg_match( '/^[a-z0-9_]+$/', $data['slug'] ) ) {
+			return new \WP_REST_Response( [ 'message' => 'Invalid slug format (lowercase alphanumeric and underscores only).' ], 400 );
+		}
+
+		if ( strlen( $data['slug'] ) > 100 ) {
+			return new \WP_REST_Response( [ 'message' => 'Slug must be 100 characters or fewer.' ], 400 );
+		}
+
+		$valid_capabilities = [ 'manage_options', 'edit_posts', 'edit_pages', 'publish_posts', 'edit_others_posts' ];
+		if ( ! empty( $data['capability'] ) && ! in_array( $data['capability'], $valid_capabilities, true ) ) {
+			return new \WP_REST_Response( [ 'message' => 'Invalid capability.' ], 400 );
+		}
+
+		$saved = $storage->save_options_page( $data );
+		$this->core->get_module( 'context' )->flush_cache();
+
+		return new \WP_REST_Response( [ 'saved' => $saved ] );
+	}
+
+	public function handle_delete_options_page( \WP_REST_Request $request ): \WP_REST_Response {
+		/** @var Tekton_Storage $storage */
+		$storage = $this->core->get_module( 'storage' );
+		$slug    = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( '' === $slug ) {
+			return new \WP_REST_Response( [ 'message' => 'Slug is required.' ], 400 );
+		}
+
+		$deleted = $storage->delete_options_page( $slug );
 		$this->core->get_module( 'context' )->flush_cache();
 
 		return new \WP_REST_Response( [ 'deleted' => $deleted ] );
