@@ -10,9 +10,19 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class Tekton_Renderer {
 
+	private const TEXT_TAGS  = [ 'p', 'div', 'span', 'blockquote', 'pre', 'address', 'figcaption', 'li', 'dd', 'dt' ];
+	private const TITLE_TAGS = [ 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span' ];
+	private const FIELD_TAGS = [ 'span', 'div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'code', 'em', 'strong', 'small', 'time' ];
+
 	/** @var string[] Collected styles from all components. */
 	private array $collected_styles = [];
+	/** @var array<string, \WP_Post[]> Cached CPT post queries per request. */
+	private array $cpt_post_cache = [];
+	private Tekton_Security $security;
 
+	public function __construct( Tekton_Security $security ) {
+		$this->security = $security;
+	}
 
 	public function render_page( array $structure, int $post_id = 0, string $wrapper_tag = 'div' ): string {
 		$this->collected_styles = [];
@@ -45,13 +55,23 @@ class Tekton_Renderer {
 		$scripts_block = '';
 		$scripts = $structure['scripts'] ?? [];
 		if ( ! empty( $scripts ) && is_array( $scripts ) ) {
-			$scripts_js     = implode( "\n", array_map( 'strval', $scripts ) );
-			$scripts_block  = "\n" . '<script class="tekton-scripts">' . "\n"
-				. '(function(){' . "\n"
-				. 'function _init(){' . "\n" . $scripts_js . "\n" . '}' . "\n"
-				. 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_init);}else{_init();}' . "\n"
-				. '})();'
-				. "\n</script>\n";
+			$validated = [];
+			foreach ( $scripts as $script ) {
+				$script_str = (string) $script;
+				$result     = $this->security->validate_generated_code( $script_str );
+				if ( $result['valid'] ) {
+					$validated[] = $script_str;
+				}
+			}
+			if ( ! empty( $validated ) ) {
+				$scripts_js     = implode( "\n", $validated );
+				$scripts_block  = "\n" . '<script class="tekton-scripts">' . "\n"
+					. '(function(){' . "\n"
+					. 'function _init(){' . "\n" . $scripts_js . "\n" . '}' . "\n"
+					. 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_init);}else{_init();}' . "\n"
+					. '})();'
+					. "\n</script>\n";
+			}
 		}
 
 		$tag      = in_array( $wrapper_tag, [ 'header', 'main', 'footer', 'div' ], true ) ? $wrapper_tag : 'div';
@@ -77,23 +97,31 @@ class Tekton_Renderer {
 		$type = $component['type'];
 
 		return match ( $type ) {
-			'section'     => $this->render_section( $component, $post_id ),
-			'container'   => $this->render_container( $component, $post_id ),
-			'div'         => $this->render_div( $component, $post_id ),
-			'heading'     => $this->render_heading( $component, $post_id ),
-			'text'        => $this->render_text( $component, $post_id ),
-			'image'       => $this->render_image( $component, $post_id ),
-			'button'      => $this->render_button( $component, $post_id ),
-			'grid'        => $this->render_grid( $component, $post_id ),
-			'flex-row'    => $this->render_flex( $component, $post_id, 'row' ),
-			'flex-column' => $this->render_flex( $component, $post_id, 'column' ),
-			'link'        => $this->render_link( $component, $post_id ),
-			'list'        => $this->render_list( $component, $post_id ),
-			'spacer'      => $this->render_spacer( $component ),
-			'divider'     => $this->render_divider( $component ),
-			'video'       => $this->render_video( $component, $post_id ),
-			'icon'        => $this->render_icon( $component ),
-			default       => '',
+			'section'        => $this->render_section( $component, $post_id ),
+			'container'      => $this->render_container( $component, $post_id ),
+			'div'            => $this->render_div( $component, $post_id ),
+			'heading'        => $this->render_heading( $component, $post_id ),
+			'text'           => $this->render_text( $component, $post_id ),
+			'image'          => $this->render_image( $component, $post_id ),
+			'button'         => $this->render_button( $component, $post_id ),
+			'grid'           => $this->render_grid( $component, $post_id ),
+			'flex-row'       => $this->render_flex( $component, $post_id, 'row' ),
+			'flex-column'    => $this->render_flex( $component, $post_id, 'column' ),
+			'link'           => $this->render_link( $component, $post_id ),
+			'list'           => $this->render_list( $component, $post_id ),
+			'spacer'         => $this->render_spacer( $component ),
+			'divider'        => $this->render_divider( $component ),
+			'video'          => $this->render_video( $component, $post_id ),
+			'icon'           => $this->render_icon( $component ),
+			'post-loop'      => $this->render_post_loop( $component, $post_id ),
+			'post-title'     => $this->render_post_title( $component, $post_id ),
+			'post-content'   => $this->render_post_content( $component, $post_id ),
+			'post-meta'      => $this->render_post_meta( $component, $post_id ),
+			'featured-image' => $this->render_featured_image( $component, $post_id ),
+			'menu'           => $this->render_menu_component( $component ),
+			'tekton-field'   => $this->render_tekton_field( $component, $post_id ),
+			'search-form'    => $this->render_search_form( $component ),
+			default          => '',
 		};
 	}
 
@@ -130,7 +158,7 @@ class Tekton_Renderer {
 	}
 
 	private function render_text( array $c, int $post_id ): string {
-		$tag     = esc_attr( $c['props']['tagName'] ?? 'p' );
+		$tag     = $this->validate_tag_name( $c['props']['tagName'] ?? 'p', self::TEXT_TAGS, 'p' );
 		$attrs   = $this->build_attributes( $c, 'tekton-text' );
 		$content = $this->resolve_prop_content( $c, 'content', $post_id );
 
@@ -274,33 +302,290 @@ class Tekton_Renderer {
 		$fallback = (string) ( $source['fallback'] ?? '' );
 
 		return match ( $source['source'] ) {
-			'static'  => (string) ( $source['value'] ?? '' ),
-			'post'    => $this->resolve_post_source( $source, $post_id ) ?: $fallback,
-			'option'  => (string) ( get_option( $source['key'] ?? '', $fallback ) ),
-			'field'   => $fallback, // Phase 2: Field Engine
-			'acf'     => $fallback, // Phase 2: ACF compat
-			'menu'    => $fallback, // Phase 2
-			'computed'=> $fallback, // Phase 2
-			default   => $fallback,
+			'static'   => (string) ( $source['value'] ?? '' ),
+			'post'     => $this->resolve_post_source( $source, $post_id ) ?: $fallback,
+			'option'   => (string) ( get_option( $source['key'] ?? '', $fallback ) ),
+			'field'    => $this->resolve_field_source( $source, $post_id ) ?: $fallback,
+			'acf'      => $this->resolve_acf_source( $source, $post_id ) ?: $fallback,
+			'menu'     => $this->resolve_menu_source( $source ) ?: $fallback,
+			'computed' => $this->resolve_computed_source( $source, $post_id ) ?: $fallback,
+			default    => $fallback,
 		};
 	}
 
 	private function resolve_post_source( array $source, int $post_id ): string {
+		// Query a specific CPT by index when post_type is specified.
+		if ( ! empty( $source['post_type'] ) ) {
+			return $this->resolve_cpt_post_source( $source );
+		}
+
 		if ( $post_id <= 0 ) {
 			return '';
 		}
 
-		$field = $source['field'] ?? '';
+		return $this->resolve_post_field( $source['field'] ?? '', $post_id, $source );
+	}
 
+	/**
+	 * Resolve a post field (core or custom meta) for a known post ID.
+	 */
+	private function resolve_post_field( string $field, int $post_id, array $source ): string {
 		return match ( $field ) {
 			'post_title'     => get_the_title( $post_id ),
 			'post_content'   => (string) get_post_field( 'post_content', $post_id ),
 			'post_excerpt'   => (string) get_the_excerpt( $post_id ),
 			'post_date'      => (string) get_the_date( '', $post_id ),
 			'featured_image' => (string) get_the_post_thumbnail_url( $post_id, $source['size'] ?? 'large' ),
-			default          => '',
+			default          => $this->resolve_post_meta_field( $field, $post_id, $source ),
 		};
 	}
+
+	/**
+	 * Query a CPT by post_type + post_index and resolve a field from the matching post.
+	 */
+	private function resolve_cpt_post_source( array $source ): string {
+		$post_type  = sanitize_key( $source['post_type'] );
+		$post_index = max( 0, (int) ( $source['post_index'] ?? 0 ) );
+
+		if ( ! isset( $this->cpt_post_cache[ $post_type ] ) ) {
+			$this->cpt_post_cache[ $post_type ] = get_posts( [
+				'post_type'      => $post_type,
+				'posts_per_page' => 20,
+				'orderby'        => 'menu_order date',
+				'order'          => 'ASC',
+				'post_status'    => 'publish',
+			] );
+		}
+
+		$post = $this->cpt_post_cache[ $post_type ][ $post_index ] ?? null;
+		if ( ! $post ) {
+			return '';
+		}
+
+		return $this->resolve_post_field( $source['field'] ?? '', $post->ID, $source );
+	}
+
+	/**
+	 * Resolve a custom meta field. Tries Tekton field engine, then plain post meta.
+	 */
+	private function resolve_post_meta_field( string $field, int $post_id, array $source ): string {
+		if ( '' === $field ) {
+			return '';
+		}
+
+		// Explicit group provided — direct lookup.
+		if ( ! empty( $source['group'] ) ) {
+			$value = tekton_get_field( $field, $post_id, $source['group'] );
+			return is_scalar( $value ) ? (string) $value : '';
+		}
+
+		// Auto-detect: search Tekton field groups for this field name.
+		$storage = Tekton_Core::instance()->get_module( 'storage' );
+		$groups  = $storage->list_field_groups();
+
+		foreach ( $groups as $group ) {
+			foreach ( $group['fields'] as $f ) {
+				if ( ( $f['name'] ?? '' ) === $field ) {
+					$value = tekton_get_field( $field, $post_id, $group['slug'] );
+					if ( is_scalar( $value ) && '' !== (string) $value ) {
+						return (string) $value;
+					}
+				}
+			}
+		}
+
+		// Last resort: plain post meta.
+		$value = get_post_meta( $post_id, $field, true );
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	// ─── Content source resolvers ─────────────────────────────────────
+
+	private function resolve_field_source( array $source, int $post_id ): string {
+		$group = $source['group'] ?? '';
+		$field = $source['field'] ?? '';
+		if ( ! $group || ! $field || $post_id <= 0 ) {
+			return '';
+		}
+		$value = tekton_get_field( $field, $post_id, $group );
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	private function resolve_acf_source( array $source, int $post_id ): string {
+		$field = $source['field'] ?? '';
+		if ( ! $field ) {
+			return '';
+		}
+		$value = Tekton_ACF_Compat::get_field( $field, $post_id );
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	private function resolve_menu_source( array $source ): string {
+		$location = $source['location'] ?? '';
+		if ( ! $location ) {
+			return '';
+		}
+		return (string) wp_nav_menu( [
+			'theme_location' => $location,
+			'echo'           => false,
+			'fallback_cb'    => '__return_empty_string',
+		] );
+	}
+
+	private function resolve_computed_source( array $source, int $post_id ): string {
+		$expr = $source['expression'] ?? '';
+		$args = $source['args'] ?? [];
+
+		return match ( $expr ) {
+			'current_year' => (string) gmdate( 'Y' ),
+			'site_name'    => get_bloginfo( 'name' ),
+			'site_url'     => home_url(),
+			'post_count'   => (string) wp_count_posts( $args['post_type'] ?? 'post' )->publish,
+			default        => '',
+		};
+	}
+
+	// ─── WordPress components ─────────────────────────────────────────
+
+	private function render_post_loop( array $c, int $post_id ): string {
+		$query_args = $c['props']['query'] ?? [];
+		$sanitized  = $this->sanitize_query_args( $query_args );
+		$query      = new \WP_Query( $sanitized );
+		$attrs      = $this->build_attributes( $c, 'tekton-post-loop' );
+
+		$html = "<div {$attrs}>\n";
+		while ( $query->have_posts() ) {
+			$query->the_post();
+			$html .= $this->render_children( $c, get_the_ID() );
+		}
+		wp_reset_postdata();
+		$html .= "</div>\n";
+
+		return $html;
+	}
+
+	private function render_post_title( array $c, int $post_id ): string {
+		$tag   = $this->validate_tag_name( $c['props']['tagName'] ?? 'h2', self::TITLE_TAGS, 'h2' );
+		$attrs = $this->build_attributes( $c, 'tekton-post-title' );
+		$link  = ! empty( $c['props']['link'] );
+		$title = esc_html( get_the_title( $post_id ) );
+
+		if ( $link ) {
+			$url   = esc_url( (string) get_permalink( $post_id ) );
+			$title = '<a href="' . $url . '">' . $title . '</a>';
+		}
+
+		return "<{$tag} {$attrs}>{$title}</{$tag}>\n";
+	}
+
+	private function render_post_content( array $c, int $post_id ): string {
+		$attrs   = $this->build_attributes( $c, 'tekton-post-content' );
+		$content = apply_filters( 'the_content', (string) get_post_field( 'post_content', $post_id ) );
+		return "<div {$attrs}>" . wp_kses_post( $content ) . "</div>\n";
+	}
+
+	private function render_post_meta( array $c, int $post_id ): string {
+		$attrs = $this->build_attributes( $c, 'tekton-post-meta' );
+		$items = [];
+
+		if ( ! empty( $c['props']['showDate'] ) ) {
+			$items[] = '<span class="tekton-post-date">' . esc_html( (string) get_the_date( '', $post_id ) ) . '</span>';
+		}
+		if ( ! empty( $c['props']['showAuthor'] ) ) {
+			$author_id = (int) get_post_field( 'post_author', $post_id );
+			$items[]   = '<span class="tekton-post-author">' . esc_html( get_the_author_meta( 'display_name', $author_id ) ) . '</span>';
+		}
+		if ( ! empty( $c['props']['showCategories'] ) ) {
+			$cats = get_the_category_list( ', ', '', $post_id );
+			if ( $cats ) {
+				$items[] = '<span class="tekton-post-cats">' . wp_kses_post( $cats ) . '</span>';
+			}
+		}
+
+		return "<div {$attrs}>" . implode( ' ', $items ) . "</div>\n";
+	}
+
+	private function render_featured_image( array $c, int $post_id ): string {
+		$size  = $c['props']['size'] ?? 'large';
+		$attrs = $this->build_attributes( $c, 'tekton-featured-image' );
+		$link  = ! empty( $c['props']['link'] );
+
+		$img = get_the_post_thumbnail( $post_id, $size, [ 'loading' => 'lazy' ] );
+		if ( ! $img ) {
+			return '';
+		}
+
+		if ( $link ) {
+			$url = esc_url( (string) get_permalink( $post_id ) );
+			$img = '<a href="' . $url . '">' . $img . '</a>';
+		}
+
+		return "<div {$attrs}>{$img}</div>\n";
+	}
+
+	private function render_menu_component( array $c ): string {
+		$location = $c['props']['location'] ?? 'primary';
+		$attrs    = $this->build_attributes( $c, 'tekton-menu' );
+
+		$menu = wp_nav_menu( [
+			'theme_location' => $location,
+			'echo'           => false,
+			'fallback_cb'    => '__return_empty_string',
+			'container'      => false,
+		] );
+
+		return "<nav {$attrs}>{$menu}</nav>\n";
+	}
+
+	private function render_tekton_field( array $c, int $post_id ): string {
+		$group = $c['props']['group'] ?? '';
+		$field = $c['props']['field'] ?? '';
+		$tag   = $this->validate_tag_name( $c['props']['tagName'] ?? 'span', self::FIELD_TAGS, 'span' );
+		$attrs = $this->build_attributes( $c, 'tekton-field' );
+
+		$value = tekton_get_field( $field, $post_id, $group );
+		if ( is_array( $value ) ) {
+			$value = wp_json_encode( $value );
+		}
+
+		return "<{$tag} {$attrs}>" . esc_html( (string) $value ) . "</{$tag}>\n";
+	}
+
+	private function render_search_form( array $c ): string {
+		$attrs = $this->build_attributes( $c, 'tekton-search-form' );
+		$form  = get_search_form( [ 'echo' => false ] );
+		return "<div {$attrs}>{$form}</div>\n";
+	}
+
+	/**
+	 * Whitelist WP_Query args to prevent injection.
+	 */
+	private function sanitize_query_args( array $args ): array {
+		$allowed = [
+			'post_type', 'posts_per_page', 'orderby', 'order', 'post_status',
+			'tax_query', 'meta_query', 'paged', 'offset', 'category_name',
+			'tag', 'author', 's',
+		];
+
+		$sanitized = [];
+		foreach ( $allowed as $key ) {
+			if ( isset( $args[ $key ] ) ) {
+				$sanitized[ $key ] = $args[ $key ];
+			}
+		}
+
+		// Force published posts only
+		$sanitized['post_status'] = 'publish';
+
+		// Sensible default
+		if ( empty( $sanitized['posts_per_page'] ) ) {
+			$sanitized['posts_per_page'] = 10;
+		}
+
+		return $sanitized;
+	}
+
+	// ─── Styles ───────────────────────────────────────────────────────
 
 	private function render_styles( array $styles, string $component_id ): string {
 		$css = '';
@@ -313,7 +598,12 @@ class Tekton_Renderer {
 
 			$rules = '';
 			foreach ( $styles[ $breakpoint ] as $prop => $value ) {
-				$prop  = $this->camel_to_kebab( $prop );
+				$prop = $this->camel_to_kebab( $prop );
+				$prop = $this->security->sanitize_css_property( $prop );
+				if ( null === $prop ) {
+					continue;
+				}
+				$value = $this->security->sanitize_css_value( (string) $value );
 				$rules .= "  {$prop}: {$value};\n";
 			}
 
@@ -412,10 +702,18 @@ class Tekton_Renderer {
 			}
 			$css .= '@keyframes ' . $name . " {\n";
 			foreach ( $steps as $stop => $props ) {
-				$stop = esc_attr( (string) $stop );
+				$stop = (string) $stop;
+				if ( ! preg_match( '/^(\d{1,3}%|from|to)$/', $stop ) ) {
+					continue;
+				}
 				$css .= "  {$stop} {\n";
 				foreach ( $props as $prop => $value ) {
 					$prop = $this->camel_to_kebab( $prop );
+					$prop = $this->security->sanitize_css_property( $prop );
+					if ( null === $prop ) {
+						continue;
+					}
+					$value = $this->security->sanitize_css_value( (string) $value );
 					$css .= "    {$prop}: {$value};\n";
 				}
 				$css .= "  }\n";
@@ -423,6 +721,10 @@ class Tekton_Renderer {
 			$css .= "}\n";
 		}
 		return $css;
+	}
+
+	private function validate_tag_name( string $tag, array $allowed, string $default ): string {
+		return in_array( $tag, $allowed, true ) ? $tag : $default;
 	}
 
 	private function camel_to_kebab( string $str ): string {

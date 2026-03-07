@@ -420,3 +420,622 @@ msgstr ""
 
 msgid "Auto (WordPress default)"
 msgstr ""
+
+#: admin/src/components/EditPostType.svelte
+msgid "General"
+msgstr ""
+
+msgid "General Settings"
+msgstr ""
+
+msgid "Labels"
+msgstr ""
+
+msgid "Fine-tune how this post type appears throughout the admin. Leave blank for WordPress defaults."
+msgstr ""
+
+msgid "Visibility"
+msgstr ""
+
+msgid "URLs & Archives"
+msgstr ""
+
+msgid "Features"
+msgstr ""
+
+msgid "REST API"
+msgstr ""
+
+msgid "Admin Menu"
+msgstr ""
+
+msgid "Capabilities"
+msgstr ""
+
+msgid "Taxonomies"
+msgstr ""
+
+msgid "Create and manage taxonomies associated with this post type."
+msgstr ""
+
+msgid "New Post Type"
+msgstr ""
+
+msgid "Saved successfully."
+msgstr ""
+
+msgid "Error:"
+msgstr ""
+
+msgid "Post Type Key (slug)"
+msgstr ""
+
+msgid "Max 20 characters. Lowercase, underscores only."
+msgstr ""
+
+msgid "Cannot be changed after creation."
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "A short description of the post type"
+msgstr ""
+
+msgid "Plural Label"
+msgstr ""
+
+msgid "Singular Label"
+msgstr ""
+
+msgid "Whether this post type is visible on the front end and in search results."
+msgstr ""
+
+msgid "Publicly Queryable"
+msgstr ""
+
+msgid "Whether queries for this post type can be performed from the front end."
+msgstr ""
+
+msgid "Exclude from Search"
+msgstr ""
+
+msgid "Whether to exclude posts from front-end search results."
+msgstr ""
+
+msgid "Show UI"
+msgstr ""
+
+msgid "Whether to generate a default admin UI for this post type."
+msgstr ""
+
+msgid "Show in Nav Menus"
+msgstr ""
+
+msgid "Whether this post type is available for selection in navigation menus."
+msgstr ""
+
+msgid "Show in Admin Bar"
+msgstr ""
+
+msgid "Whether to show the post type in the admin bar \"New\" menu."
+msgstr ""
+
+msgid "Show in Menu"
+msgstr ""
+
+msgid "Show as top-level menu, or enter a parent menu slug (e.g. \"edit.php\" or \"tools.php\")."
+msgstr ""
+
+msgid "Has Archive"
+msgstr ""
+
+msgid "Enable an archive page for this post type."
+msgstr ""
+
+msgid "Custom Archive Slug"
+msgstr ""
+
+msgid "Same as post type slug"
+msgstr ""
+
+msgid "Leave blank to use the post type slug."
+msgstr ""
+
+msgid "URL Rewrites"
+msgstr ""
+
+msgid "Whether to enable pretty permalinks for this post type."
+msgstr ""
+
+msgid "Custom Rewrite Slug"
+msgstr ""
+
+msgid "With Front"
+msgstr ""
+
+msgid "Feeds"
+msgstr ""
+
+msgid "Pagination"
+msgstr ""
+
+msgid "Query Var"
+msgstr ""
+
+msgid "Whether to allow ?post_type=slug queries."
+msgstr ""
+
+msgid "Supported Features"
+msgstr ""
+
+msgid "Which core features this post type supports. Note: Tekton replaces the block editor, so \"Editor\" enables the classic editor fallback only."
+msgstr ""
+
+msgid "Hierarchical"
+msgstr ""
+
+msgid "Allow parent/child relationships (like Pages)."
+msgstr ""
+
+msgid "Can Export"
+msgstr ""
+
+msgid "Allow this post type to be exported via WordPress export tools."
+msgstr ""
+
+msgid "Delete with User"
+msgstr ""
+
+msgid "Delete posts of this type when the author user is deleted."
+msgstr ""
+
+msgid "Show in REST"
+msgstr ""
+
+msgid "Expose this post type in the WordPress REST API. Required for Tekton."
+msgstr ""
+
+msgid "REST Base"
+msgstr ""
+
+msgid "Custom base URL for REST routes. Defaults to the post type slug."
+msgstr ""
+
+msgid "REST Namespace"
+msgstr ""
+
+msgid "Custom namespace. Defaults to wp/v2."
+msgstr ""
+
+msgid "REST Controller Class"
+msgstr ""
+
+msgid "Custom controller class. For advanced use only."
+msgstr ""
+
+msgid "Menu Position"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "5=below Posts, 10=below Media, 20=below Pages, 25=below Comments, 60=below first separator, 65=below Plugins, 70=below Users, 80=below Settings"
+msgstr ""
+
+msgid "Menu Icon"
+msgstr ""
+
+msgid "Or enter custom:"
+msgstr ""
+
+msgid "Capability Type"
+msgstr ""
+
+msgid "Use \"post\" for standard capabilities, or a custom string to create unique capabilities for this post type."
+msgstr ""
+
+msgid "Map Meta Cap"
+msgstr ""
+
+msgid "Map meta capabilities to primitive capabilities. Usually should be enabled."
+msgstr ""
+
+msgid "No taxonomies yet."
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Slug"
+msgstr ""
+
+msgid "Rewrite Slug"
+msgstr ""
+
+msgid "Public"
+msgstr ""
+
+msgid "Tag Cloud"
+msgstr ""
+
+msgid "Quick Edit"
+msgstr ""
+
+msgid "Add Taxonomy"
+msgstr ""
+
+#: admin/src/components/EditFieldGroup.svelte
+msgid "New Field Group"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Auto-generated from title. Lowercase, underscores only."
+msgstr ""
+
+msgid "Optional description for this field group"
+msgstr ""
+
+msgid "Whether this field group is active and its meta boxes are shown."
+msgstr ""
+
+msgid "field"
+msgstr ""
+
+msgid "configured"
+msgstr ""
+
+msgid "Add Field"
+msgstr ""
+
+msgid "No fields yet. Click \"Add Field\" to start."
+msgstr ""
+
+msgid "Untitled field"
+msgstr ""
+
+msgid "Required"
+msgstr ""
+
+msgid "Move up"
+msgstr ""
+
+msgid "Move down"
+msgstr ""
+
+msgid "Field Label"
+msgstr ""
+
+msgid "Field Name"
+msgstr ""
+
+msgid "Used as the meta key suffix. Lowercase, underscores only."
+msgstr ""
+
+msgid "Field Type"
+msgstr ""
+
+msgid "Instructions"
+msgstr ""
+
+msgid "Help text shown below the field"
+msgstr ""
+
+msgid "Default Value"
+msgstr ""
+
+msgid "Placeholder"
+msgstr ""
+
+msgid "Type-Specific Settings"
+msgstr ""
+
+msgid "Max Length"
+msgstr ""
+
+msgid "No limit"
+msgstr ""
+
+msgid "Rows"
+msgstr ""
+
+msgid "Min Value"
+msgstr ""
+
+msgid "Max Value"
+msgstr ""
+
+msgid "Step"
+msgstr ""
+
+msgid "Choices"
+msgstr ""
+
+msgid "One choice per line"
+msgstr ""
+
+msgid "Enter one choice per line. Use \"value : Label\" format for different values and labels."
+msgstr ""
+
+msgid "Allow Multiple Selections"
+msgstr ""
+
+msgid "Return Format"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "Image ID"
+msgstr ""
+
+msgid "Image URL"
+msgstr ""
+
+msgid "Post ID"
+msgstr ""
+
+msgid "Post Object"
+msgstr ""
+
+msgid "Preview Size"
+msgstr ""
+
+msgid "Thumbnail"
+msgstr ""
+
+msgid "Medium"
+msgstr ""
+
+msgid "Large"
+msgstr ""
+
+msgid "Full"
+msgstr ""
+
+msgid "Filter by Post Type"
+msgstr ""
+
+msgid "Comma-separated post type slugs. Leave empty for all."
+msgstr ""
+
+msgid "Min Rows"
+msgstr ""
+
+msgid "Max Rows"
+msgstr ""
+
+msgid "Sub Fields (JSON)"
+msgstr ""
+
+msgid "JSON array of sub-field definitions. Each must have name, type, and label."
+msgstr ""
+
+msgid "Error: At least one valid field is required."
+msgstr ""
+
+msgid "Location Rules"
+msgstr ""
+
+msgid "Define where this field group appears. Rule groups use OR logic between them, AND logic within each group."
+msgstr ""
+
+msgid "Post Type"
+msgstr ""
+
+msgid "is equal to"
+msgstr ""
+
+msgid "is not equal to"
+msgstr ""
+
+msgid "Remove rule"
+msgstr ""
+
+msgid "Add Rule"
+msgstr ""
+
+msgid "Remove Group"
+msgstr ""
+
+msgid "Add Rule Group"
+msgstr ""
+
+msgid "Presentation"
+msgstr ""
+
+msgid "Position"
+msgstr ""
+
+msgid "Normal (below content)"
+msgstr ""
+
+msgid "Side (sidebar)"
+msgstr ""
+
+msgid "Advanced (below normal)"
+msgstr ""
+
+msgid "Where the meta box appears on the edit screen."
+msgstr ""
+
+msgid "Priority"
+msgstr ""
+
+msgid "High"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Low"
+msgstr ""
+
+msgid "Order within the chosen position."
+msgstr ""
+
+# CPT Labels section (manual override labels)
+msgid "Add New"
+msgstr ""
+
+msgid "e.g. Add New"
+msgstr ""
+
+msgid "Add New Item"
+msgstr ""
+
+msgid "e.g. Add New Team Member"
+msgstr ""
+
+msgid "Edit Item"
+msgstr ""
+
+msgid "e.g. Edit Team Member"
+msgstr ""
+
+msgid "New Item"
+msgstr ""
+
+msgid "e.g. New Team Member"
+msgstr ""
+
+msgid "View Item"
+msgstr ""
+
+msgid "e.g. View Team Member"
+msgstr ""
+
+msgid "View Items"
+msgstr ""
+
+msgid "e.g. View Team Members"
+msgstr ""
+
+msgid "Search Items"
+msgstr ""
+
+msgid "e.g. Search Team Members"
+msgstr ""
+
+msgid "Not Found"
+msgstr ""
+
+msgid "e.g. No team members found"
+msgstr ""
+
+msgid "Not Found in Trash"
+msgstr ""
+
+msgid "e.g. No team members found in trash"
+msgstr ""
+
+msgid "All Items"
+msgstr ""
+
+msgid "e.g. All Team Members"
+msgstr ""
+
+msgid "Archives"
+msgstr ""
+
+msgid "e.g. Team Member Archives"
+msgstr ""
+
+msgid "Menu Name"
+msgstr ""
+
+msgid "e.g. Team"
+msgstr ""
+
+msgid "Parent Item:"
+msgstr ""
+
+msgid "For hierarchical types"
+msgstr ""
+
+msgid "Attributes"
+msgstr ""
+
+msgid "e.g. Team Member Attributes"
+msgstr ""
+
+msgid "Insert into Item"
+msgstr ""
+
+msgid "e.g. Insert into team member"
+msgstr ""
+
+msgid "Uploaded to Item"
+msgstr ""
+
+msgid "e.g. Uploaded to this team member"
+msgstr ""
+
+msgid "Filter Items List"
+msgstr ""
+
+msgid "e.g. Filter team members list"
+msgstr ""
+
+msgid "Items List Navigation"
+msgstr ""
+
+msgid "e.g. Team members list navigation"
+msgstr ""
+
+msgid "Items List"
+msgstr ""
+
+msgid "e.g. Team members list"
+msgstr ""
+
+# Auto-generated CPT label templates
+msgid "Add New %s"
+msgstr ""
+
+msgid "Edit %s"
+msgstr ""
+
+msgid "New %s"
+msgstr ""
+
+msgid "View %s"
+msgstr ""
+
+msgid "Search %s"
+msgstr ""
+
+msgid "No %s found"
+msgstr ""
+
+msgid "No %s found in trash"
+msgstr ""
+
+msgid "All %s"
+msgstr ""
+
+msgid "%s Archives"
+msgstr ""
+
+msgid "Parent %s:"
+msgstr ""
+
+msgid "%s Attributes"
+msgstr ""
+
+msgid "Insert into %s"
+msgstr ""
+
+msgid "Uploaded to this %s"
+msgstr ""
+
+msgid "Filter %s list"
+msgstr ""
+
+msgid "%s list navigation"
+msgstr ""
+
+msgid "%s list"
+msgstr ""

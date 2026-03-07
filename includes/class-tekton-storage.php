@@ -400,6 +400,152 @@ class Tekton_Storage {
 		return $rows;
 	}
 
+	// ─── Field Group CRUD ─────────────────────────────────────────────
+
+	public function get_field_group( int $id ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}tekton_field_groups WHERE id = %d",
+				$id
+			),
+			ARRAY_A
+		);
+		if ( ! $row ) {
+			return null;
+		}
+		$row['fields']         = json_decode( $row['fields'], true ) ?? [];
+		$row['location_rules'] = json_decode( $row['location_rules'], true ) ?? [];
+		return $row;
+	}
+
+	public function get_field_group_by_slug( string $slug ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}tekton_field_groups WHERE slug = %s",
+				$slug
+			),
+			ARRAY_A
+		);
+		if ( ! $row ) {
+			return null;
+		}
+		$row['fields']         = json_decode( $row['fields'], true ) ?? [];
+		$row['location_rules'] = json_decode( $row['location_rules'], true ) ?? [];
+		return $row;
+	}
+
+	/**
+	 * Insert or update a field group. Returns the ID.
+	 */
+	public function save_field_group( array $data ): int {
+		global $wpdb;
+		$table = $wpdb->prefix . 'tekton_field_groups';
+		$slug  = sanitize_key( $data['slug'] ?? '' );
+
+		$row = [
+			'title'          => sanitize_text_field( $data['title'] ?? '' ),
+			'slug'           => $slug,
+			'fields'         => wp_json_encode( $data['fields'] ?? [] ),
+			'location_rules' => wp_json_encode( $data['location_rules'] ?? [] ),
+			'position'       => sanitize_key( $data['position'] ?? 'normal' ),
+			'priority'       => sanitize_key( $data['priority'] ?? 'high' ),
+			'menu_order'     => (int) ( $data['menu_order'] ?? 0 ),
+			'is_active'      => (int) ( $data['is_active'] ?? 1 ),
+			'source'         => in_array( $data['source'] ?? 'ai', [ 'ai', 'manual' ], true ) ? $data['source'] : 'ai',
+			'ai_prompt'      => sanitize_textarea_field( $data['ai_prompt'] ?? '' ),
+		];
+
+		// Upsert: if slug exists, update
+		$existing = $wpdb->get_var(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $slug )
+		);
+
+		if ( $existing ) {
+			$wpdb->update( $table, $row, [ 'id' => (int) $existing ] );
+			return (int) $existing;
+		}
+
+		$wpdb->insert( $table, $row );
+		return (int) $wpdb->insert_id;
+	}
+
+	public function delete_field_group( int $id ): bool {
+		global $wpdb;
+		return (bool) $wpdb->delete( $wpdb->prefix . 'tekton_field_groups', [ 'id' => $id ] );
+	}
+
+	// ─── Post Type CRUD ───────────────────────────────────────────────
+
+	public function get_post_type_entry( int $id ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}tekton_post_types WHERE id = %d",
+				$id
+			),
+			ARRAY_A
+		);
+		if ( ! $row ) {
+			return null;
+		}
+		$row['config']     = json_decode( $row['config'], true ) ?? [];
+		$row['taxonomies'] = json_decode( $row['taxonomies'] ?? '[]', true ) ?? [];
+		return $row;
+	}
+
+	public function get_post_type_by_slug( string $slug ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}tekton_post_types WHERE slug = %s",
+				$slug
+			),
+			ARRAY_A
+		);
+		if ( ! $row ) {
+			return null;
+		}
+		$row['config']     = json_decode( $row['config'], true ) ?? [];
+		$row['taxonomies'] = json_decode( $row['taxonomies'] ?? '[]', true ) ?? [];
+		return $row;
+	}
+
+	/**
+	 * Insert or update a post type. Returns the ID.
+	 */
+	public function save_post_type( array $data ): int {
+		global $wpdb;
+		$table = $wpdb->prefix . 'tekton_post_types';
+		$slug  = sanitize_key( $data['slug'] ?? '' );
+
+		$row = [
+			'slug'       => $slug,
+			'config'     => wp_json_encode( $data['config'] ?? [] ),
+			'taxonomies' => wp_json_encode( $data['taxonomies'] ?? [] ),
+			'source'     => in_array( $data['source'] ?? 'ai', [ 'ai', 'manual' ], true ) ? $data['source'] : 'ai',
+			'ai_prompt'  => sanitize_textarea_field( $data['ai_prompt'] ?? '' ),
+		];
+
+		$existing = $wpdb->get_var(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $slug )
+		);
+
+		if ( $existing ) {
+			$wpdb->update( $table, $row, [ 'id' => (int) $existing ] );
+			return (int) $existing;
+		}
+
+		$wpdb->insert( $table, $row );
+		return (int) $wpdb->insert_id;
+	}
+
+	public function delete_post_type( int $id ): bool {
+		global $wpdb;
+		return (bool) $wpdb->delete( $wpdb->prefix . 'tekton_post_types', [ 'id' => $id ] );
+	}
+
 	// ─── Activity ──────────────────────────────────────────────────────
 
 	/**

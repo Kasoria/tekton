@@ -14,12 +14,15 @@
 
   const theme = createThemeStore();
 
-  let { onOpenBuilder, onOpenTemplate } = $props();
+  let { onOpenBuilder, onOpenTemplate, onEditPostType, onEditFieldGroup } = $props();
 
   const GLOBAL_TEMPLATES = ['header', 'footer'];
 
   let tab = $state('overview');
   let deleteConfirm = $state({ open: false, key: '' });
+  let deleteFgConfirm = $state({ open: false, id: 0 });
+  let deleteCptConfirm = $state({ open: false, id: 0 });
+
   let showOnboarding = $state(false);
   let currentTheme = $state(null);
 
@@ -210,6 +213,20 @@
     const templateKey = deleteConfirm.key;
     deleteConfirm = { open: false, key: '' };
     await api.deleteStructure(templateKey);
+    await dashboard.load();
+  }
+
+  async function confirmDeleteFieldGroup() {
+    const id = deleteFgConfirm.id;
+    deleteFgConfirm = { open: false, id: 0 };
+    await api.deleteFieldGroup(id);
+    await dashboard.load();
+  }
+
+  async function confirmDeletePostType() {
+    const id = deleteCptConfirm.id;
+    deleteCptConfirm = { open: false, id: 0 };
+    await api.deletePostType(id);
     await dashboard.load();
   }
 
@@ -504,6 +521,7 @@
             <h2 class="font-heading text-2xl font-extrabold tracking-tight">{t('field_groups_heading', 'Field Groups')}</h2>
             <p class="text-[13px] text-muted mt-1">{t('field_groups_desc', "Content structure — Tekton's built-in field engine")}</p>
           </div>
+          <Button onclick={() => onEditFieldGroup?.(null)}>+ New Field Group</Button>
         </div>
 
         {#if dashboard.fieldGroups.length === 0}
@@ -513,23 +531,32 @@
         {:else}
           <div class="flex flex-col gap-2">
             {#each dashboard.fieldGroups as fg}
-              <Card class="flex items-center justify-between px-5 py-4 cursor-pointer transition-colors hover:border-dim">
-                <div class="flex items-center gap-4">
-                  <div class="w-[3px] h-8 rounded-sm {fg.source === 'ai' ? 'bg-copper' : 'bg-slate'}"></div>
-                  <div>
-                    <div class="text-sm font-semibold">{fg.title}</div>
-                    <div class="flex gap-2 mt-[3px] items-center">
-                      <span class="text-[12px] text-muted font-mono">{fg.slug}</span>
-                      {#if locationLabel(fg)}
-                        <span class="text-dim">·</span>
-                        <span class="text-[12px] text-muted">{locationLabel(fg)}</span>
-                      {/if}
+              <Card class="transition-colors hover:border-dim">
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="flex items-center justify-between px-5 py-4 cursor-pointer" onclick={() => onEditFieldGroup?.(fg.id)}>
+                  <div class="flex items-center gap-4">
+                    <div class="w-[3px] h-8 rounded-sm {fg.source === 'ai' ? 'bg-copper' : 'bg-slate'}"></div>
+                    <div>
+                      <div class="text-sm font-semibold">{fg.title}</div>
+                      <div class="flex gap-2 mt-[3px] items-center">
+                        <span class="text-[12px] text-muted font-mono">{fg.slug}</span>
+                        {#if locationLabel(fg)}
+                          <span class="text-dim">·</span>
+                          <span class="text-[12px] text-muted">{locationLabel(fg)}</span>
+                        {/if}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="text-xs text-muted">{fg.field_count || 0} {t('fields', 'fields')}</span>
-                  <Badge variant={fg.source === 'ai' ? 'ai' : 'manual'}>{fg.source}</Badge>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-muted">{fg.field_count || 0} {t('fields', 'fields')}</span>
+                    <Badge variant={fg.source === 'ai' ? 'ai' : 'manual'}>{fg.source}</Badge>
+                    <button
+                      class="w-6 h-6 rounded-md bg-transparent border border-transparent text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all"
+                      onclick={(e) => { e.stopPropagation(); deleteFgConfirm = { open: true, id: fg.id }; }}
+                      title={t('delete', 'Delete')}
+                    >×</button>
+                    <span class="text-dim text-xs">&#9656;</span>
+                  </div>
                 </div>
               </Card>
             {/each}
@@ -540,7 +567,10 @@
     <!-- POST TYPES TAB -->
     {:else if tab === 'cpts'}
       <div class="pb-15">
-        <h2 class="font-heading text-2xl font-extrabold tracking-tight mb-6">{t('custom_post_types', 'Custom Post Types')}</h2>
+        <div class="flex justify-between items-baseline mb-6">
+          <h2 class="font-heading text-2xl font-extrabold tracking-tight">{t('custom_post_types', 'Custom Post Types')}</h2>
+          <Button onclick={() => onEditPostType?.(null)}>+ New Post Type</Button>
+        </div>
         {#if dashboard.postTypes.length === 0}
           <Card class="p-8 text-center">
             <div class="text-muted text-sm">{t('no_post_types_yet', "No custom post types yet. They'll be created when the AI generates full-stack features.")}</div>
@@ -548,7 +578,13 @@
         {:else}
           <div class="grid grid-cols-3 gap-3.5">
             {#each dashboard.postTypes as c}
-              <Card class="p-[22px_20px]">
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <Card class="p-[22px_20px] relative group cursor-pointer" onclick={() => onEditPostType?.(c.id)}>
+                <button
+                  class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-background/80 border border-border text-dim hover:text-gold hover:border-gold/30 cursor-pointer flex items-center justify-center text-xs transition-all z-10"
+                  onclick={(e) => { e.stopPropagation(); deleteCptConfirm = { open: true, id: c.id }; }}
+                  title={t('delete', 'Delete')}
+                >×</button>
                 <div class="flex items-center justify-between mb-3">
                   <span class="font-heading text-base font-bold">{c.config?.label || c.slug}</span>
                   <Badge variant={c.source === 'ai' ? 'ai' : 'manual'}>{c.source}</Badge>
@@ -767,6 +803,25 @@
   oncancel={() => (deleteConfirm = { open: false, key: '' })}
 />
 
+<ConfirmDialog
+  open={deleteFgConfirm.open}
+  title="Delete field group"
+  description="This will permanently delete the field group. Field values in existing posts will not be removed."
+  confirmLabel={t('delete', 'Delete')}
+  onconfirm={confirmDeleteFieldGroup}
+  oncancel={() => (deleteFgConfirm = { open: false, id: 0 })}
+/>
+
+<ConfirmDialog
+  open={deleteCptConfirm.open}
+  title="Delete post type"
+  description="This will unregister the post type. Existing posts will remain in the database but won't be accessible until re-registered."
+  confirmLabel={t('delete', 'Delete')}
+  onconfirm={confirmDeletePostType}
+  oncancel={() => (deleteCptConfirm = { open: false, id: 0 })}
+/>
+
+
 <style>
   .tk-dashboard {
     min-height: 100vh;
@@ -853,4 +908,5 @@
   .tk-dashboard :global(label) {
     color: inherit;
   }
+
 </style>

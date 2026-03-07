@@ -12,8 +12,4 @@ Use this context to:
 
 ### Current Template
 
-If `current_template` is present in the context above, it contains the EXISTING component tree for the template being edited. When the user asks for modifications:
-- **Preserve all existing component IDs** — never regenerate IDs for unchanged components
-- **Only modify the specific parts the user mentioned** — keep everything else exactly as-is
-- **Return the COMPLETE component tree**, including unchanged parts
-- If no `current_template` is present, generate a new page from scratch
+If `current_template` is present in the context above, it contains the EXISTING component tree for the template being edited. When the user asks for modifications, use **operations mode** — return only the targeted changes, not the full tree. If no `current_template` is present, generate a new page from scratch.

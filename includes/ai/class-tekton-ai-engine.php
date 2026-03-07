@@ -164,6 +164,12 @@ class Tekton_AI_Engine {
 			// If continuations produced multiple fences, strip inner fence markers.
 			$raw_json = preg_replace( '/\n```\s*\n*```(?:json)?\s*\n/', "\n", $matches[1] );
 			$decoded  = json_decode( $raw_json, true );
+
+			// If decode fails, try repairing common AI JSON issues.
+			if ( null === $decoded ) {
+				$decoded = self::try_repair_json( $raw_json );
+			}
+
 			if ( is_array( $decoded ) ) {
 				$json = $decoded;
 				$before = trim( substr( $response, 0, strpos( $response, '```' ) ) );
@@ -174,7 +180,7 @@ class Tekton_AI_Engine {
 		// If no code fence, try direct JSON parse (backwards compat).
 		if ( ! $json ) {
 			$decoded = json_decode( $response, true );
-			if ( is_array( $decoded ) && ( isset( $decoded['components'] ) || isset( $decoded['type'] ) || isset( $decoded['structure'] ) || isset( $decoded['operations'] ) ) ) {
+			if ( is_array( $decoded ) && self::is_tekton_json( $decoded ) ) {
 				$json    = $decoded;
 				$message = 'Changes applied to the preview.';
 			}
@@ -188,7 +194,10 @@ class Tekton_AI_Engine {
 			if ( false !== $first_brace ) {
 				$candidate = substr( $response, $first_brace );
 				$decoded   = json_decode( $candidate, true );
-				if ( is_array( $decoded ) && ( isset( $decoded['components'] ) || isset( $decoded['operations'] ) || isset( $decoded['structure'] ) ) ) {
+				if ( null === $decoded ) {
+					$decoded = self::try_repair_json( $candidate );
+				}
+				if ( is_array( $decoded ) && self::is_tekton_json( $decoded ) ) {
 					$json    = $decoded;
 					$before  = trim( substr( $response, 0, $first_brace ) );
 					$message = $before !== '' ? $before : 'Changes applied to the preview.';
@@ -200,5 +209,51 @@ class Tekton_AI_Engine {
 			'message' => $message,
 			'json'    => $json,
 		];
+	}
+
+	/**
+	 * Check if a decoded JSON array contains Tekton-specific keys.
+	 */
+	private static function is_tekton_json( array $data ): bool {
+		return isset( $data['components'] )
+			|| isset( $data['operations'] )
+			|| isset( $data['structure'] )
+			|| isset( $data['type'] )
+			|| isset( $data['posts'] )
+			|| isset( $data['postTypes'] )
+			|| isset( $data['fieldGroups'] );
+	}
+
+	/**
+	 * Attempt to repair common AI-generated JSON errors.
+	 *
+	 * @return ?array Decoded JSON or null if repair failed.
+	 */
+	private static function try_repair_json( string $raw ): ?array {
+		// Remove trailing commas before } or ] (common AI mistake).
+		$repaired = preg_replace( '/,\s*([}\]])/', '$1', $raw );
+
+		// Try decoding after trailing comma fix.
+		$decoded = json_decode( $repaired, true );
+		if ( is_array( $decoded ) ) {
+			return $decoded;
+		}
+
+		// Fix unescaped control characters (newlines/tabs inside strings).
+		$repaired = preg_replace_callback(
+			'/"((?:[^"\\\\]|\\\\.)*)"/s',
+			function ( $m ) {
+				$inner = str_replace( [ "\n", "\r", "\t" ], [ '\\n', '\\r', '\\t' ], $m[1] );
+				return '"' . $inner . '"';
+			},
+			$repaired
+		);
+
+		$decoded = json_decode( $repaired, true );
+		if ( is_array( $decoded ) ) {
+			return $decoded;
+		}
+
+		return null;
 	}
 }

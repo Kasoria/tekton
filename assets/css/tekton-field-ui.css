@@ -1,0 +1,164 @@
+/**
+ * Tekton Field Engine — admin meta box styles.
+ *
+ * @package Tekton
+ * @since   1.0.0
+ */
+
+.tekton-field-group {
+  padding: 8px 0;
+}
+
+.tekton-field {
+  margin-bottom: 16px;
+}
+
+.tekton-field:last-child {
+  margin-bottom: 0;
+}
+
+.tekton-field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #1d2327;
+}
+
+.tekton-required {
+  color: #d63638;
+}
+
+.tekton-field-input {
+  margin-bottom: 4px;
+}
+
+.tekton-field-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #646970;
+  font-style: italic;
+}
+
+/* Image field */
+.tekton-image-preview {
+  margin-bottom: 8px;
+}
+
+.tekton-image-preview img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 4px;
+  border: 1px solid #dcdcde;
+}
+
+/* Checkbox / Radio groups */
+.tekton-checkbox-group,
+.tekton-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tekton-checkbox-item,
+.tekton-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Repeater */
+.tekton-repeater-rows {
+  margin-bottom: 8px;
+}
+
+.tekton-repeater-row {
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background: #f6f7f7;
+}
+
+.tekton-repeater-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dcdcde;
+  background: #f0f0f1;
+  border-radius: 4px 4px 0 0;
+}
+
+.tekton-repeater-row-num {
+  font-weight: 600;
+  font-size: 12px;
+  color: #646970;
+}
+
+.tekton-repeater-remove {
+  color: #d63638;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tekton-repeater-row-fields {
+  padding: 12px;
+}
+
+/* Relationship field */
+.tekton-relationship-selected {
+  margin-bottom: 8px;
+}
+
+.tekton-relationship-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.tekton-relationship-remove {
+  color: #d63638;
+  cursor: pointer;
+}
+
+.tekton-relationship-results {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #dcdcde;
+  border-radius: 3px;
+  display: none;
+}
+
+.tekton-relationship-results.active {
+  display: block;
+}
+
+/* Color field */
+.tekton-color-input {
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.tekton-color-text {
+  margin-left: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* Toggle */
+.tekton-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}

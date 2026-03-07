@@ -1,5 +1,5 @@
 <script>
-  let { open = false, onclose, children } = $props();
+  let { open = false, onclose, children, wide = false } = $props();
 
   function handleBackdrop(e) {
     if (e.target === e.currentTarget) {
@@ -29,7 +29,7 @@
     ></div>
 
     <!-- Content -->
-    <div class="relative z-10 w-full max-w-[400px] mx-4 bg-card border border-border rounded-xl shadow-[0_24px_80px_var(--color-shadow)] p-5">
+    <div class="relative z-10 w-full mx-4 bg-card border border-border rounded-xl shadow-[0_24px_80px_var(--color-shadow)] p-5 {wide ? 'max-w-[540px]' : 'max-w-[400px]'} max-h-[90vh] overflow-y-auto">
       {@render children()}
     </div>
   </div>

@@ -482,3 +482,622 @@ msgstr "Generiere dein Website-Theme mit KI basierend auf einer Beschreibung dei
 
 msgid "Regenerate Theme"
 msgstr "Theme neu generieren"
+
+#: admin/src/components/EditPostType.svelte
+msgid "General"
+msgstr "Allgemein"
+
+msgid "General Settings"
+msgstr "Allgemeine Einstellungen"
+
+msgid "Labels"
+msgstr "Bezeichnungen"
+
+msgid "Fine-tune how this post type appears throughout the admin. Leave blank for WordPress defaults."
+msgstr "Passe an, wie dieser Inhaltstyp im Adminbereich angezeigt wird. Leer lassen für WordPress-Standards."
+
+msgid "Visibility"
+msgstr "Sichtbarkeit"
+
+msgid "URLs & Archives"
+msgstr "URLs & Archive"
+
+msgid "Features"
+msgstr "Funktionen"
+
+msgid "REST API"
+msgstr "REST-API"
+
+msgid "Admin Menu"
+msgstr "Admin-Menü"
+
+msgid "Capabilities"
+msgstr "Berechtigungen"
+
+msgid "Taxonomies"
+msgstr "Taxonomien"
+
+msgid "Create and manage taxonomies associated with this post type."
+msgstr "Taxonomien für diesen Inhaltstyp erstellen und verwalten."
+
+msgid "New Post Type"
+msgstr "Neuer Inhaltstyp"
+
+msgid "Saved successfully."
+msgstr "Erfolgreich gespeichert."
+
+msgid "Error:"
+msgstr "Fehler:"
+
+msgid "Post Type Key (slug)"
+msgstr "Inhaltstyp-Schlüssel (Slug)"
+
+msgid "Max 20 characters. Lowercase, underscores only."
+msgstr "Max. 20 Zeichen. Nur Kleinbuchstaben und Unterstriche."
+
+msgid "Cannot be changed after creation."
+msgstr "Kann nach der Erstellung nicht mehr geändert werden."
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "A short description of the post type"
+msgstr "Eine kurze Beschreibung des Inhaltstyps"
+
+msgid "Plural Label"
+msgstr "Mehrzahl-Bezeichnung"
+
+msgid "Singular Label"
+msgstr "Einzahl-Bezeichnung"
+
+msgid "Whether this post type is visible on the front end and in search results."
+msgstr "Ob dieser Inhaltstyp im Frontend und in Suchergebnissen sichtbar ist."
+
+msgid "Publicly Queryable"
+msgstr "Öffentlich abfragbar"
+
+msgid "Whether queries for this post type can be performed from the front end."
+msgstr "Ob Abfragen für diesen Inhaltstyp vom Frontend aus möglich sind."
+
+msgid "Exclude from Search"
+msgstr "Von Suche ausschließen"
+
+msgid "Whether to exclude posts from front-end search results."
+msgstr "Ob Beiträge von Frontend-Suchergebnissen ausgeschlossen werden sollen."
+
+msgid "Show UI"
+msgstr "UI anzeigen"
+
+msgid "Whether to generate a default admin UI for this post type."
+msgstr "Ob eine Standard-Admin-Oberfläche für diesen Inhaltstyp generiert werden soll."
+
+msgid "Show in Nav Menus"
+msgstr "In Navigationsmenüs anzeigen"
+
+msgid "Whether this post type is available for selection in navigation menus."
+msgstr "Ob dieser Inhaltstyp in Navigationsmenüs zur Auswahl steht."
+
+msgid "Show in Admin Bar"
+msgstr "In Admin-Leiste anzeigen"
+
+msgid "Whether to show the post type in the admin bar \"New\" menu."
+msgstr "Ob der Inhaltstyp im \"Neu\"-Menü der Admin-Leiste angezeigt werden soll."
+
+msgid "Show in Menu"
+msgstr "Im Menü anzeigen"
+
+msgid "Show as top-level menu, or enter a parent menu slug (e.g. \"edit.php\" or \"tools.php\")."
+msgstr "Als Hauptmenüpunkt anzeigen oder einen übergeordneten Menü-Slug eingeben (z.B. \"edit.php\" oder \"tools.php\")."
+
+msgid "Has Archive"
+msgstr "Hat Archiv"
+
+msgid "Enable an archive page for this post type."
+msgstr "Archivseite für diesen Inhaltstyp aktivieren."
+
+msgid "Custom Archive Slug"
+msgstr "Benutzerdefinierter Archiv-Slug"
+
+msgid "Same as post type slug"
+msgstr "Gleich wie Inhaltstyp-Slug"
+
+msgid "Leave blank to use the post type slug."
+msgstr "Leer lassen, um den Inhaltstyp-Slug zu verwenden."
+
+msgid "URL Rewrites"
+msgstr "URL-Umschreibungen"
+
+msgid "Whether to enable pretty permalinks for this post type."
+msgstr "Ob schöne Permalinks für diesen Inhaltstyp aktiviert werden sollen."
+
+msgid "Custom Rewrite Slug"
+msgstr "Benutzerdefinierter Rewrite-Slug"
+
+msgid "With Front"
+msgstr "Mit Präfix"
+
+msgid "Feeds"
+msgstr "Feeds"
+
+msgid "Pagination"
+msgstr "Seitennummerierung"
+
+msgid "Query Var"
+msgstr "Query-Variable"
+
+msgid "Whether to allow ?post_type=slug queries."
+msgstr "Ob ?post_type=slug-Abfragen erlaubt sein sollen."
+
+msgid "Supported Features"
+msgstr "Unterstützte Funktionen"
+
+msgid "Which core features this post type supports. Note: Tekton replaces the block editor, so \"Editor\" enables the classic editor fallback only."
+msgstr "Welche Kernfunktionen dieser Inhaltstyp unterstützt. Hinweis: Tekton ersetzt den Block-Editor, daher aktiviert \"Editor\" nur den klassischen Editor als Fallback."
+
+msgid "Hierarchical"
+msgstr "Hierarchisch"
+
+msgid "Allow parent/child relationships (like Pages)."
+msgstr "Eltern-/Kind-Beziehungen erlauben (wie Seiten)."
+
+msgid "Can Export"
+msgstr "Exportierbar"
+
+msgid "Allow this post type to be exported via WordPress export tools."
+msgstr "Diesen Inhaltstyp über WordPress-Exportwerkzeuge exportierbar machen."
+
+msgid "Delete with User"
+msgstr "Mit Benutzer löschen"
+
+msgid "Delete posts of this type when the author user is deleted."
+msgstr "Beiträge dieses Typs löschen, wenn der Autor-Benutzer gelöscht wird."
+
+msgid "Show in REST"
+msgstr "In REST anzeigen"
+
+msgid "Expose this post type in the WordPress REST API. Required for Tekton."
+msgstr "Diesen Inhaltstyp in der WordPress-REST-API bereitstellen. Für Tekton erforderlich."
+
+msgid "REST Base"
+msgstr "REST-Basis"
+
+msgid "Custom base URL for REST routes. Defaults to the post type slug."
+msgstr "Benutzerdefinierte Basis-URL für REST-Routen. Standard ist der Inhaltstyp-Slug."
+
+msgid "REST Namespace"
+msgstr "REST-Namespace"
+
+msgid "Custom namespace. Defaults to wp/v2."
+msgstr "Benutzerdefinierter Namespace. Standard ist wp/v2."
+
+msgid "REST Controller Class"
+msgstr "REST-Controller-Klasse"
+
+msgid "Custom controller class. For advanced use only."
+msgstr "Benutzerdefinierte Controller-Klasse. Nur für fortgeschrittene Nutzung."
+
+msgid "Menu Position"
+msgstr "Menüposition"
+
+msgid "Auto"
+msgstr "Automatisch"
+
+msgid "5=below Posts, 10=below Media, 20=below Pages, 25=below Comments, 60=below first separator, 65=below Plugins, 70=below Users, 80=below Settings"
+msgstr "5=unter Beiträge, 10=unter Medien, 20=unter Seiten, 25=unter Kommentare, 60=unter erster Trenner, 65=unter Plugins, 70=unter Benutzer, 80=unter Einstellungen"
+
+msgid "Menu Icon"
+msgstr "Menü-Symbol"
+
+msgid "Or enter custom:"
+msgstr "Oder eigenes eingeben:"
+
+msgid "Capability Type"
+msgstr "Berechtigungstyp"
+
+msgid "Use \"post\" for standard capabilities, or a custom string to create unique capabilities for this post type."
+msgstr "Verwende \"post\" für Standardberechtigungen oder eine eigene Zeichenkette für einzigartige Berechtigungen."
+
+msgid "Map Meta Cap"
+msgstr "Meta-Berechtigungen zuordnen"
+
+msgid "Map meta capabilities to primitive capabilities. Usually should be enabled."
+msgstr "Meta-Berechtigungen auf primitive Berechtigungen abbilden. Sollte normalerweise aktiviert sein."
+
+msgid "No taxonomies yet."
+msgstr "Noch keine Taxonomien."
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Slug"
+msgstr "Slug"
+
+msgid "Rewrite Slug"
+msgstr "Rewrite-Slug"
+
+msgid "Public"
+msgstr "Öffentlich"
+
+msgid "Tag Cloud"
+msgstr "Schlagwortwolke"
+
+msgid "Quick Edit"
+msgstr "Schnellbearbeitung"
+
+msgid "Add Taxonomy"
+msgstr "Taxonomie hinzufügen"
+
+#: admin/src/components/EditFieldGroup.svelte
+msgid "New Field Group"
+msgstr "Neue Feldgruppe"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Auto-generated from title. Lowercase, underscores only."
+msgstr "Automatisch aus Titel generiert. Nur Kleinbuchstaben und Unterstriche."
+
+msgid "Optional description for this field group"
+msgstr "Optionale Beschreibung für diese Feldgruppe"
+
+msgid "Whether this field group is active and its meta boxes are shown."
+msgstr "Ob diese Feldgruppe aktiv ist und ihre Meta-Boxen angezeigt werden."
+
+msgid "field"
+msgstr "Feld"
+
+msgid "configured"
+msgstr "konfiguriert"
+
+msgid "Add Field"
+msgstr "Feld hinzufügen"
+
+msgid "No fields yet. Click \"Add Field\" to start."
+msgstr "Noch keine Felder. Klicke auf \"Feld hinzufügen\", um zu beginnen."
+
+msgid "Untitled field"
+msgstr "Unbenanntes Feld"
+
+msgid "Required"
+msgstr "Erforderlich"
+
+msgid "Move up"
+msgstr "Nach oben"
+
+msgid "Move down"
+msgstr "Nach unten"
+
+msgid "Field Label"
+msgstr "Feldbezeichnung"
+
+msgid "Field Name"
+msgstr "Feldname"
+
+msgid "Used as the meta key suffix. Lowercase, underscores only."
+msgstr "Wird als Meta-Key-Suffix verwendet. Nur Kleinbuchstaben und Unterstriche."
+
+msgid "Field Type"
+msgstr "Feldtyp"
+
+msgid "Instructions"
+msgstr "Anweisungen"
+
+msgid "Help text shown below the field"
+msgstr "Hilfetext, der unter dem Feld angezeigt wird"
+
+msgid "Default Value"
+msgstr "Standardwert"
+
+msgid "Placeholder"
+msgstr "Platzhalter"
+
+msgid "Type-Specific Settings"
+msgstr "Typspezifische Einstellungen"
+
+msgid "Max Length"
+msgstr "Maximale Länge"
+
+msgid "No limit"
+msgstr "Kein Limit"
+
+msgid "Rows"
+msgstr "Zeilen"
+
+msgid "Min Value"
+msgstr "Minimalwert"
+
+msgid "Max Value"
+msgstr "Maximalwert"
+
+msgid "Step"
+msgstr "Schrittweite"
+
+msgid "Choices"
+msgstr "Auswahlmöglichkeiten"
+
+msgid "One choice per line"
+msgstr "Eine Auswahl pro Zeile"
+
+msgid "Enter one choice per line. Use \"value : Label\" format for different values and labels."
+msgstr "Eine Auswahl pro Zeile eingeben. Verwende \"Wert : Bezeichnung\" für unterschiedliche Werte und Bezeichnungen."
+
+msgid "Allow Multiple Selections"
+msgstr "Mehrfachauswahl erlauben"
+
+msgid "Return Format"
+msgstr "Rückgabeformat"
+
+msgid "Value"
+msgstr "Wert"
+
+msgid "Image ID"
+msgstr "Bild-ID"
+
+msgid "Image URL"
+msgstr "Bild-URL"
+
+msgid "Post ID"
+msgstr "Beitrags-ID"
+
+msgid "Post Object"
+msgstr "Beitragsobjekt"
+
+msgid "Preview Size"
+msgstr "Vorschaugröße"
+
+msgid "Thumbnail"
+msgstr "Miniaturbild"
+
+msgid "Medium"
+msgstr "Mittel"
+
+msgid "Large"
+msgstr "Groß"
+
+msgid "Full"
+msgstr "Volle Größe"
+
+msgid "Filter by Post Type"
+msgstr "Nach Inhaltstyp filtern"
+
+msgid "Comma-separated post type slugs. Leave empty for all."
+msgstr "Kommagetrennte Inhaltstyp-Slugs. Leer lassen für alle."
+
+msgid "Min Rows"
+msgstr "Min. Zeilen"
+
+msgid "Max Rows"
+msgstr "Max. Zeilen"
+
+msgid "Sub Fields (JSON)"
+msgstr "Unterfelder (JSON)"
+
+msgid "JSON array of sub-field definitions. Each must have name, type, and label."
+msgstr "JSON-Array von Unterfeld-Definitionen. Jedes muss Name, Typ und Bezeichnung haben."
+
+msgid "Error: At least one valid field is required."
+msgstr "Fehler: Mindestens ein gültiges Feld ist erforderlich."
+
+msgid "Location Rules"
+msgstr "Standortregeln"
+
+msgid "Define where this field group appears. Rule groups use OR logic between them, AND logic within each group."
+msgstr "Lege fest, wo diese Feldgruppe erscheint. Regelgruppen verwenden ODER-Logik untereinander, UND-Logik innerhalb jeder Gruppe."
+
+msgid "Post Type"
+msgstr "Inhaltstyp"
+
+msgid "is equal to"
+msgstr "ist gleich"
+
+msgid "is not equal to"
+msgstr "ist nicht gleich"
+
+msgid "Remove rule"
+msgstr "Regel entfernen"
+
+msgid "Add Rule"
+msgstr "Regel hinzufügen"
+
+msgid "Remove Group"
+msgstr "Gruppe entfernen"
+
+msgid "Add Rule Group"
+msgstr "Regelgruppe hinzufügen"
+
+msgid "Presentation"
+msgstr "Darstellung"
+
+msgid "Position"
+msgstr "Position"
+
+msgid "Normal (below content)"
+msgstr "Normal (unter dem Inhalt)"
+
+msgid "Side (sidebar)"
+msgstr "Seite (Seitenleiste)"
+
+msgid "Advanced (below normal)"
+msgstr "Erweitert (unter Normal)"
+
+msgid "Where the meta box appears on the edit screen."
+msgstr "Wo die Meta-Box auf dem Bearbeitungsbildschirm erscheint."
+
+msgid "Priority"
+msgstr "Priorität"
+
+msgid "High"
+msgstr "Hoch"
+
+msgid "Default"
+msgstr "Standard"
+
+msgid "Low"
+msgstr "Niedrig"
+
+msgid "Order within the chosen position."
+msgstr "Reihenfolge innerhalb der gewählten Position."
+
+# CPT Labels section
+msgid "Add New"
+msgstr "Neu hinzufügen"
+
+msgid "e.g. Add New"
+msgstr "z.B. Neu hinzufügen"
+
+msgid "Add New Item"
+msgstr "Neues Element hinzufügen"
+
+msgid "e.g. Add New Team Member"
+msgstr "z.B. Neues Teammitglied hinzufügen"
+
+msgid "Edit Item"
+msgstr "Element bearbeiten"
+
+msgid "e.g. Edit Team Member"
+msgstr "z.B. Teammitglied bearbeiten"
+
+msgid "New Item"
+msgstr "Neues Element"
+
+msgid "e.g. New Team Member"
+msgstr "z.B. Neues Teammitglied"
+
+msgid "View Item"
+msgstr "Element ansehen"
+
+msgid "e.g. View Team Member"
+msgstr "z.B. Teammitglied ansehen"
+
+msgid "View Items"
+msgstr "Elemente ansehen"
+
+msgid "e.g. View Team Members"
+msgstr "z.B. Teammitglieder ansehen"
+
+msgid "Search Items"
+msgstr "Elemente suchen"
+
+msgid "e.g. Search Team Members"
+msgstr "z.B. Teammitglieder suchen"
+
+msgid "Not Found"
+msgstr "Nicht gefunden"
+
+msgid "e.g. No team members found"
+msgstr "z.B. Keine Teammitglieder gefunden"
+
+msgid "Not Found in Trash"
+msgstr "Nicht im Papierkorb gefunden"
+
+msgid "e.g. No team members found in trash"
+msgstr "z.B. Keine Teammitglieder im Papierkorb gefunden"
+
+msgid "All Items"
+msgstr "Alle Elemente"
+
+msgid "e.g. All Team Members"
+msgstr "z.B. Alle Teammitglieder"
+
+msgid "Archives"
+msgstr "Archive"
+
+msgid "e.g. Team Member Archives"
+msgstr "z.B. Teammitglieder-Archiv"
+
+msgid "Menu Name"
+msgstr "Menüname"
+
+msgid "e.g. Team"
+msgstr "z.B. Team"
+
+msgid "Parent Item:"
+msgstr "Übergeordnetes Element:"
+
+msgid "For hierarchical types"
+msgstr "Für hierarchische Typen"
+
+msgid "Attributes"
+msgstr "Attribute"
+
+msgid "e.g. Team Member Attributes"
+msgstr "z.B. Teammitglied-Attribute"
+
+msgid "Insert into Item"
+msgstr "In Element einfügen"
+
+msgid "e.g. Insert into team member"
+msgstr "z.B. In Teammitglied einfügen"
+
+msgid "Uploaded to Item"
+msgstr "Hochgeladen zu Element"
+
+msgid "e.g. Uploaded to this team member"
+msgstr "z.B. Zu diesem Teammitglied hochgeladen"
+
+msgid "Filter Items List"
+msgstr "Elementliste filtern"
+
+msgid "e.g. Filter team members list"
+msgstr "z.B. Teammitgliederliste filtern"
+
+msgid "Items List Navigation"
+msgstr "Elementlisten-Navigation"
+
+msgid "e.g. Team members list navigation"
+msgstr "z.B. Teammitgliederlisten-Navigation"
+
+msgid "Items List"
+msgstr "Elementliste"
+
+msgid "e.g. Team members list"
+msgstr "z.B. Teammitgliederliste"
+
+# Auto-generated CPT label templates (%s = placeholder for singular/plural name)
+msgid "Add New %s"
+msgstr "%s hinzufügen"
+
+msgid "Edit %s"
+msgstr "%s bearbeiten"
+
+msgid "New %s"
+msgstr "Neues %s"
+
+msgid "View %s"
+msgstr "%s ansehen"
+
+msgid "Search %s"
+msgstr "%s suchen"
+
+msgid "No %s found"
+msgstr "Keine %s gefunden"
+
+msgid "No %s found in trash"
+msgstr "Keine %s im Papierkorb gefunden"
+
+msgid "All %s"
+msgstr "Alle %s"
+
+msgid "%s Archives"
+msgstr "%s-Archiv"
+
+msgid "Parent %s:"
+msgstr "Übergeordnetes %s:"
+
+msgid "%s Attributes"
+msgstr "%s-Attribute"
+
+msgid "Insert into %s"
+msgstr "In %s einfügen"
+
+msgid "Uploaded to this %s"
+msgstr "Zu diesem %s hochgeladen"
+
+msgid "Filter %s list"
+msgstr "%s-Liste filtern"
+
+msgid "%s list navigation"
+msgstr "%s-Listennavigation"
+
+msgid "%s list"
+msgstr "%s-Liste"

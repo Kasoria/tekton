@@ -97,7 +97,7 @@
 
 /* Paragraphs, labels */
 #tekton-app p,
-#tekton-app label {
+#tekton-app label:not(.tk-label) {
   color: inherit;
   font-size: inherit;
   font-family: inherit;

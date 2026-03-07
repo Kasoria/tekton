@@ -6,6 +6,7 @@
     options = [],
     placeholder = '',
     searchable = false,
+    fullWidth = false,
     class: className = '',
     onchange,
     ...restProps
@@ -84,15 +85,15 @@
   }
 </script>
 
-<div class={cn('tk-select', className)} {...restProps}>
+<div class={cn('tk-select', fullWidth && 'tk-select-full', className)} {...restProps}>
   <button
     bind:this={triggerEl}
     type="button"
-    class="tk-select-trigger"
+    class="tk-select-trigger {fullWidth ? 'tk-select-trigger-full' : ''}"
     onclick={toggleOpen}
     onkeydown={handleKeydown}
   >
-    <span class="tk-select-value {value ? '' : 'tk-select-placeholder'}">{selectedLabel}</span>
+    <span class="tk-select-value {value ? '' : 'tk-select-placeholder'} {fullWidth ? 'tk-select-value-full' : ''}">{selectedLabel}</span>
     <svg class="tk-select-chevron {open ? 'tk-select-chevron-open' : ''}" width="12" height="12" viewBox="0 0 12 12" fill="none">
       <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -284,5 +285,22 @@
   .tk-select-dropdown::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 2px;
+  }
+
+  /* Full-width variant for form fields */
+  .tk-select-full {
+    display: flex;
+    width: 100%;
+  }
+
+  .tk-select-trigger-full {
+    flex: 1;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .tk-select-value-full {
+    text-align: left;
   }
 </style>

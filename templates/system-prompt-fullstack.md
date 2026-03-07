@@ -32,6 +32,18 @@ Your JSON output must include ALL of these:
     ],
     "location_rules": [[{"param": "post_type", "operator": "==", "value": "example"}]]
   }],
+  "posts": [
+    {
+      "post_type": "example",
+      "title": "First Example",
+      "content": "",
+      "meta": {
+        "example_details": {
+          "subtitle": "A subtitle for this example"
+        }
+      }
+    }
+  ],
   "structure": {
     "templateKey": "archive-example",
     "title": "Example Archive",
@@ -40,6 +52,20 @@ Your JSON output must include ALL of these:
 }
 ```
 
-The template components MUST reference the fields you create using `{"source": "field", "group": "slug", "field": "name"}`.
+### Posts
 
-Omit `"editor"` from `supports` — Tekton fields replace the block editor.
+When the user asks you to create posts with specific content (e.g. "add 4 team members"), include a `posts` array. Each entry creates a real WordPress post:
+
+- `post_type` — the CPT slug (must match a `postTypes` entry or existing CPT)
+- `title` — the post title
+- `content` — optional post body content
+- `meta` — custom field values, keyed by field group slug, then field name. Example: `{"team_info": {"position": "Lead Artist", "bio": "..."}}`
+
+Posts with duplicate titles in the same post type are skipped (meta is updated on the existing post).
+
+### Rules
+
+- The template components MUST reference the fields you create using `{"source": "field", "group": "slug", "field": "name"}`.
+- Omit `"editor"` from `supports` — Tekton fields replace the block editor.
+- When creating posts, always include meaningful content for all custom fields defined in the field groups.
+- For templates that list CPT posts, prefer using `post-loop` with WordPress components (`post-title`, `featured-image`, `tekton-field`) so the listing stays dynamic.

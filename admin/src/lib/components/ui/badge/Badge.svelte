@@ -10,6 +10,7 @@
     muted: 'bg-muted/10 text-muted',
     ai: 'bg-copper/10 text-copper',
     manual: 'bg-slate/10 text-slate',
+    secondary: 'bg-muted/5 text-muted-foreground',
   };
 </script>
 

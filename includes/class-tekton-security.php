@@ -101,13 +101,48 @@ class Tekton_Security {
 
 	public function sanitize_css( string $css ): string {
 		$css = preg_replace( '/@import\b[^;]*;/', '', $css );
-		$css = preg_replace( '/expression\s*\(/', '', $css );
-		$css = preg_replace( '/javascript\s*:/', '', $css );
-		$css = preg_replace( '/behavior\s*:/', '', $css );
-		$css = preg_replace( '/-moz-binding\s*:/', '', $css );
+		$css = preg_replace( '/expression\s*\(/i', '', $css );
+		$css = preg_replace( '/javascript\s*:/i', '', $css );
+		$css = preg_replace( '/behavior\s*:/i', '', $css );
+		$css = preg_replace( '/-moz-binding\s*:/i', '', $css );
 		$css = preg_replace( '/url\s*\(\s*["\']?\s*data\s*:/i', 'url(blocked:', $css );
 
 		return $css;
+	}
+
+	/**
+	 * Validate a CSS property name format.
+	 * Accepts standard properties, vendor-prefixed, and custom properties (--*).
+	 *
+	 * @return string|null Sanitized property name or null if invalid.
+	 */
+	public function sanitize_css_property( string $property ): ?string {
+		$property = strtolower( trim( $property ) );
+
+		// Custom properties: --foo-bar
+		if ( str_starts_with( $property, '--' ) ) {
+			return preg_match( '/^--[a-z][a-z0-9-]*$/', $property ) ? $property : null;
+		}
+
+		// Standard or vendor-prefixed: only lowercase letters, digits, hyphens.
+		return preg_match( '/^-?[a-z][a-z0-9-]*$/', $property ) ? $property : null;
+	}
+
+	/**
+	 * Sanitize a single CSS value to prevent injection.
+	 */
+	public function sanitize_css_value( string $value ): string {
+		// Block characters that could inject new declarations or close blocks.
+		$value = str_replace( [ '{', '}', ';', '<', '>' ], '', $value );
+
+		// Strip dangerous patterns.
+		$value = preg_replace( '/expression\s*\(/i', '', $value );
+		$value = preg_replace( '/javascript\s*:/i', '', $value );
+		$value = preg_replace( '/behavior\s*:/i', '', $value );
+		$value = preg_replace( '/-moz-binding\s*:/i', '', $value );
+		$value = preg_replace( '/url\s*\(\s*["\']?\s*data\s*:/i', 'url(blocked:', $value );
+
+		return trim( $value );
 	}
 
 	private function get_encryption_key(): string {

@@ -81,7 +81,18 @@ class Tekton_Structure_Patcher {
 					break;
 
 				case 'set_scripts':
-					$structure['scripts'] = $op['scripts'] ?? [];
+					$new_scripts = $op['scripts'] ?? [];
+					if ( ! empty( $op['replace'] ) ) {
+						$structure['scripts'] = $new_scripts;
+					} else {
+						$existing_scripts = $structure['scripts'] ?? [];
+						foreach ( $new_scripts as $script ) {
+							if ( ! in_array( $script, $existing_scripts, true ) ) {
+								$existing_scripts[] = $script;
+							}
+						}
+						$structure['scripts'] = $existing_scripts;
+					}
 					break;
 
 				case 'set_meta':

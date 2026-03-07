@@ -30,7 +30,7 @@ final class Tekton_Core {
 		$this->register_hooks();
 	}
 
-	private const DB_VERSION = '1.2.0';
+	private const DB_VERSION = '1.3.0';
 
 	private function maybe_upgrade_db(): void {
 		$db_version = get_option( 'tekton_db_version', '0' );
@@ -52,8 +52,22 @@ final class Tekton_Core {
 		require_once $dir . 'class-tekton-theme-bridge.php';
 		require_once $dir . 'class-tekton-assets.php';
 		require_once $dir . 'class-tekton-rest-api.php';
+		require_once $dir . 'class-tekton-rest-ai.php';
+		require_once $dir . 'class-tekton-rest-structures.php';
+		require_once $dir . 'class-tekton-rest-settings.php';
+		require_once $dir . 'class-tekton-rest-content.php';
+		require_once $dir . 'class-tekton-i18n.php';
 		require_once $dir . 'class-tekton-structure-patcher.php';
 		require_once $dir . 'class-tekton-publisher.php';
+		require_once $dir . 'class-tekton-cpt-manager.php';
+
+		// Field Engine
+		$fe_dir = $dir . 'field-engine/';
+		require_once $fe_dir . 'class-tekton-field-type.php';
+		require_once $fe_dir . 'class-tekton-field-registry.php';
+		require_once $fe_dir . 'class-tekton-field-engine.php';
+		require_once $fe_dir . 'class-tekton-acf-compat.php';
+		require_once $fe_dir . 'functions-tekton-fields.php';
 
 		require_once $dir . 'ai/interface-tekton-ai-provider.php';
 		require_once $dir . 'ai/class-tekton-ai-engine.php';
@@ -80,12 +94,21 @@ final class Tekton_Core {
 		$this->modules['security']       = new Tekton_Security();
 		$this->modules['storage']        = new Tekton_Storage();
 		$this->modules['schema']         = new Tekton_Schema();
-		$this->modules['renderer']       = new Tekton_Renderer();
+		$this->modules['renderer']       = new Tekton_Renderer( $this->modules['security'] );
 		$this->modules['context']        = new Tekton_Context_Builder( $this->modules['storage'] );
 		$this->modules['theme_bridge']   = new Tekton_Theme_Bridge( $this->modules['storage'], $this->modules['renderer'] );
 		$this->modules['assets']         = new Tekton_Assets();
 		$this->modules['ai_engine']      = new Tekton_AI_Engine( $this->modules['security'] );
 		$this->modules['publisher']      = new Tekton_Publisher();
+
+		// Field Engine
+		$this->modules['field_registry'] = new Tekton_Field_Registry();
+		$this->modules['field_registry']->register_defaults();
+		$this->modules['field_engine']   = new Tekton_Field_Engine( $this->modules['storage'], $this->modules['field_registry'] );
+		$this->modules['field_engine']->init();
+		$this->modules['cpt_manager']    = new Tekton_CPT_Manager( $this->modules['storage'] );
+		$this->modules['cpt_manager']->init();
+
 		$this->modules['rest_api']       = new Tekton_REST_API( $this );
 
 		$this->ensure_global_templates();
@@ -245,202 +268,6 @@ final class Tekton_Core {
 	 * @return array<string, string>
 	 */
 	public static function get_translations(): array {
-		return [
-			// General
-			'settings'                  => __( 'Settings', 'tekton' ),
-			'save'                      => __( 'Save', 'tekton' ),
-			'cancel'                    => __( 'Cancel', 'tekton' ),
-			'edit'                      => __( 'Edit', 'tekton' ),
-			'delete'                    => __( 'Delete', 'tekton' ),
-			'loading'                   => __( 'Loading...', 'tekton' ),
-			'saving'                    => __( 'Saving...', 'tekton' ),
-			'copy'                      => __( 'Copy', 'tekton' ),
-			'discard'                   => __( 'Discard', 'tekton' ),
-			'add'                       => __( 'Add', 'tekton' ),
-			'create'                    => __( 'Create', 'tekton' ),
-
-			// Dashboard tabs
-			'overview'                  => __( 'Overview', 'tekton' ),
-			'templates'                 => __( 'Templates', 'tekton' ),
-			'fields'                    => __( 'Fields', 'tekton' ),
-			'post_types'                => __( 'Post Types', 'tekton' ),
-
-			// Dashboard stats
-			'live'                      => __( 'live', 'tekton' ),
-			'field_groups'              => __( 'Field Groups', 'tekton' ),
-			'entries'                   => __( 'entries', 'tekton' ),
-			'plugins'                   => __( 'Plugins', 'tekton' ),
-			'active'                    => __( 'active', 'tekton' ),
-
-			// Dashboard overview
-			'view_all'                  => __( 'View all →', 'tekton' ),
-			'no_templates_yet'          => __( 'No templates yet. Open the builder to create one.', 'tekton' ),
-			'comp'                      => __( 'comp', 'tekton' ),
-			'global'                    => __( 'Global', 'tekton' ),
-			'status_live'               => __( 'LIVE', 'tekton' ),
-			'status_draft'              => __( 'DRAFT', 'tekton' ),
-			'activity'                  => __( 'Activity', 'tekton' ),
-			'no_activity_yet'           => __( 'No activity yet.', 'tekton' ),
-			'quick_actions'             => __( 'Quick Actions', 'tekton' ),
-			'build_a_page'              => __( 'Build a Page', 'tekton' ),
-			'build_a_page_desc'         => __( 'Start from a natural language prompt', 'tekton' ),
-			'fullstack_generate'        => __( 'Full-Stack Generate', 'tekton' ),
-			'fullstack_generate_desc'   => __( 'CPT + Fields + Template in one shot', 'tekton' ),
-			'create_plugin'             => __( 'Create Plugin', 'tekton' ),
-			'create_plugin_desc'        => __( 'Generate a server-side feature', 'tekton' ),
-			'new_template'              => __( 'New Template', 'tekton' ),
-			'components'                => __( 'components', 'tekton' ),
-
-			// Templates tab
-			'templates_heading'         => __( 'Templates', 'tekton' ),
-			'templates_desc'            => __( 'Page and archive templates managed by Tekton', 'tekton' ),
-			'new_template_btn'          => __( '+ New Template', 'tekton' ),
-
-			// Fields tab
-			'field_groups_heading'      => __( 'Field Groups', 'tekton' ),
-			'field_groups_desc'         => __( 'Content structure — Tekton\'s built-in field engine', 'tekton' ),
-			'no_field_groups_yet'       => __( 'No field groups yet. They\'ll be created automatically when the AI generates templates that need custom fields.', 'tekton' ),
-
-			// Post types tab
-			'custom_post_types'         => __( 'Custom Post Types', 'tekton' ),
-			'no_post_types_yet'         => __( 'No custom post types yet. They\'ll be created when the AI generates full-stack features.', 'tekton' ),
-
-			// Settings
-			'api_keys'                  => __( 'API Keys', 'tekton' ),
-			'ai'                        => __( 'AI', 'tekton' ),
-			'provider'                  => __( 'Provider', 'tekton' ),
-			'model'                     => __( 'Model', 'tekton' ),
-			'custom_model'              => __( 'Custom model...', 'tekton' ),
-			'custom_model_id'           => __( 'Custom model ID', 'tekton' ),
-			'max_tokens'                => __( 'Max tokens', 'tekton' ),
-			'not_set'                   => __( 'Not set', 'tekton' ),
-			'enter_api_key'             => __( 'Enter API key...', 'tekton' ),
-			'rendering'                 => __( 'Rendering', 'tekton' ),
-			'optional'                  => __( 'Optional', 'tekton' ),
-			'override_theme'            => __( 'Override theme', 'tekton' ),
-			'disable_gutenberg'         => __( 'Disable Gutenberg', 'tekton' ),
-			'cache_html'                => __( 'Cache HTML', 'tekton' ),
-			'minify_output'             => __( 'Minify output', 'tekton' ),
-			'acf_compatibility'         => __( 'ACF compatibility', 'tekton' ),
-			'plugin_mode'               => __( 'Plugin Mode', 'tekton' ),
-			'debug_mode'                => __( 'Debug mode', 'tekton' ),
-
-			// Header
-			'api_connected'             => __( 'API Connected', 'tekton' ),
-			'no_api_key'                => __( 'No API Key', 'tekton' ),
-			'open_builder'              => __( 'Open Builder', 'tekton' ),
-
-			// Delete dialog
-			'delete_template'           => __( 'Delete template', 'tekton' ),
-			'delete_template_desc'      => __( 'This will permanently delete the template and all its versions. This cannot be undone.', 'tekton' ),
-
-			// Builder
-			'editing'                   => __( 'editing', 'tekton' ),
-			'select_page'               => __( 'Select page', 'tekton' ),
-			'template_name'             => __( 'Template name...', 'tekton' ),
-			'preview'                   => __( 'Preview', 'tekton' ),
-			'code'                      => __( 'Code', 'tekton' ),
-			'tree'                      => __( 'Tree', 'tekton' ),
-			'history'                   => __( 'History', 'tekton' ),
-			'component_tree'            => __( 'Component Tree', 'tekton' ),
-			'version_history'           => __( 'Version History', 'tekton' ),
-			'generated_plugins'         => __( 'Generated Plugins', 'tekton' ),
-			'preview_link'              => __( 'Preview ↗', 'tekton' ),
-			'unpublish'                 => __( 'Unpublish', 'tekton' ),
-			'view_link'                 => __( 'View ↗', 'tekton' ),
-			'publish'                   => __( 'Publish', 'tekton' ),
-			'you'                       => __( 'You', 'tekton' ),
-			'tekton'                    => __( 'Tekton', 'tekton' ),
-			'summary_of_previous'       => __( 'summary of previous session', 'tekton' ),
-			'preview_updated'           => __( 'Preview updated', 'tekton' ),
-			'generating_structure'      => __( 'Generating structure…', 'tekton' ),
-			'thinking'                  => __( 'Thinking...', 'tekton' ),
-			'describe_prompt'           => __( 'Describe what to build or change...', 'tekton' ),
-			'clear_chat'                => __( 'Clear chat', 'tekton' ),
-			'clearing'                  => __( 'Clearing...', 'tekton' ),
-			'clear_with_summary'        => __( 'Clear with summary', 'tekton' ),
-			'clear_with_summary_desc'   => __( 'AI summarizes the conversation, then clears', 'tekton' ),
-			'clear_all'                 => __( 'Clear all', 'tekton' ),
-			'clear_all_desc'            => __( 'Remove entire chat history', 'tekton' ),
-			'shift_enter_newline'       => __( 'shift+enter for newline', 'tekton' ),
-			'structure_json'            => __( 'Structure JSON', 'tekton' ),
-			'rendered_html'             => __( 'Rendered HTML', 'tekton' ),
-			'no_preview_html'           => __( 'No preview HTML generated yet.', 'tekton' ),
-			'no_template_selected'      => __( 'No template selected.', 'tekton' ),
-			'loading_preview'           => __( 'Loading preview...', 'tekton' ),
-			'no_template_hint'          => __( 'Use the chat to generate a page, or select a template from the dropdown above.', 'tekton' ),
-			'no_components_yet'         => __( 'No components yet.', 'tekton' ),
-			'no_versions_yet'           => __( 'No versions yet.', 'tekton' ),
-			'no_field_groups_sidebar'   => __( 'No field groups yet.', 'tekton' ),
-			'plugins_hint'              => __( 'Generated plugins will appear here.', 'tekton' ),
-			'plugins_hint_cmd'          => __( 'Use /plugin in the chat to generate one.', 'tekton' ),
-			'current'                   => __( 'CURRENT', 'tekton' ),
-			'restore'                   => __( 'Restore', 'tekton' ),
-			'rename'                    => __( 'Rename', 'tekton' ),
-			'label'                     => __( 'Label', 'tekton' ),
-			'version_label'             => __( 'Version label...', 'tekton' ),
-			'ai_generate'               => __( 'AI generated', 'tekton' ),
-			'manual_edit'               => __( 'Manual edit', 'tekton' ),
-			'restored'                  => __( 'Restored', 'tekton' ),
-			'published'                 => __( 'Published', 'tekton' ),
-			'just_now'                  => __( 'just now', 'tekton' ),
-			'attach_image'              => __( 'Attach image', 'tekton' ),
-			'send_message'              => __( 'Send message', 'tekton' ),
-
-			// ChatPanel
-			'tekton_builder'            => __( 'Tekton Builder', 'tekton' ),
-			'chat_empty_hint'           => __( 'Describe the page you want to build.', 'tekton' ),
-			'chat_empty_example'        => __( 'Try: "Create a landing page with a hero section, features grid, and call to action"', 'tekton' ),
-			'chat_placeholder'          => __( 'Describe what you want to build...', 'tekton' ),
-
-			// PageSelector
-			'select_template'           => __( 'Select template...', 'tekton' ),
-			'front_page'                => __( 'Front Page', 'tekton' ),
-			'template_key'              => __( 'template-key', 'tekton' ),
-
-			// PreviewPanel
-			'no_preview_hint'           => __( 'No preview yet. Start by describing a page in the chat.', 'tekton' ),
-			'preview_error'             => __( 'Preview error:', 'tekton' ),
-			'page_preview'              => __( 'Page Preview', 'tekton' ),
-
-			// SettingsPanel
-			'ai_provider'               => __( 'AI Provider', 'tekton' ),
-			'api_key_for'               => __( 'API Key', 'tekton' ),
-			'model_hint'                => __( 'Select provider and enter API key to load models', 'tekton' ),
-			'settings_saved'            => __( 'Settings saved.', 'tekton' ),
-			'save_settings'             => __( 'Save Settings', 'tekton' ),
-			'api_keys_encrypted'        => __( 'API keys are encrypted and stored in your WordPress database. They are never sent to the frontend.', 'tekton' ),
-			'salt_warning'              => __( 'If your WordPress security salts are regenerated, you will need to re-enter your API keys.', 'tekton' ),
-
-			// Language
-			'language'                  => __( 'Language', 'tekton' ),
-			'language_auto'             => __( 'Auto (WordPress default)', 'tekton' ),
-
-			// Onboarding
-			'onboarding_welcome'        => __( 'Welcome to Tekton', 'tekton' ),
-			'onboarding_welcome_sub'    => __( "AI-first WordPress site builder. Let's get you set up.", 'tekton' ),
-			'select_provider'           => __( 'Select provider...', 'tekton' ),
-			'api_key'                   => __( 'API Key', 'tekton' ),
-			'continue'                  => __( 'Continue', 'tekton' ),
-			'skip_setup'                => __( 'Skip setup', 'tekton' ),
-			'back'                      => __( 'Back', 'tekton' ),
-			'onboarding_describe'       => __( 'Tell us about your site', 'tekton' ),
-			'onboarding_describe_sub'   => __( 'A sentence or two is enough. The AI will design a fitting theme.', 'tekton' ),
-			'onboarding_describe_placeholder' => __( 'e.g. A craft coffee roastery in Portland with an earthy, artisanal vibe...', 'tekton' ),
-			'generating'                => __( 'Generating...', 'tekton' ),
-			'generating_theme'          => __( 'Generating...', 'tekton' ),
-			'generate_theme'            => __( 'Generate Theme', 'tekton' ),
-			'onboarding_theme'          => __( 'Your Theme', 'tekton' ),
-			'colors'                    => __( 'Colors', 'tekton' ),
-			'typography'                => __( 'Typography', 'tekton' ),
-			'regenerate'                => __( 'Regenerate', 'tekton' ),
-			'use_this_theme'            => __( 'Use This Theme', 'tekton' ),
-
-			// Theme (settings)
-			'theme'                     => __( 'Theme', 'tekton' ),
-			'theme_current'             => __( 'Current theme configuration', 'tekton' ),
-			'theme_desc'                => __( 'Regenerate your site theme with AI based on a description of your site.', 'tekton' ),
-			'regenerate_theme'          => __( 'Regenerate Theme', 'tekton' ),
-		];
+		return Tekton_I18n::get_translations();
 	}
 }

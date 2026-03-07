@@ -57,7 +57,7 @@ Use when `current_template` IS present in the context and the user wants to chan
 | `replace_component` | `target`, `component` | Replace a component entirely (preserves the original ID). |
 | `move_component` | `target`, `parent`, `position` | Move a component to a new parent at a given position. |
 | `set_keyframes` | `keyframes` | Add or replace `@keyframes` definitions. `keyframes` is `{name: {stop: {prop: value}}}`. Merged with existing keyframes. |
-| `set_scripts` | `scripts` | Set page-level JavaScript. `scripts` is an array of JS code strings. Replaces existing scripts. |
+| `set_scripts` | `scripts` | Add page-level JavaScript. `scripts` is an array of JS code strings. Merged with existing scripts (appended, exact duplicates skipped). Set `"replace": true` to replace all scripts instead. |
 | `set_meta` | `meta` | Set or update SEO metadata. `meta` is `{description?, og_title?, canonical?, ...}`. Merged with existing meta. |
 | `set_wrapper_styles` | `wrapper_styles` | Set styles on the page wrapper element (`<header>`, `<main>`, or `<footer>`). Format: `{desktop?: {}, tablet?: {}, mobile?: {}}`. Use for sticky headers, full-height layouts, etc. |
 
@@ -419,16 +419,51 @@ Components NEVER hardcode user-facing content. All text, images, and data use co
 {"source": "field", "group": "hero_fields", "field": "headline", "fallback": "Welcome"}
 {"source": "post", "field": "post_title"}
 {"source": "post", "field": "featured_image", "size": "large"}
+{"source": "post", "post_type": "team_members", "post_index": 0, "field": "post_title", "fallback": "Team Member"}
+{"source": "post", "post_type": "team_members", "post_index": 0, "field": "position", "fallback": "Role"}
 {"source": "option", "key": "blogname"}
 {"source": "menu", "location": "primary"}
 {"source": "static", "value": "Read More →"}
 ```
 
 - Use `source: "field"` for any content users should edit (and note what field group is needed)
-- Use `source: "post"` for WordPress post fields (title, content, excerpt, featured_image)
+- Use `source: "post"` for WordPress post fields (title, content, excerpt, featured_image, post_date, post_excerpt)
+- Use `source: "post"` with `post_type` + `post_index` to reference a specific post from a CPT (0-indexed). Custom meta fields (from Tekton field groups) are auto-detected by field name.
 - Use `source: "option"` for site-wide settings (blogname, etc.)
 - Use `source: "static"` ONLY for structural labels, button text, ARIA attributes
 - Always include a `"fallback"` for field sources
+
+### Displaying CPT Posts
+
+**For dynamic listings** (team grids, portfolio galleries, blog feeds), prefer the `post-loop` component. It runs a `WP_Query` and repeats its children for each post. Inside the loop, use `source: "post"` without `post_type` — the loop provides the post context:
+
+```json
+{
+  "type": "post-loop",
+  "props": {"query": {"post_type": "team_members", "posts_per_page": 4, "orderby": "menu_order date", "order": "ASC"}},
+  "styles": {"desktop": {"display": "grid", "gridTemplateColumns": "repeat(4, 1fr)", "gap": "32px"}, "tablet": {"gridTemplateColumns": "repeat(2, 1fr)"}, "mobile": {"gridTemplateColumns": "1fr"}},
+  "children": [
+    {
+      "type": "flex-column",
+      "children": [
+        {"type": "featured-image", "props": {"size": "large"}},
+        {"type": "post-title", "props": {"tagName": "h3", "link": false}},
+        {"type": "tekton-field", "props": {"group": "team_info", "field": "position", "tagName": "span"}}
+      ]
+    }
+  ]
+}
+```
+
+Inside `post-loop` children, these components get the current post automatically:
+- `post-title` — renders the post title
+- `post-content` — renders the post content
+- `post-meta` — renders date, author, categories (props: `showDate`, `showAuthor`, `showCategories`)
+- `featured-image` — renders the featured image
+- `tekton-field` — renders a Tekton custom field value (props: `group`, `field`, `tagName`)
+- Any component with `{"source": "post", "field": "..."}` content sources
+
+**For fixed-slot layouts** where each card has unique styling/animations, use `post_type` + `post_index` on individual components instead of `post-loop`.
 
 ## Styles
 
@@ -500,9 +535,14 @@ For advanced animations and interactivity that CSS alone can't handle (scroll-tr
 
 Scripts run inside an IIFE — no global pollution. Target components by their human-friendly `id` prop (e.g. `#mobile-menu-toggle`) or `data-*` attributes set via component props.
 
-In operations mode, use the `set_scripts` operation:
+In operations mode, use the `set_scripts` operation. New scripts are **merged** with existing ones (appended, exact duplicates skipped), so you only need to include the new scripts you're adding — existing scripts are preserved automatically:
 ```json
 {"op": "set_scripts", "scripts": ["document.querySelector('#comp_hero0001').addEventListener('mousemove', (e) => { /* parallax logic */ });"]}
+```
+
+To replace ALL scripts (e.g. when rewriting interactive behavior from scratch), set `"replace": true`:
+```json
+{"op": "set_scripts", "scripts": ["/* new complete script */"], "replace": true}
 ```
 
 **Guidelines:**

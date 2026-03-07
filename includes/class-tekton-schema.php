@@ -20,8 +20,12 @@ class Tekton_Schema {
 	/**
 	 * @return array{valid: bool, errors: string[]}
 	 */
-	public function validate_component( array $component ): array {
+	public function validate_component( array $component, int $depth = 0 ): array {
 		$errors = [];
+
+		if ( $depth > 20 ) {
+			return [ 'valid' => false, 'errors' => [ 'Maximum nesting depth (20) exceeded.' ] ];
+		}
 
 		if ( empty( $component['id'] ) ) {
 			$errors[] = 'Component missing "id".';
@@ -44,7 +48,7 @@ class Tekton_Schema {
 
 		if ( ! empty( $component['children'] ) && is_array( $component['children'] ) ) {
 			foreach ( $component['children'] as $i => $child ) {
-				$child_result = $this->validate_component( $child );
+				$child_result = $this->validate_component( $child, $depth + 1 );
 				foreach ( $child_result['errors'] as $err ) {
 					$errors[] = sprintf( 'Child %d: %s', $i, $err );
 				}
@@ -211,6 +215,62 @@ class Tekton_Schema {
 				'allowedChildren' => [],
 				'defaultProps'    => [ 'name' => '', 'size' => '24px' ],
 				'editableProps'   => [ 'name', 'size' ],
+			],
+			'post-loop' => [
+				'type'            => 'post-loop',
+				'label'           => 'Post Loop',
+				'allowedChildren' => '*',
+				'defaultProps'    => [ 'query' => [ 'post_type' => 'post', 'posts_per_page' => 10 ] ],
+				'editableProps'   => [ 'query' ],
+			],
+			'post-title' => [
+				'type'            => 'post-title',
+				'label'           => 'Post Title',
+				'allowedChildren' => [],
+				'defaultProps'    => [ 'tagName' => 'h2', 'link' => true ],
+				'editableProps'   => [ 'tagName', 'link' ],
+			],
+			'post-content' => [
+				'type'            => 'post-content',
+				'label'           => 'Post Content',
+				'allowedChildren' => [],
+				'defaultProps'    => [],
+				'editableProps'   => [],
+			],
+			'post-meta' => [
+				'type'            => 'post-meta',
+				'label'           => 'Post Meta',
+				'allowedChildren' => [],
+				'defaultProps'    => [ 'showDate' => true, 'showAuthor' => true, 'showCategories' => false ],
+				'editableProps'   => [ 'showDate', 'showAuthor', 'showCategories' ],
+			],
+			'featured-image' => [
+				'type'            => 'featured-image',
+				'label'           => 'Featured Image',
+				'allowedChildren' => [],
+				'defaultProps'    => [ 'size' => 'large', 'link' => false ],
+				'editableProps'   => [ 'size', 'link' ],
+			],
+			'menu' => [
+				'type'            => 'menu',
+				'label'           => 'Menu',
+				'allowedChildren' => [],
+				'defaultProps'    => [ 'location' => 'primary' ],
+				'editableProps'   => [ 'location' ],
+			],
+			'tekton-field' => [
+				'type'            => 'tekton-field',
+				'label'           => 'Tekton Field',
+				'allowedChildren' => [],
+				'defaultProps'    => [ 'group' => '', 'field' => '', 'tagName' => 'span' ],
+				'editableProps'   => [ 'group', 'field', 'tagName' ],
+			],
+			'search-form' => [
+				'type'            => 'search-form',
+				'label'           => 'Search Form',
+				'allowedChildren' => [],
+				'defaultProps'    => [],
+				'editableProps'   => [],
 			],
 		];
 	}
