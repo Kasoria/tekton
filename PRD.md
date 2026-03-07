@@ -756,6 +756,9 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 - [x] Settings panel with live save (all settings + per-provider API key editing)
 - [x] Stores: `chat.svelte.js`, `page.svelte.js`, `settings.svelte.js`, `dashboard.svelte.js`
 - [x] `api.js` — full REST API wrapper with SSE streaming
+- [x] Light/dark mode with system preference default, localStorage persistence, and toggle in Dashboard + Builder headers
+- [x] `theme.svelte.js` store — mode cycling (system → light → dark), OS preference listener, `.dark` class strategy
+- [x] Full CSS custom property theming — light and dark palettes, no hardcoded colors
 
 ### Missing — Phase 2 (Field Engine & Content Sources)
 
