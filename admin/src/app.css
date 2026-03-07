@@ -69,6 +69,8 @@
  */
 #tekton-app {
   font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
 }
@@ -87,22 +89,27 @@
 #tekton-app h5,
 #tekton-app h6 {
   color: var(--color-foreground);
-  font-size: inherit;
-  font-weight: inherit;
-  font-family: inherit;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
   margin: 0;
   padding: 0;
-  line-height: inherit;
 }
+#tekton-app h1 { font-size: 1.875rem; }
+#tekton-app h2 { font-size: 1.5rem; }
+#tekton-app h3 { font-size: 1.25rem; }
+#tekton-app h4 { font-size: 1.125rem; }
+#tekton-app h5 { font-size: 1rem; }
+#tekton-app h6 { font-size: 0.875rem; }
 
 /* Paragraphs, labels */
 #tekton-app p,
 #tekton-app label:not(.tk-label) {
   color: inherit;
-  font-size: inherit;
-  font-family: inherit;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
   margin: 0;
-  line-height: inherit;
+  line-height: 1.5;
 }
 
 /* Links — WP sets color:#2271b1, text-decoration:underline */

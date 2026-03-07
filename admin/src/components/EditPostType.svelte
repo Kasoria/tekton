@@ -371,40 +371,45 @@
         </nav>
 
         <!-- Form content -->
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-8">
           <!-- GENERAL -->
           {#if activeSection === 'basic'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-6">{t('general_settings', 'General Settings')}</h3>
-              <div class="grid grid-cols-2 gap-x-6 gap-y-5">
-                <div class="col-span-2 grid grid-cols-[1fr_1fr] gap-6">
-                  <div>
-                    <label class="tk-label">{t('post_type_key', 'Post Type Key (slug)')}</label>
-                    <input type="text" class="tk-field font-mono" maxlength="20" placeholder="team_member" bind:value={slug} disabled={!isNew} oninput={() => { slug = slug.toLowerCase().replace(/[^a-z0-9_]/g, ''); }} />
-                    <p class="tk-hint">{t('cpt_slug_hint', 'Max 20 characters. Lowercase, underscores only.')}{!isNew ? ' ' + t('slug_locked', 'Cannot be changed after creation.') : ''}</p>
+            <Card class="p-8">
+              <div class="flex flex-col gap-8">
+                <h3 class="font-heading text-base font-bold">{t('general_settings', 'General Settings')}</h3>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-6">
+                  <div class="col-span-2 grid grid-cols-[1fr_1fr] gap-6">
+                    <div>
+                      <label class="tk-label">{t('post_type_key', 'Post Type Key (slug)')}</label>
+                      <input type="text" class="tk-field font-mono" maxlength="20" placeholder="team_member" bind:value={slug} disabled={!isNew} oninput={() => { slug = slug.toLowerCase().replace(/[^a-z0-9_]/g, ''); }} />
+                      <p class="tk-hint">{t('cpt_slug_hint', 'Max 20 characters. Lowercase, underscores only.')}{!isNew ? ' ' + t('slug_locked', 'Cannot be changed after creation.') : ''}</p>
+                    </div>
+                    <div>
+                      <label class="tk-label">{t('description', 'Description')}</label>
+                      <input type="text" class="tk-field" placeholder={t('cpt_desc_placeholder', 'A short description of the post type')} bind:value={description} />
+                    </div>
                   </div>
                   <div>
-                    <label class="tk-label">{t('description', 'Description')}</label>
-                    <input type="text" class="tk-field" placeholder={t('cpt_desc_placeholder', 'A short description of the post type')} bind:value={description} />
+                    <label class="tk-label">{t('plural_label', 'Plural Label')}</label>
+                    <input type="text" class="tk-field" placeholder="Team Members" bind:value={label} />
                   </div>
-                </div>
-                <div>
-                  <label class="tk-label">{t('plural_label', 'Plural Label')}</label>
-                  <input type="text" class="tk-field" placeholder="Team Members" bind:value={label} />
-                </div>
-                <div>
-                  <label class="tk-label">{t('singular_label', 'Singular Label')}</label>
-                  <input type="text" class="tk-field" placeholder="Team Member" bind:value={singularLabel} />
+                  <div>
+                    <label class="tk-label">{t('singular_label', 'Singular Label')}</label>
+                    <input type="text" class="tk-field" placeholder="Team Member" bind:value={singularLabel} />
+                  </div>
                 </div>
               </div>
             </Card>
 
           <!-- LABELS -->
           {:else if activeSection === 'labels'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-1">{t('labels', 'Labels')}</h3>
-              <p class="text-[12px] text-muted mb-6">{t('labels_desc', 'Fine-tune how this post type appears throughout the admin. Leave blank for WordPress defaults.')}</p>
-              <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+                <div>
+                  <h3 class="font-heading text-base font-bold">{t('labels', 'Labels')}</h3>
+                  <div class="text-[12px] text-muted" style="margin-top:6px">{t('labels_desc', 'Fine-tune how this post type appears throughout the admin. Leave blank for WordPress defaults.')}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-6">
                 {#each [
                   ['addNew', t('label_add_new', 'Add New'), t('label_add_new_ph', 'e.g. Add New')],
                   ['addNewItem', t('label_add_new_item', 'Add New Item'), t('label_add_new_item_ph', 'e.g. Add New Team Member')],
@@ -432,12 +437,14 @@
                   </div>
                 {/each}
               </div>
+              </div>
             </Card>
 
           <!-- VISIBILITY -->
           {:else if activeSection === 'visibility'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-5">{t('visibility', 'Visibility')}</h3>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <h3 class="font-heading text-base font-bold">{t('visibility', 'Visibility')}</h3>
               <div class="flex flex-col gap-4">
                 {#each [
                   ['isPublic', t('cpt_public', 'Public'), t('cpt_public_desc', 'Whether this post type is visible on the front end and in search results.')],
@@ -480,12 +487,14 @@
                   </div>
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- URLS & ARCHIVES -->
           {:else if activeSection === 'urls'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-5">{t('urls_archives', 'URLs & Archives')}</h3>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <h3 class="font-heading text-base font-bold">{t('urls_archives', 'URLs & Archives')}</h3>
               <div class="flex flex-col gap-4">
                 <div class="flex items-center justify-between py-2 border-b border-border-subtle">
                   <div>
@@ -540,14 +549,18 @@
                   <Switch checked={queryVar} onchange={() => (queryVar = !queryVar)} />
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- FEATURES -->
           {:else if activeSection === 'features'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-1">{t('supported_features', 'Supported Features')}</h3>
-              <p class="text-[12px] text-muted mb-5">{t('supported_features_desc', 'Which core features this post type supports. Note: Tekton replaces the block editor, so "Editor" enables the classic editor fallback only.')}</p>
-              <div class="grid grid-cols-3 gap-3 mb-6">
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <div>
+                <h3 class="font-heading text-base font-bold">{t('supported_features', 'Supported Features')}</h3>
+                <div class="text-[12px] text-muted" style="margin-top:6px">{t('supported_features_desc', 'Which core features this post type supports. Note: Tekton replaces the block editor, so "Editor" enables the classic editor fallback only.')}</div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
                 {#each allSupports as s}
                   <label class="flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors
                     {supports.includes(s.key) ? 'border-copper/40 bg-copper/5' : 'border-border hover:border-dim'}">
@@ -580,12 +593,14 @@
                   <Switch checked={deleteWithUser} onchange={() => (deleteWithUser = !deleteWithUser)} />
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- REST API -->
           {:else if activeSection === 'rest'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-5">{t('rest_api', 'REST API')}</h3>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <h3 class="font-heading text-base font-bold">{t('rest_api', 'REST API')}</h3>
               <div class="flex flex-col gap-4">
                 <div class="flex items-center justify-between py-2 border-b border-border-subtle">
                   <div>
@@ -610,12 +625,14 @@
                   <p class="tk-hint">{t('rest_controller_hint', 'Custom controller class. For advanced use only.')}</p>
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- ADMIN MENU -->
           {:else if activeSection === 'admin'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-5">{t('admin_menu', 'Admin Menu')}</h3>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <h3 class="font-heading text-base font-bold">{t('admin_menu', 'Admin Menu')}</h3>
               <div class="flex flex-col gap-5">
                 <div>
                   <label class="tk-label">{t('menu_position', 'Menu Position')}</label>
@@ -642,12 +659,14 @@
                   </div>
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- CAPABILITIES -->
           {:else if activeSection === 'capabilities'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-5">{t('capabilities', 'Capabilities')}</h3>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <h3 class="font-heading text-base font-bold">{t('capabilities', 'Capabilities')}</h3>
               <div class="flex flex-col gap-4">
                 <div>
                   <label class="tk-label">{t('capability_type', 'Capability Type')}</label>
@@ -662,18 +681,22 @@
                   <Switch checked={mapMetaCap} onchange={() => (mapMetaCap = !mapMetaCap)} />
                 </div>
               </div>
+              </div>
             </Card>
 
           <!-- TAXONOMIES -->
           {:else if activeSection === 'taxonomies'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-1">{t('taxonomies', 'Taxonomies')}</h3>
-              <p class="text-[12px] text-muted mb-5">{t('taxonomies_desc', 'Create and manage taxonomies associated with this post type.')}</p>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+              <div>
+                <h3 class="font-heading text-base font-bold">{t('taxonomies', 'Taxonomies')}</h3>
+                <div class="text-[12px] text-muted" style="margin-top:6px">{t('taxonomies_desc', 'Create and manage taxonomies associated with this post type.')}</div>
+              </div>
 
               {#if taxonomies.length === 0}
-                <div class="text-sm text-muted text-center py-6 border border-dashed border-border rounded-lg mb-4">{t('no_taxonomies_yet', 'No taxonomies yet.')}</div>
+                <div class="text-sm text-muted text-center py-6 border border-dashed border-border rounded-lg">{t('no_taxonomies_yet', 'No taxonomies yet.')}</div>
               {:else}
-                <div class="flex flex-col gap-4 mb-4">
+                <div class="flex flex-col gap-4">
                   {#each taxonomies as tx, i}
                     <div class="p-4 rounded-lg border border-border bg-background">
                       <div class="flex items-center justify-between mb-3">
@@ -718,12 +741,15 @@
                 </div>
               {/if}
 
-              <Button variant="ghost" onclick={addTaxonomy}>+ {t('add_taxonomy', 'Add Taxonomy')}</Button>
+              <div>
+                <Button variant="ghost" onclick={addTaxonomy}>+ {t('add_taxonomy', 'Add Taxonomy')}</Button>
+              </div>
+              </div>
             </Card>
           {/if}
 
           <!-- Bottom save bar -->
-          <div class="flex justify-end gap-3 pt-2 pb-8">
+          <div class="flex justify-end gap-3 pt-4 pb-8">
             <Button variant="ghost" onclick={onBack}>{t('cancel', 'Cancel')}</Button>
             <Button onclick={save} disabled={saving || !slug || !label}>
               {saving ? t('saving', 'Saving...') : (isNew ? t('create', 'Create') : t('save', 'Save'))}
@@ -745,10 +771,10 @@
 
   .tk-editor :global(h1), .tk-editor :global(h2), .tk-editor :global(h3),
   .tk-editor :global(h4), .tk-editor :global(h5), .tk-editor :global(h6) {
-    color: var(--color-foreground); font-size: inherit; font-weight: inherit;
-    margin: 0; padding: 0; line-height: inherit;
+    color: var(--color-foreground); font-family: var(--font-heading);
+    font-weight: 700; line-height: 1.2; margin: 0; padding: 0;
   }
-  .tk-editor :global(p) { color: inherit; font-size: inherit; margin: 0; line-height: inherit; }
+  .tk-editor :global(p) { color: inherit; font-size: 0.875rem; font-family: var(--font-body); margin: 0; line-height: 1.5; }
   .tk-editor :global(button) { font-family: var(--font-body); line-height: inherit; }
   .tk-editor :global(input), .tk-editor :global(select), .tk-editor :global(textarea) {
     font-family: var(--font-body); color: var(--color-foreground);

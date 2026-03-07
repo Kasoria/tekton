@@ -361,56 +361,59 @@
         </nav>
 
         <!-- Form content -->
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-8">
 
           <!-- GENERAL -->
           {#if activeSection === 'basic'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-6">{t('general_settings', 'General Settings')}</h3>
-              <div class="grid grid-cols-2 gap-x-6 gap-y-5">
-                <div>
-                  <label class="tk-label">{t('title', 'Title')}</label>
-                  <input type="text" class="tk-field" placeholder="e.g. Team Member Details" bind:value={title}
-                    oninput={() => { if (isNew && (!slug || slug === autoSlug(title.slice(0, -1)))) slug = autoSlug(title); }} />
-                </div>
-                <div>
-                  <label class="tk-label">{t('slug', 'Slug')}</label>
-                  <input type="text" class="tk-field font-mono" placeholder="team_member_details" bind:value={slug} disabled={!isNew}
-                    oninput={() => { slug = slug.toLowerCase().replace(/[^a-z0-9_]/g, ''); }} />
-                  <p class="tk-hint">{!isNew ? t('slug_locked', 'Cannot be changed after creation.') : t('slug_hint', 'Auto-generated from title. Lowercase, underscores only.')}</p>
-                </div>
-                <div class="col-span-2">
-                  <label class="tk-label">{t('description', 'Description')}</label>
-                  <input type="text" class="tk-field" placeholder={t('fg_description_placeholder', 'Optional description for this field group')} bind:value={description} />
-                </div>
-                <div class="col-span-2 flex items-center justify-between py-2">
+            <Card class="p-8">
+              <div class="flex flex-col gap-8">
+                <h3 class="font-heading text-base font-bold">{t('general_settings', 'General Settings')}</h3>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-6">
                   <div>
-                    <div class="text-[13px] font-medium">{t('active', 'Active')}</div>
-                    <div class="text-[12px] text-muted mt-0.5">{t('active_desc', 'Whether this field group is active and its meta boxes are shown.')}</div>
+                    <label class="tk-label">{t('title', 'Title')}</label>
+                    <input type="text" class="tk-field" placeholder="e.g. Team Member Details" bind:value={title}
+                      oninput={() => { if (isNew && (!slug || slug === autoSlug(title.slice(0, -1)))) slug = autoSlug(title); }} />
                   </div>
-                  <Switch checked={isActive} onchange={() => (isActive = !isActive)} />
+                  <div>
+                    <label class="tk-label">{t('slug', 'Slug')}</label>
+                    <input type="text" class="tk-field font-mono" placeholder="team_member_details" bind:value={slug} disabled={!isNew}
+                      oninput={() => { slug = slug.toLowerCase().replace(/[^a-z0-9_]/g, ''); }} />
+                    <p class="tk-hint">{!isNew ? t('slug_locked', 'Cannot be changed after creation.') : t('slug_hint', 'Auto-generated from title. Lowercase, underscores only.')}</p>
+                  </div>
+                  <div class="col-span-2">
+                    <label class="tk-label">{t('description', 'Description')}</label>
+                    <input type="text" class="tk-field" placeholder={t('fg_description_placeholder', 'Optional description for this field group')} bind:value={description} />
+                  </div>
+                  <div class="col-span-2 flex items-center justify-between py-2">
+                    <div>
+                      <div class="text-[13px] font-medium">{t('active', 'Active')}</div>
+                      <div class="text-[12px] text-muted">{t('active_desc', 'Whether this field group is active and its meta boxes are shown.')}</div>
+                    </div>
+                    <Switch checked={isActive} onchange={() => (isActive = !isActive)} />
+                  </div>
                 </div>
               </div>
             </Card>
 
           <!-- FIELDS -->
           {:else if activeSection === 'fields'}
-            <Card class="p-6">
-              <div class="flex items-center justify-between mb-5">
-                <div>
-                  <h3 class="font-heading text-base font-bold">{t('fields', 'Fields')}</h3>
-                  <p class="text-[12px] text-muted mt-1">{fields.length} {fields.length !== 1 ? t('fields', 'fields') : t('field', 'field')} {t('configured', 'configured')}</p>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-heading text-base font-bold">{t('fields', 'Fields')}</h3>
+                    <div class="text-[12px] text-muted" style="margin-top:4px">{fields.length} {fields.length !== 1 ? t('fields', 'fields') : t('field', 'field')} {t('configured', 'configured')}</div>
+                  </div>
+                  <Button onclick={addField}>+ {t('add_field', 'Add Field')}</Button>
                 </div>
-                <Button onclick={addField}>+ {t('add_field', 'Add Field')}</Button>
-              </div>
 
-              {#if fields.length === 0}
-                <div class="text-sm text-muted text-center py-8 border border-dashed border-border rounded-lg">
-                  {t('no_fields_yet', 'No fields yet. Click "Add Field" to start.')}
-                </div>
-              {:else}
-                <div class="flex flex-col gap-2">
-                  {#each fields as field, i}
+                {#if fields.length === 0}
+                  <div class="text-sm text-muted text-center py-8 border border-dashed border-border rounded-lg">
+                    {t('no_fields_yet', 'No fields yet. Click "Add Field" to start.')}
+                  </div>
+                {:else}
+                  <div class="flex flex-col gap-2">
+                    {#each fields as field, i}
                     <div class="rounded-lg border transition-colors {expandedField === i ? 'border-copper/40 bg-copper/[0.02]' : 'border-border hover:border-dim'}">
                       <!-- Field header -->
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -436,7 +439,7 @@
 
                       <!-- Field config (expanded) -->
                       {#if expandedField === i}
-                        <div class="border-t border-border-subtle px-4 py-4">
+                        <div class="border-t border-border-subtle px-5 py-5">
                           <div class="grid grid-cols-2 gap-x-6 gap-y-5">
                             <!-- Label -->
                             <div>
@@ -600,80 +603,86 @@
                   {/each}
                 </div>
 
-                <div class="mt-4">
-                  <Button variant="ghost" onclick={addField}>+ {t('add_field', 'Add Field')}</Button>
-                </div>
-              {/if}
+                  <div>
+                    <Button variant="ghost" onclick={addField}>+ {t('add_field', 'Add Field')}</Button>
+                  </div>
+                {/if}
+              </div>
             </Card>
 
           <!-- LOCATION RULES -->
           {:else if activeSection === 'location'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-1">{t('location_rules', 'Location Rules')}</h3>
-              <p class="text-[12px] text-muted mb-5">{t('location_rules_desc', 'Define where this field group appears. Rule groups use OR logic between them, AND logic within each group.')}</p>
+            <Card class="p-8">
+              <div class="flex flex-col gap-6">
+                <div>
+                  <h3 class="font-heading text-base font-bold">{t('location_rules', 'Location Rules')}</h3>
+                  <div class="text-[12px] text-muted" style="margin-top:6px">{t('location_rules_desc', 'Define where this field group appears. Rule groups use OR logic between them, AND logic within each group.')}</div>
+                </div>
 
-              <div class="flex flex-col gap-4">
-                {#each locationRules as ruleGroup, gi}
-                  {#if gi > 0}
-                    <div class="text-center text-[12px] font-semibold text-copper uppercase tracking-wider">or</div>
-                  {/if}
-                  <div class="p-4 rounded-lg border border-border bg-background">
-                    <div class="flex flex-col gap-2">
-                      {#each ruleGroup as rule, ri}
-                        {#if ri > 0}
-                          <div class="text-[11px] font-semibold text-muted uppercase tracking-wider pl-1">and</div>
+                <div class="flex flex-col gap-5">
+                  {#each locationRules as ruleGroup, gi}
+                    {#if gi > 0}
+                      <div class="text-center text-[12px] font-semibold text-copper uppercase tracking-wider">or</div>
+                    {/if}
+                    <div class="flex flex-col gap-4 p-5 rounded-lg border border-border bg-background">
+                      <div class="flex flex-col gap-3">
+                        {#each ruleGroup as rule, ri}
+                          {#if ri > 0}
+                            <div class="text-[11px] font-semibold text-muted uppercase tracking-wider pl-1">and</div>
+                          {/if}
+                          <div class="flex items-center gap-3">
+                            <div class="w-40 shrink-0">
+                              <Select
+                                value={rule.param}
+                                options={locationParams}
+                                fullWidth
+                                onchange={(val) => { rule.param = val; }}
+                              />
+                            </div>
+                            <div class="w-40 shrink-0">
+                              <Select
+                                value={rule.operator}
+                                options={operatorOptions}
+                                fullWidth
+                                onchange={(val) => { rule.operator = val; }}
+                              />
+                            </div>
+                            <div class="flex-1">
+                              <Select
+                                value={rule.value}
+                                options={postTypeOptions}
+                                searchable
+                                fullWidth
+                                placeholder={t('select_post_type', 'Select...')}
+                                onchange={(val) => { rule.value = val; }}
+                              />
+                            </div>
+                            <button class="w-6 h-6 rounded bg-transparent border-none text-dim hover:text-gold cursor-pointer text-xs flex items-center justify-center" onclick={() => removeRule(gi, ri)} title={t('remove_rule', 'Remove rule')}>&#10005;</button>
+                          </div>
+                        {/each}
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <button class="text-[12px] text-copper bg-transparent border-none cursor-pointer font-body font-medium" onclick={() => addRule(gi)}>+ {t('add_rule', 'Add Rule')}</button>
+                        {#if locationRules.length > 1}
+                          <button class="text-[12px] text-dim hover:text-gold bg-transparent border-none cursor-pointer font-body" onclick={() => removeRuleGroup(gi)}>{t('remove_group', 'Remove Group')}</button>
                         {/if}
-                        <div class="flex items-center gap-2">
-                          <div class="w-40 shrink-0">
-                            <Select
-                              value={rule.param}
-                              options={locationParams}
-                              fullWidth
-                              onchange={(val) => { rule.param = val; }}
-                            />
-                          </div>
-                          <div class="w-40 shrink-0">
-                            <Select
-                              value={rule.operator}
-                              options={operatorOptions}
-                              fullWidth
-                              onchange={(val) => { rule.operator = val; }}
-                            />
-                          </div>
-                          <div class="flex-1">
-                            <Select
-                              value={rule.value}
-                              options={postTypeOptions}
-                              searchable
-                              fullWidth
-                              placeholder={t('select_post_type', 'Select...')}
-                              onchange={(val) => { rule.value = val; }}
-                            />
-                          </div>
-                          <button class="w-6 h-6 rounded bg-transparent border-none text-dim hover:text-gold cursor-pointer text-xs flex items-center justify-center" onclick={() => removeRule(gi, ri)} title={t('remove_rule', 'Remove rule')}>&#10005;</button>
-                        </div>
-                      {/each}
+                      </div>
                     </div>
-                    <div class="flex items-center gap-2 mt-3">
-                      <button class="text-[12px] text-copper bg-transparent border-none cursor-pointer font-body font-medium" onclick={() => addRule(gi)}>+ {t('add_rule', 'Add Rule')}</button>
-                      {#if locationRules.length > 1}
-                        <button class="text-[12px] text-dim hover:text-gold bg-transparent border-none cursor-pointer font-body" onclick={() => removeRuleGroup(gi)}>{t('remove_group', 'Remove Group')}</button>
-                      {/if}
-                    </div>
-                  </div>
-                {/each}
-              </div>
+                  {/each}
+                </div>
 
-              <div class="mt-4">
-                <Button variant="ghost" onclick={addRuleGroup}>+ {t('add_rule_group', 'Add Rule Group')}</Button>
+                <div>
+                  <Button variant="ghost" onclick={addRuleGroup}>+ {t('add_rule_group', 'Add Rule Group')}</Button>
+                </div>
               </div>
             </Card>
 
           <!-- PRESENTATION -->
           {:else if activeSection === 'presentation'}
-            <Card class="p-6">
-              <h3 class="font-heading text-base font-bold mb-6">{t('presentation', 'Presentation')}</h3>
-              <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+            <Card class="p-8">
+              <div class="flex flex-col gap-8">
+                <h3 class="font-heading text-base font-bold">{t('presentation', 'Presentation')}</h3>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-6">
                 <div>
                   <label class="tk-label">{t('position', 'Position')}</label>
                   <select class="tk-field" bind:value={position}>
@@ -693,11 +702,12 @@
                   <p class="tk-hint">{t('priority_hint', 'Order within the chosen position.')}</p>
                 </div>
               </div>
+              </div>
             </Card>
           {/if}
 
           <!-- Bottom save bar -->
-          <div class="flex justify-end gap-3 pt-2 pb-8">
+          <div class="flex justify-end gap-3 pt-4 pb-8">
             <Button variant="ghost" onclick={onBack}>{t('cancel', 'Cancel')}</Button>
             <Button onclick={save} disabled={saving || !slug || !title}>
               {saving ? t('saving', 'Saving...') : (isNew ? t('create', 'Create') : t('save', 'Save'))}
@@ -719,10 +729,10 @@
 
   .tk-editor :global(h1), .tk-editor :global(h2), .tk-editor :global(h3),
   .tk-editor :global(h4), .tk-editor :global(h5), .tk-editor :global(h6) {
-    color: var(--color-foreground); font-size: inherit; font-weight: inherit;
-    margin: 0; padding: 0; line-height: inherit;
+    color: var(--color-foreground); font-family: var(--font-heading);
+    font-weight: 700; line-height: 1.2; margin: 0; padding: 0;
   }
-  .tk-editor :global(p) { color: inherit; font-size: inherit; margin: 0; line-height: inherit; }
+  .tk-editor :global(p) { color: inherit; font-size: 0.875rem; font-family: var(--font-body); margin: 0; line-height: 1.5; }
   .tk-editor :global(button) { font-family: var(--font-body); line-height: inherit; }
   .tk-editor :global(input), .tk-editor :global(select), .tk-editor :global(textarea) {
     font-family: var(--font-body); color: var(--color-foreground);

@@ -159,21 +159,36 @@ class Tekton_AI_Engine {
 		$message = $response;
 		$json    = null;
 
-		// Try to extract JSON from code fences (greedy — captures across continuations).
-		if ( preg_match( '/```(?:json)?\s*\n(.+)\n```/s', $response, $matches ) ) {
-			// If continuations produced multiple fences, strip inner fence markers.
-			$raw_json = preg_replace( '/\n```\s*\n*```(?:json)?\s*\n/', "\n", $matches[1] );
-			$decoded  = json_decode( $raw_json, true );
-
-			// If decode fails, try repairing common AI JSON issues.
-			if ( null === $decoded ) {
-				$decoded = self::try_repair_json( $raw_json );
+		// Try to extract JSON from code fences.
+		// First try each block individually (last-to-first) to handle AI self-corrections
+		// where the AI outputs one JSON block, then says "Wait, let me fix that" and outputs another.
+		if ( preg_match_all( '/```(?:json)?\s*\n(.+?)\n```/s', $response, $all_matches ) ) {
+			for ( $i = count( $all_matches[1] ) - 1; $i >= 0; $i-- ) {
+				$raw_json = $all_matches[1][ $i ];
+				$decoded  = json_decode( $raw_json, true );
+				if ( null === $decoded ) {
+					$decoded = self::try_repair_json( $raw_json );
+				}
+				if ( is_array( $decoded ) && self::is_tekton_json( $decoded ) ) {
+					$json    = $decoded;
+					$before  = trim( substr( $response, 0, strpos( $response, '```' ) ) );
+					$message = $before !== '' ? $before : 'Changes applied to the preview.';
+					break;
+				}
 			}
 
-			if ( is_array( $decoded ) ) {
-				$json = $decoded;
-				$before = trim( substr( $response, 0, strpos( $response, '```' ) ) );
-				$message = $before !== '' ? $before : 'Changes applied to the preview.';
+			// Fallback: greedy capture across continuations (truncated JSON split across fences).
+			if ( ! $json && preg_match( '/```(?:json)?\s*\n(.+)\n```/s', $response, $matches ) ) {
+				$raw_json = preg_replace( '/\n```\s*\n*```(?:json)?\s*\n/', "\n", $matches[1] );
+				$decoded  = json_decode( $raw_json, true );
+				if ( null === $decoded ) {
+					$decoded = self::try_repair_json( $raw_json );
+				}
+				if ( is_array( $decoded ) ) {
+					$json    = $decoded;
+					$before  = trim( substr( $response, 0, strpos( $response, '```' ) ) );
+					$message = $before !== '' ? $before : 'Changes applied to the preview.';
+				}
 			}
 		}
 

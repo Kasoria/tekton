@@ -838,18 +838,19 @@
   .tk-dashboard :global(h5),
   .tk-dashboard :global(h6) {
     color: var(--color-foreground);
-    font-size: inherit;
-    font-weight: inherit;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    line-height: 1.2;
     margin: 0;
     padding: 0;
-    line-height: inherit;
   }
 
   .tk-dashboard :global(p) {
     color: inherit;
-    font-size: inherit;
+    font-size: 0.875rem;
+    font-family: var(--font-body);
     margin: 0;
-    line-height: inherit;
+    line-height: 1.5;
   }
 
   .tk-dashboard :global(a) {
