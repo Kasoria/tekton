@@ -13,6 +13,7 @@ async function apiFetch(endpoint, options = {}) {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));
+    if (error.errors) console.error('[Tekton API]', error.errors);
     throw new Error(error.message || 'API request failed');
   }
   return response.json();

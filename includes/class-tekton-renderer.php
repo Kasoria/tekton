@@ -152,17 +152,19 @@ class Tekton_Renderer {
 		$level   = max( 1, min( 6, $level ?: 2 ) );
 		$tag     = 'h' . $level;
 		$attrs   = $this->build_attributes( $c, 'tekton-heading' );
+		$edit    = $this->build_editable_attrs( $c, 'content' );
 		$content = $this->resolve_prop_content( $c, 'content', $post_id );
 
-		return "<{$tag} {$attrs}>" . esc_html( $content ) . "</{$tag}>\n";
+		return "<{$tag} {$attrs}{$edit}>" . esc_html( $content ) . "</{$tag}>\n";
 	}
 
 	private function render_text( array $c, int $post_id ): string {
 		$tag     = $this->validate_tag_name( $c['props']['tagName'] ?? 'p', self::TEXT_TAGS, 'p' );
 		$attrs   = $this->build_attributes( $c, 'tekton-text' );
+		$edit    = $this->build_editable_attrs( $c, 'content' );
 		$content = $this->resolve_prop_content( $c, 'content', $post_id );
 
-		return "<{$tag} {$attrs}>" . wp_kses_post( $content ) . "</{$tag}>\n";
+		return "<{$tag} {$attrs}{$edit}>" . wp_kses_post( $content ) . "</{$tag}>\n";
 	}
 
 	private function render_image( array $c, int $post_id ): string {
@@ -185,6 +187,7 @@ class Tekton_Renderer {
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
 		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-button' );
+		$edit   = empty( $c['children'] ) ? $this->build_editable_attrs( $c, 'text' ) : '';
 
 		// If the button has children (e.g. icon + label), render them instead of text prop.
 		if ( ! empty( $c['children'] ) ) {
@@ -195,12 +198,12 @@ class Tekton_Renderer {
 
 		// Render as <a> when there's a real href, otherwise as <button>.
 		if ( '' !== $href ) {
-			return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
+			return '<a ' . $attrs . $edit . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
 				. $inner . "</a>\n";
 		}
 
 		$btn_type = esc_attr( $c['props']['type'] ?? 'button' );
-		return '<button ' . $attrs . ' type="' . $btn_type . '">'
+		return '<button ' . $attrs . $edit . ' type="' . $btn_type . '">'
 			. $inner . "</button>\n";
 	}
 
@@ -222,6 +225,7 @@ class Tekton_Renderer {
 		$target = esc_attr( $c['props']['target'] ?? '_self' );
 		$rel    = $this->build_link_rel( $c['props'] ?? [] );
 		$attrs  = $this->build_attributes( $c, 'tekton-link' );
+		$edit   = empty( $c['children'] ) ? $this->build_editable_attrs( $c, 'text' ) : '';
 
 		// If the link has children (e.g. logo with icon + text), render them instead of text prop.
 		if ( ! empty( $c['children'] ) ) {
@@ -230,7 +234,7 @@ class Tekton_Renderer {
 			$inner = esc_html( $this->resolve_prop_content( $c, 'text', $post_id ) );
 		}
 
-		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
+		return '<a ' . $attrs . $edit . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
 			. $inner . "</a>\n";
 	}
 
@@ -736,5 +740,38 @@ class Tekton_Renderer {
 		}
 
 		return $kebab;
+	}
+
+	/**
+	 * Build data attributes for inline-editable elements.
+	 *
+	 * @param array  $c    Component data.
+	 * @param string $prop The prop name that holds the editable content.
+	 * @return string HTML attribute string (leading space included).
+	 */
+	private function build_editable_attrs( array $c, string $prop ): string {
+		$attrs = ' data-tekton-editable="true" data-tekton-prop="' . esc_attr( $prop ) . '"';
+
+		$value = $c['props'][ $prop ] ?? null;
+		if ( is_array( $value ) && isset( $value['source'] ) ) {
+			$source_data = [
+				'source' => $value['source'],
+			];
+			if ( ! empty( $value['group'] ) ) {
+				$source_data['group'] = $value['group'];
+			}
+			if ( ! empty( $value['field'] ) ) {
+				$source_data['field'] = $value['field'];
+			}
+			if ( ! empty( $value['expression'] ) ) {
+				$source_data['expression'] = $value['expression'];
+			}
+			if ( ! empty( $value['key'] ) ) {
+				$source_data['key'] = $value['key'];
+			}
+			$attrs .= ' data-tekton-source="' . esc_attr( wp_json_encode( $source_data ) ) . '"';
+		}
+
+		return $attrs;
 	}
 }

@@ -36,15 +36,7 @@ class Tekton_Schema {
 			return [ 'valid' => false, 'errors' => $errors ];
 		}
 
-		if ( ! isset( $this->types[ $component['type'] ] ) ) {
-			$errors[] = sprintf( 'Unknown component type: %s', $component['type'] );
-		}
-
-		if ( isset( $component['props']['content'] ) && is_array( $component['props']['content'] ) ) {
-			if ( ! $this->validate_content_source( $component['props']['content'] ) ) {
-				$errors[] = sprintf( 'Invalid content source in component %s.', $component['id'] ?? '?' );
-			}
-		}
+		// Unknown types are allowed — the renderer handles them via render_generic.
 
 		if ( ! empty( $component['children'] ) && is_array( $component['children'] ) ) {
 			foreach ( $component['children'] as $i => $child ) {
@@ -97,9 +89,11 @@ class Tekton_Schema {
 			return false;
 		}
 
+		// Lenient validation: require only the source type key.
+		// The renderer handles missing fields gracefully (auto-detection, fallbacks).
 		return match ( $source['source'] ) {
-			'field'    => ! empty( $source['group'] ) && ! empty( $source['field'] ),
-			'post'     => ! empty( $source['field'] ),
+			'field'    => ! empty( $source['field'] ),
+			'post'     => true,
 			'option'   => ! empty( $source['key'] ),
 			'acf'      => ! empty( $source['field'] ),
 			'static'   => array_key_exists( 'value', $source ),

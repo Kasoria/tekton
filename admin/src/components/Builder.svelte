@@ -1,11 +1,16 @@
 <script>
+  import { untrack } from 'svelte';
   import { Button } from '$lib/components/ui/button/index.js';
   import { ConfirmDialog } from '$lib/components/ui/dialog/index.js';
   import { createChatStore } from '$lib/stores/chat.svelte.js';
   import { createPageStore } from '$lib/stores/page.svelte.js';
+  import { createEditorStore } from '$lib/stores/editor.svelte.js';
+  import { createBridge } from '$lib/bridge.js';
+  import { flattenTree } from '$lib/componentTree.js';
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
   import { createThemeStore } from '$lib/stores/theme.svelte.js';
+  import PropertyPanel from './PropertyPanel.svelte';
 
   let { onBack, initialTemplateKey = null } = $props();
 
@@ -13,6 +18,11 @@
 
   const chat = createChatStore();
   const page = createPageStore();
+
+  // Bridge and editor store
+  let bridge = $state(null);
+  let iframeEl = $state(null);
+  const editor = createEditorStore(page, () => bridge);
 
   let input = $state('');
   let showPages = $state(false);
@@ -66,11 +76,76 @@
     }
   });
 
-  // Refresh preview when structure changes
+  // Refresh preview only on structural changes (load, AI generate, code save) — NOT on style/prop edits.
+  // structureVersion is the only tracked dependency; everything else is untracked.
   $effect(() => {
-    if (page.currentStructure?.components) {
+    const _v = page.structureVersion;
+    untrack(() => {
       refreshPreview();
+    });
+  });
+
+  // Sync editor breakpoint with viewport selector
+  $effect(() => {
+    editor.setBreakpoint(viewport);
+  });
+
+  // Initialize bridge when iframe loads
+  function handleIframeLoad() {
+    if (bridge) bridge.destroy();
+    if (!iframeEl) return;
+    bridge = createBridge(iframeEl);
+
+    bridge.on('tekton:ready', () => {
+      // Re-select component if one was selected before re-render
+      if (editor.selectedComponentId) {
+        bridge.send('tekton:select', { componentId: editor.selectedComponentId });
+      }
+    });
+
+    bridge.on('tekton:componentClick', ({ componentId, componentType }) => {
+      if (componentId) {
+        editor.selectComponent(componentId);
+        selectedComp = componentId;
+      } else {
+        editor.deselectComponent();
+        selectedComp = null;
+      }
+    });
+
+    bridge.on('tekton:componentHover', ({ componentId }) => {
+      editor.hoveredComponentId; // read for reactivity, actual state is in editor
+    });
+
+    bridge.on('tekton:componentLeave', () => {});
+
+    bridge.on('tekton:contentEdit', ({ componentId, prop, value, isContentSource }) => {
+      editor.updateContent(prop, value, isContentSource);
+    });
+
+    bridge.on('tekton:editStart', ({ componentId }) => {
+      editor.startEditing(componentId);
+    });
+
+    bridge.on('tekton:editEnd', ({ componentId }) => {
+      editor.stopEditing();
+    });
+  }
+
+  // Handle keyboard shortcuts
+  function handleGlobalKeydown(e) {
+    if (e.key === 'Escape' && editor.selectedComponentId && !editor.isEditing) {
+      editor.deselectComponent();
+      selectedComp = null;
     }
+  }
+
+  // Cleanup on destroy
+  $effect(() => {
+    return () => {
+      if (bridge) bridge.destroy();
+      editor.destroy();
+    };
   });
 
   // Sync code editor when structure changes (only if not dirty)
@@ -172,30 +247,23 @@
 
   async function handlePublish() {
     if (!currentPage || !page.currentStructure) return;
-    const result = await api.saveStructure({
-      template_key: currentPage.template_key,
-      title: page.currentStructure.title || currentPage.title || currentPage.template_key,
-      components: page.currentStructure.components || [],
-      styles: page.currentStructure.styles || [],
-      status: 'published',
-    });
-    if (result?.url) {
-      currentPage = { ...currentPage, url: result.url, preview_url: result.preview_url, status: 'published' };
-    }
+    const result = await page.saveCurrentStructure('publish', 'Published', 'publish');
+    currentPage = {
+      ...currentPage,
+      url: result?.url || currentPage.url,
+      preview_url: result?.preview_url || currentPage.preview_url,
+      status: 'publish',
+    };
     page.loadStructures();
+    loadSidebarData(currentPage.template_key);
   }
 
   async function handleUnpublish() {
     if (!currentPage || !page.currentStructure) return;
-    const result = await api.saveStructure({
-      template_key: currentPage.template_key,
-      title: page.currentStructure.title || currentPage.title || currentPage.template_key,
-      components: page.currentStructure.components || [],
-      styles: page.currentStructure.styles || [],
-      status: 'draft',
-    });
-    currentPage = { ...currentPage, url: null, preview_url: result?.preview_url || null, status: 'draft' };
+    await page.saveCurrentStructure('manual', 'Unpublished', 'draft');
+    currentPage = { ...currentPage, url: null, preview_url: null, status: 'draft' };
     page.loadStructures();
+    loadSidebarData(currentPage.template_key);
   }
 
   async function saveCodeEdits() {
@@ -392,23 +460,7 @@
     icon: { letter: 'Ic', hue: '#8a847d' },
   };
 
-  function flattenTree(components, depth = 0) {
-    let result = [];
-    for (const comp of (components || [])) {
-      result.push({
-        id: comp.id,
-        type: comp.type,
-        label: comp.props?.label || comp.props?.className || comp.type,
-        depth,
-      });
-      if (comp.children) {
-        result = result.concat(flattenTree(comp.children, depth + 1));
-      }
-    }
-    return result;
-  }
-
-  let tree = $derived(flattenTree(page.currentStructure?.components));
+  let tree = $derived(flattenTree(page.currentStructure?.components || []));
 
   const vw = { desktop: '100%', tablet: '768px', mobile: '375px' };
 
@@ -449,6 +501,8 @@
   }
 </script>
 
+<svelte:window onkeydown={handleGlobalKeydown} />
+
 <div class="tk-builder">
   <!-- Grain -->
   <div
@@ -481,7 +535,7 @@
           <span class="text-muted text-[12px]">{t('editing', 'editing')}</span>
           <span>{currentPage?.title || currentPage?.template_key || t('select_page', 'Select page')}</span>
           {#if currentPage}
-            <span class="w-[5px] h-[5px] rounded-full {currentPage.status === 'published' ? 'bg-green' : 'bg-gold'}"></span>
+            <span class="w-[5px] h-[5px] rounded-full {currentPage.status === 'publish' ? 'bg-green' : 'bg-gold'}"></span>
           {/if}
           <svg width="10" height="10" viewBox="0 0 10 10" class="transition-transform {showPages ? 'rotate-180' : ''}">
             <path d="M2.5 4L5 6.5L7.5 4" class="stroke-muted" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -518,7 +572,7 @@
                   class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"
                   onclick={() => selectPage(p)}
                 >
-                  <span class="w-[5px] h-[5px] rounded-full {p.status === 'published' ? 'bg-green' : 'bg-gold'}"></span>
+                  <span class="w-[5px] h-[5px] rounded-full {p.status === 'publish' ? 'bg-green' : 'bg-gold'}"></span>
                   <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
                 </button>
                 <button
@@ -636,7 +690,7 @@
           onclick={handlePreview}
         >{t('preview_link', 'Preview ↗')}</button>
       {/if}
-      {#if currentPage?.status === 'published'}
+      {#if currentPage?.status === 'publish'}
         <button
           class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
           onclick={handleUnpublish}
@@ -910,10 +964,12 @@
         >
           {#if previewHtml}
             <iframe
+              bind:this={iframeEl}
               srcdoc={previewHtml}
               title="Preview"
               class="w-full h-full border-none"
               sandbox="allow-same-origin allow-scripts"
+              onload={handleIframeLoad}
             ></iframe>
           {:else if page.currentStructure}
             <div class="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -957,7 +1013,7 @@
               <button
                 class="flex items-center gap-[7px] py-1 px-1.5 rounded-[5px] cursor-pointer w-full text-left border {selectedComp === n.id ? 'bg-copper/5 border-copper/10' : 'bg-transparent border-transparent'}"
                 style="padding-left: {6 + n.depth * 16}px;"
-                onclick={() => (selectedComp = n.id)}
+                onclick={() => { selectedComp = n.id; editor.selectComponent(n.id); }}
               >
                 <span
                   class="w-4 h-4 rounded-[3px] shrink-0 text-[8px] font-bold font-mono flex items-center justify-center"
@@ -1058,6 +1114,23 @@
       {/if}
     </div>
   </div>
+
+  <!-- PROPERTY PANEL (slides in from right when component selected) -->
+  {#if editor.selectedComponentId && !sidebar}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="tk-drawer-backdrop tk-drawer-open"
+      onclick={() => { editor.deselectComponent(); selectedComp = null; }}
+    ></div>
+    <div class="tk-drawer tk-drawer-open" style="width: 320px;">
+      <PropertyPanel
+        {editor}
+        {page}
+        typeMap={TYPE_MAP}
+        onclose={() => { editor.deselectComponent(); selectedComp = null; }}
+      />
+    </div>
+  {/if}
 
   <ConfirmDialog
     open={deleteConfirm.open}

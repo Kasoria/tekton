@@ -42,21 +42,25 @@ class Tekton_REST_Structures {
 						'type'              => 'array',
 						'default'           => [],
 						'validate_callback' => function ( $val ): bool { return is_array( $val ); },
+						'sanitize_callback' => function ( $val ) { return $val; },
 					],
 					'styles' => [
 						'type'    => 'array',
 						'default' => [],
 						'validate_callback' => function ( $val ): bool { return is_array( $val ); },
+						'sanitize_callback' => function ( $val ) { return $val; },
 					],
 					'keyframes' => [
 						'type'    => 'array',
 						'default' => [],
 						'validate_callback' => function ( $val ): bool { return is_array( $val ); },
+						'sanitize_callback' => function ( $val ) { return $val; },
 					],
 					'scripts' => [
 						'type'    => 'array',
 						'default' => [],
 						'validate_callback' => function ( $val ): bool { return is_array( $val ); },
+						'sanitize_callback' => function ( $val ) { return $val; },
 					],
 					'status' => [
 						'type'              => 'string',
@@ -65,6 +69,22 @@ class Tekton_REST_Structures {
 						'validate_callback' => function ( $val ): bool {
 							return in_array( $val, [ 'draft', 'publish' ], true );
 						},
+					],
+					'wrapper_styles' => [
+						'type'    => 'array',
+						'default' => [],
+						'validate_callback' => function ( $val ): bool { return is_array( $val ); },
+						'sanitize_callback' => function ( $val ) { return $val; },
+					],
+					'change_type' => [
+						'type'              => 'string',
+						'default'           => 'ai_generate',
+						'sanitize_callback' => 'sanitize_key',
+					],
+					'change_summary' => [
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
 					],
 				],
 			],
@@ -176,12 +196,15 @@ class Tekton_REST_Structures {
 		$status = sanitize_key( $request->get_param( 'status' ) ?? 'draft' );
 
 		$data = [
-			'title'      => $title,
-			'components' => $request->get_param( 'components' ) ?? [],
-			'styles'     => $request->get_param( 'styles' ) ?? [],
-			'keyframes'  => $request->get_param( 'keyframes' ) ?? [],
-			'scripts'    => $request->get_param( 'scripts' ) ?? [],
-			'status'     => $status,
+			'title'          => $title,
+			'components'     => $request->get_param( 'components' ) ?? [],
+			'styles'         => $request->get_param( 'styles' ) ?? [],
+			'keyframes'      => $request->get_param( 'keyframes' ) ?? [],
+			'scripts'        => $request->get_param( 'scripts' ) ?? [],
+			'wrapper_styles' => $request->get_param( 'wrapper_styles' ) ?? [],
+			'status'         => $status,
+			'change_type'    => sanitize_key( $request->get_param( 'change_type' ) ?? 'ai_generate' ),
+			'change_summary' => sanitize_text_field( $request->get_param( 'change_summary' ) ?? '' ),
 		];
 
 		// Validate structure before saving.
@@ -404,7 +427,13 @@ class Tekton_REST_Structures {
 			}
 		}
 
-		$html .= '</div></body></html>';
+		$html .= '</div>';
+
+		// Inject inline editor bridge script for live preview interaction.
+		$bridge_url = esc_url( TEKTON_URL . 'assets/js/tekton-preview-bridge.js?v=' . TEKTON_VERSION );
+		$html .= '<script src="' . $bridge_url . '"></script>';
+
+		$html .= '</body></html>';
 
 		return new \WP_REST_Response( [ 'html' => $html ] );
 	}
