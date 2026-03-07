@@ -121,7 +121,7 @@ Every component follows this structure:
 - `heading` — h1-h6 heading (level, content). **The `level` prop is a number (1-6) that controls the semantic tag.** Example: `"level": 2` → `<h2>`. Style with CSS — do not choose a heading level for its visual size.
 - `text` — Paragraph or text block (content, tagName: p/span/div)
 - `image` — Image element (src, alt, caption)
-- `button` — Clickable button/link (text, href, target, rel)
+- `button` — Clickable element. With `href` → renders as `<a>`. Without `href` → renders as `<button>`. Use for CTAs, toggles, and interactive controls. Props: text, href, target, rel.
 - `grid` — CSS Grid layout (columns, gap)
 - `flex-row` — Horizontal flex container (gap, alignItems, justifyContent)
 - `flex-column` — Vertical flex container (gap, alignItems)
@@ -292,6 +292,17 @@ Set these directly in component `props`:
 - Buttons and links MUST have descriptive text. If the visible text is generic (e.g. "→", an icon), add `"aria-label"` with the full action (e.g. `"aria-label": "View our services"`).
 - Links opening in new tabs (`target: "_blank"`) → append "(opens in new tab)" to the link text or aria-label.
 
+**Human-Friendly IDs:**
+- Any component can have an `"id"` prop to override its HTML id (instead of using the internal `comp_` id).
+- Use this for elements targeted by scripts: `"id": "mobile-menu-toggle"`, `"id": "mobile-nav-drawer"`.
+- In scripts, reference these human-friendly ids: `document.getElementById('mobile-menu-toggle')`.
+
+**Mobile Navigation Pattern:**
+- Headers MUST include a working mobile nav. The burger button is a `button` component **without `href`** so it renders as a `<button>`.
+- The burger button needs: `"id": "mobile-menu-toggle"`, `"aria-label"`, `"aria-expanded": "false"`, `"aria-controls": "mobile-nav-drawer"`.
+- The mobile drawer is a sibling `div` with `"id": "mobile-nav-drawer"`, `"role": "navigation"`, `"aria-hidden": "true"`, and `display: none` in its styles.
+- Include a script that toggles the drawer visibility and updates `aria-expanded`/`aria-hidden` on click.
+
 **Decorative Elements:**
 - Dividers, spacers, background overlays, decorative shapes → `"aria-hidden": "true"`.
 - Icon components already have `aria-hidden="true"` by default.
@@ -300,9 +311,23 @@ Set these directly in component `props`:
 - Ensure text has sufficient contrast against its background (4.5:1 for normal text, 3:1 for large text).
 - Never convey information through color alone.
 
+**ARIA for Interactive Patterns:**
+- **Accordions / FAQs:** Each trigger button needs `"aria-expanded": "false"` and `"aria-controls": "panel-id"`. The panel needs `"id"`, `"role": "region"`, `"aria-labelledby": "trigger-id"`, and starts hidden. Script toggles `aria-expanded` and visibility.
+- **Tabs:** Tab list gets `"role": "tablist"`. Each tab button: `"role": "tab"`, `"aria-selected"`, `"aria-controls"`. Each panel: `"role": "tabpanel"`, `"aria-labelledby"`.
+- **Modals / Drawers:** Trigger button: `"aria-expanded"`, `"aria-controls"`. Drawer/modal: `"role": "dialog"`, `"aria-label"` or `"aria-labelledby"`, `"aria-modal": "true"`. Script must trap focus and handle Escape key.
+- **Toggle buttons:** Use `"aria-pressed": "false"` for on/off buttons.
+- Use human-friendly IDs for all these patterns (e.g. `"id": "faq-panel-1"`, not `comp_` ids).
+
+**Semantic HTML:**
+- Use appropriate heading levels (`level` prop) for document hierarchy, never skip levels.
+- Use `section` with `"role": "banner"` for headers, `"role": "contentinfo"` for footers.
+- Prefer `<nav>` semantics via `"role": "navigation"` for any group of navigation links.
+- Use `list` components for groups of related items instead of stacked divs.
+
 **Focus & Keyboard:**
 - All interactive elements (buttons, links) must be keyboard accessible — this is handled by using correct semantic elements (`<a>`, `<button>`).
 - Avoid removing focus outlines in styles unless you provide a custom visible focus indicator.
+- Scripts for interactive patterns (accordions, tabs, drawers) MUST handle keyboard navigation (Enter, Space, Escape, Arrow keys as appropriate).
 
 ### Data Attributes
 
@@ -473,7 +498,7 @@ For advanced animations and interactivity that CSS alone can't handle (scroll-tr
 }
 ```
 
-Scripts run inside an IIFE — no global pollution. Target components by their `id` attribute or `data-*` attributes set via component props.
+Scripts run inside an IIFE — no global pollution. Target components by their human-friendly `id` prop (e.g. `#mobile-menu-toggle`) or `data-*` attributes set via component props.
 
 In operations mode, use the `set_scripts` operation:
 ```json
@@ -482,7 +507,7 @@ In operations mode, use the `set_scripts` operation:
 
 **Guidelines:**
 - Use `IntersectionObserver` for scroll-triggered effects instead of scroll event listeners
-- Target elements by their component `id` (e.g. `#comp_abc12345`)
+- Target elements by human-friendly `id` props when available (e.g. `#mobile-menu-toggle`), or by component `id` (e.g. `#comp_abc12345`)
 - For scroll-triggered animations, combine with CSS: add a class that triggers a CSS animation/transition, and use `data-animate` attributes + observer to add the class on scroll
 - Keep scripts minimal and focused — one concern per script string
 - Never use `document.write`, `eval`, or inline event handlers

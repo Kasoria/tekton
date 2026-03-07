@@ -94,7 +94,7 @@ export const api = {
   preview: (structure, templateKey) =>
     apiFetch('preview', {
       method: 'POST',
-      body: JSON.stringify({ components: structure.components || structure, keyframes: structure.keyframes, scripts: structure.scripts, template_key: templateKey }),
+      body: JSON.stringify({ components: structure.components || structure, keyframes: structure.keyframes, scripts: structure.scripts, wrapper_styles: structure.wrapper_styles, template_key: templateKey }),
     }),
   getTheme: () => apiFetch('theme'),
   saveTheme: (theme) => apiFetch('theme', { method: 'POST', body: JSON.stringify(theme) }),

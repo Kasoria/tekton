@@ -13,6 +13,7 @@ class Tekton_Renderer {
 	/** @var string[] Collected styles from all components. */
 	private array $collected_styles = [];
 
+
 	public function render_page( array $structure, int $post_id = 0, string $wrapper_tag = 'div' ): string {
 		$this->collected_styles = [];
 
@@ -44,10 +45,12 @@ class Tekton_Renderer {
 		$scripts_block = '';
 		$scripts = $structure['scripts'] ?? [];
 		if ( ! empty( $scripts ) && is_array( $scripts ) ) {
-			$scripts_block = "\n" . '<script class="tekton-scripts">' . "\n"
+			$scripts_js     = implode( "\n", array_map( 'strval', $scripts ) );
+			$scripts_block  = "\n" . '<script class="tekton-scripts">' . "\n"
 				. '(function(){' . "\n"
-				. implode( "\n", array_map( 'strval', $scripts ) )
-				. "\n" . '})();'
+				. 'function _init(){' . "\n" . $scripts_js . "\n" . '}' . "\n"
+				. 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",_init);}else{_init();}' . "\n"
+				. '})();'
 				. "\n</script>\n";
 		}
 
@@ -67,7 +70,8 @@ class Tekton_Renderer {
 		}
 
 		if ( ! empty( $component['styles'] ) ) {
-			$this->collected_styles[] = $this->render_styles( $component['styles'], $component['id'] );
+			$html_id = $component['props']['id'] ?? $component['id'];
+			$this->collected_styles[] = $this->render_styles( $component['styles'], $html_id );
 		}
 
 		$type = $component['type'];
@@ -161,8 +165,15 @@ class Tekton_Renderer {
 			$inner = esc_html( $this->resolve_prop_content( $c, 'text', $post_id ) );
 		}
 
-		return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
-			. $inner . "</a>\n";
+		// Render as <a> when there's a real href, otherwise as <button>.
+		if ( '' !== $href ) {
+			return '<a ' . $attrs . ' href="' . esc_url( $href ) . '" target="' . $target . '"' . $rel . '>'
+				. $inner . "</a>\n";
+		}
+
+		$btn_type = esc_attr( $c['props']['type'] ?? 'button' );
+		return '<button ' . $attrs . ' type="' . $btn_type . '">'
+			. $inner . "</button>\n";
 	}
 
 	private function render_grid( array $c, int $post_id ): string {
@@ -337,7 +348,7 @@ class Tekton_Renderer {
 	}
 
 	private function build_attributes( array $component, string $base_class = '' ): string {
-		$id        = esc_attr( $component['id'] ?? '' );
+		$id        = esc_attr( $component['props']['id'] ?? $component['id'] ?? '' );
 		$extra_cls = esc_attr( $component['props']['className'] ?? '' );
 		$classes   = trim( $base_class . ( $extra_cls ? ' ' . $extra_cls : '' ) );
 

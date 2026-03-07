@@ -685,11 +685,14 @@ class Tekton_REST_API {
 		/** @var Tekton_Storage $storage */
 		$storage = $this->core->get_module( 'storage' );
 
+		$wrapper_styles = $request->get_param( 'wrapper_styles' ) ?? [];
+
 		$structure = [
-			'template_key' => $template_key,
-			'components'   => $components,
-			'keyframes'    => $keyframes,
-			'scripts'      => $scripts,
+			'template_key'   => $template_key,
+			'components'     => $components,
+			'keyframes'      => $keyframes,
+			'scripts'        => $scripts,
+			'wrapper_styles' => $wrapper_styles,
 		];
 
 		$tokens_css = $assets->get_design_tokens_css();
@@ -1069,15 +1072,38 @@ class Tekton_REST_API {
 		// Standard page response — full component tree.
 		if ( ! empty( $json['components'] ) ) {
 			$json['template_key'] = $template_key;
-			return $json;
+			return $this->merge_existing_metadata( $json, $template_key );
 		}
 
 		// Fullstack response.
 		if ( ! empty( $json['structure']['components'] ) ) {
 			$json['structure']['template_key'] = $template_key;
-			return $json['structure'];
+			return $this->merge_existing_metadata( $json['structure'], $template_key );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Preserve scripts, keyframes, and wrapper_styles from the existing structure
+	 * when the AI sends a full regeneration that omits them.
+	 */
+	private function merge_existing_metadata( array $new, string $template_key ): array {
+		/** @var Tekton_Storage $storage */
+		$storage  = $this->core->get_module( 'storage' );
+		$existing = $storage->get_structure( $template_key );
+
+		if ( ! $existing ) {
+			return $new;
+		}
+
+		$preserve = [ 'scripts', 'keyframes', 'wrapper_styles', 'meta' ];
+		foreach ( $preserve as $key ) {
+			if ( empty( $new[ $key ] ) && ! empty( $existing[ $key ] ) ) {
+				$new[ $key ] = $existing[ $key ];
+			}
+		}
+
+		return $new;
 	}
 }
