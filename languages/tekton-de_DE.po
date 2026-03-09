@@ -1253,3 +1253,116 @@ msgstr "Bearbeitungsmodus starten"
 
 msgid "Exit edit mode"
 msgstr "Bearbeitungsmodus beenden"
+
+# Design Tokens panel
+msgid "Design"
+msgstr "Design"
+
+msgid "Design Tokens"
+msgstr "Design-Tokens"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Body"
+msgstr "Fließtext"
+
+msgid "Border Radii"
+msgstr "Eckenradien"
+
+msgid "Shadows"
+msgstr "Schatten"
+
+msgid "Style Notes"
+msgstr "Stilnotizen"
+
+msgid "Describe the visual style..."
+msgstr "Beschreibe den visuellen Stil..."
+
+msgid "Saved"
+msgstr "Gespeichert"
+
+msgid "The quick brown fox jumps over the lazy dog"
+msgstr "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern"
+
+msgid "Fonts"
+msgstr "Schriften"
+
+msgid "Name"
+msgstr "Name"
+
+# Design Tokens — colors
+msgid "Primary"
+msgstr "Primär"
+
+msgid "Secondary"
+msgstr "Sekundär"
+
+msgid "Accent"
+msgstr "Akzent"
+
+msgid "Surface"
+msgstr "Oberfläche"
+
+msgid "Text Muted"
+msgstr "Gedämpfter Text"
+
+# Design Tokens — typography
+msgid "Size XS"
+msgstr "Größe XS"
+
+msgid "Size SM"
+msgstr "Größe SM"
+
+msgid "Size Base"
+msgstr "Größe Basis"
+
+msgid "Size LG"
+msgstr "Größe LG"
+
+msgid "Size XL"
+msgstr "Größe XL"
+
+msgid "Size 2XL"
+msgstr "Größe 2XL"
+
+msgid "Size 3XL"
+msgstr "Größe 3XL"
+
+msgid "Size 4XL"
+msgstr "Größe 4XL"
+
+msgid "Size 5XL"
+msgstr "Größe 5XL"
+
+msgid "Line Height Tight"
+msgstr "Zeilenhöhe Eng"
+
+msgid "Line Height Base"
+msgstr "Zeilenhöhe Basis"
+
+msgid "Line Height Relaxed"
+msgstr "Zeilenhöhe Weit"
+
+msgid "Letter Spacing Tight"
+msgstr "Zeichenabstand Eng"
+
+msgid "Letter Spacing Normal"
+msgstr "Zeichenabstand Normal"
+
+msgid "Letter Spacing Wide"
+msgstr "Zeichenabstand Weit"
+
+# Design Tokens — spacing
+msgid "Section Padding"
+msgstr "Abschnittsabstand"
+
+msgid "Content Gap"
+msgstr "Inhaltsabstand"
+
+# Design Tokens — builder sidebar
+msgid "Expand all"
+msgstr "Alle aufklappen"
+
+msgid "Collapse all"
+msgstr "Alle zuklappen"

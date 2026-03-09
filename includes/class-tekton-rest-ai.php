@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class Tekton_REST_AI {
 
 	private Tekton_Core $core;
+	private ?array $updated_design_tokens = null;
 
 	public function __construct( Tekton_Core $core ) {
 		$this->core = $core;
@@ -41,6 +42,7 @@ class Tekton_REST_AI {
 	}
 
 	public function handle_ai_generate( \WP_REST_Request $request ): void {
+		$this->updated_design_tokens = null;
 		$prompt       = sanitize_text_field( $request->get_param( 'prompt' ) ?? '' );
 		$template_key = sanitize_key( $request->get_param( 'template_key' ) ?? 'front-page' );
 		$type         = sanitize_key( $request->get_param( 'type' ) ?? 'generate_page' );
@@ -242,14 +244,20 @@ class Tekton_REST_AI {
 				if ( ! empty( $json_data['operations'] ) || ! empty( $json_data['components'] ) || ! empty( $json_data['structure'] ) ) {
 					$storage->save_structure( $template_key, $structure );
 				}
-				$this->send_sse_event( 'complete', null, [
+				$complete_data = [
 					'structure' => $structure,
 					'message'   => $message,
-				] );
+				];
+				if ( $this->updated_design_tokens ) {
+					$complete_data['design_tokens'] = $this->updated_design_tokens;
+				}
+				$this->send_sse_event( 'complete', null, $complete_data );
 			} else {
-				$this->send_sse_event( 'complete', null, [
-					'message' => $message,
-				] );
+				$complete_data = [ 'message' => $message ];
+				if ( $this->updated_design_tokens ) {
+					$complete_data['design_tokens'] = $this->updated_design_tokens;
+				}
+				$this->send_sse_event( 'complete', null, $complete_data );
 			}
 		} catch ( \Throwable $e ) {
 			$this->send_sse_error( $e->getMessage() );
@@ -329,7 +337,21 @@ class Tekton_REST_AI {
 		// Always process data model (CPTs, field groups, posts) regardless of response mode.
 		$data_created = $this->process_fullstack_data( $json );
 
+		// Process design token updates from operations or top-level key.
+		$this->extract_and_apply_design_tokens( $json );
+
 		if ( ! empty( $json['operations'] ) ) {
+			// Filter out set_design_tokens ops (already handled above).
+			$structure_ops = array_values( array_filter(
+				$json['operations'],
+				fn( $op ) => ( $op['op'] ?? '' ) !== 'set_design_tokens'
+			) );
+
+			// If only design token ops remain, no structure change needed.
+			if ( empty( $structure_ops ) ) {
+				return null;
+			}
+
 			/** @var Tekton_Storage $storage */
 			$storage   = $this->core->get_module( 'storage' );
 			$existing  = $storage->get_structure( $template_key );
@@ -338,7 +360,7 @@ class Tekton_REST_AI {
 				return null;
 			}
 
-			$patched = Tekton_Structure_Patcher::apply( $existing, $json['operations'] );
+			$patched = Tekton_Structure_Patcher::apply( $existing, $structure_ops );
 			$patched['template_key'] = $template_key;
 
 			if ( ! empty( $json['title'] ) ) {
@@ -413,6 +435,84 @@ class Tekton_REST_AI {
 
 		$this->core->get_module( 'context' )->flush_cache();
 		return true;
+	}
+
+	/**
+	 * Extract design token updates from AI response and apply them.
+	 *
+	 * Supports both:
+	 *   - Operations: {"operations": [{"op": "set_design_tokens", "design_tokens": {...}}]}
+	 *   - Top-level: {"design_tokens": {...}}
+	 */
+	private function extract_and_apply_design_tokens( array $json ): void {
+		$token_updates = null;
+
+		// Check for set_design_tokens inside operations array.
+		if ( ! empty( $json['operations'] ) && is_array( $json['operations'] ) ) {
+			foreach ( $json['operations'] as $op ) {
+				if ( ( $op['op'] ?? '' ) === 'set_design_tokens' && ! empty( $op['design_tokens'] ) ) {
+					$token_updates = $op['design_tokens'];
+					break;
+				}
+			}
+		}
+
+		// Also check top-level design_tokens key (fallback).
+		if ( ! $token_updates && ! empty( $json['design_tokens'] ) ) {
+			$token_updates = $json['design_tokens'];
+		}
+
+		if ( ! $token_updates || ! is_array( $token_updates ) ) {
+			return;
+		}
+
+		$this->apply_design_token_update( $token_updates );
+	}
+
+	/**
+	 * Merge design token changes into the existing theme, derive CSS tokens, and persist.
+	 */
+	private function apply_design_token_update( array $updates ): void {
+		$theme_raw = get_option( 'tekton_theme', null );
+		if ( is_string( $theme_raw ) ) {
+			$theme = json_decode( $theme_raw, true ) ?? [];
+		} else {
+			$theme = is_array( $theme_raw ) ? $theme_raw : [];
+		}
+
+		// Top-level string fields.
+		$top_level_keys = [ 'name', 'description', 'style_notes' ];
+		foreach ( $top_level_keys as $key ) {
+			if ( isset( $updates[ $key ] ) && is_string( $updates[ $key ] ) ) {
+				$theme[ $key ] = sanitize_text_field( $updates[ $key ] );
+			}
+		}
+
+		// Category-level merge (colors, fonts, typography, spacing, radii, shadows).
+		$categories = [ 'colors', 'fonts', 'typography', 'spacing', 'radii', 'shadows' ];
+		foreach ( $categories as $category ) {
+			if ( ! empty( $updates[ $category ] ) && is_array( $updates[ $category ] ) ) {
+				if ( ! isset( $theme[ $category ] ) || ! is_array( $theme[ $category ] ) ) {
+					$theme[ $category ] = [];
+				}
+				foreach ( $updates[ $category ] as $key => $value ) {
+					$theme[ $category ][ sanitize_key( $key ) ] = sanitize_text_field( (string) $value );
+				}
+			}
+		}
+
+		// Save updated theme.
+		update_option( 'tekton_theme', wp_json_encode( $theme ) );
+
+		// Derive CSS tokens and save.
+		$tokens = Tekton_REST_Settings::derive_design_tokens( $theme );
+		update_option( 'tekton_design_tokens', wp_json_encode( $tokens ) );
+
+		// Flush context cache so future AI calls see the updated theme.
+		$this->core->get_module( 'context' )->flush_cache();
+
+		// Store for inclusion in SSE response.
+		$this->updated_design_tokens = $tokens;
 	}
 
 	/**

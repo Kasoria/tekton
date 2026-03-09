@@ -141,6 +141,8 @@ class Tekton_I18n {
 			'loading_preview'           => __( 'Loading preview...', 'tekton' ),
 			'no_template_hint'          => __( 'Use the chat to generate a page, or select a template from the dropdown above.', 'tekton' ),
 			'no_components_yet'         => __( 'No components yet.', 'tekton' ),
+			'expand_all'                => __( 'Expand all', 'tekton' ),
+			'collapse_all'              => __( 'Collapse all', 'tekton' ),
 			'no_versions_yet'           => __( 'No versions yet.', 'tekton' ),
 			'no_field_groups_sidebar'   => __( 'No field groups yet.', 'tekton' ),
 			'plugins_hint'              => __( 'Generated plugins will appear here.', 'tekton' ),
@@ -488,6 +490,73 @@ class Tekton_I18n {
 			'theme_current'             => __( 'Current theme configuration', 'tekton' ),
 			'theme_desc'                => __( 'Regenerate your site theme with AI based on a description of your site.', 'tekton' ),
 			'regenerate_theme'          => __( 'Regenerate Theme', 'tekton' ),
+
+			// Design Tokens — general
+			'design'                    => __( 'Design', 'tekton' ),
+			'dt_design_tokens'          => __( 'Design Tokens', 'tekton' ),
+			'dt_heading_font'           => __( 'Heading', 'tekton' ),
+			'dt_body_font'              => __( 'Body', 'tekton' ),
+			'dt_spacing'                => __( 'Spacing', 'tekton' ),
+			'dt_radii'                  => __( 'Border Radii', 'tekton' ),
+			'dt_shadows'                => __( 'Shadows', 'tekton' ),
+			'dt_style_notes'            => __( 'Style Notes', 'tekton' ),
+			'dt_style_notes_placeholder' => __( 'Describe the visual style...', 'tekton' ),
+			'dt_saved'                  => __( 'Saved', 'tekton' ),
+			'dt_font_preview'           => __( 'The quick brown fox jumps over the lazy dog', 'tekton' ),
+			'fonts'                     => __( 'Fonts', 'tekton' ),
+			'name'                      => __( 'Name', 'tekton' ),
+
+			// Design Tokens — colors
+			'dt_primary'                => __( 'Primary', 'tekton' ),
+			'dt_secondary'              => __( 'Secondary', 'tekton' ),
+			'dt_accent'                 => __( 'Accent', 'tekton' ),
+			'dt_background'             => __( 'Background', 'tekton' ),
+			'dt_surface'                => __( 'Surface', 'tekton' ),
+			'dt_text'                   => __( 'Text', 'tekton' ),
+			'dt_text_muted'             => __( 'Text Muted', 'tekton' ),
+			'dt_border'                 => __( 'Border', 'tekton' ),
+
+			// Design Tokens — typography
+			'dt_size_xs'                => __( 'Size XS', 'tekton' ),
+			'dt_size_sm'                => __( 'Size SM', 'tekton' ),
+			'dt_size_base'              => __( 'Size Base', 'tekton' ),
+			'dt_size_lg'                => __( 'Size LG', 'tekton' ),
+			'dt_size_xl'                => __( 'Size XL', 'tekton' ),
+			'dt_size_2xl'               => __( 'Size 2XL', 'tekton' ),
+			'dt_size_3xl'               => __( 'Size 3XL', 'tekton' ),
+			'dt_size_4xl'               => __( 'Size 4XL', 'tekton' ),
+			'dt_size_5xl'               => __( 'Size 5XL', 'tekton' ),
+			'dt_lh_tight'               => __( 'Line Height Tight', 'tekton' ),
+			'dt_lh_base'                => __( 'Line Height Base', 'tekton' ),
+			'dt_lh_relaxed'             => __( 'Line Height Relaxed', 'tekton' ),
+			'dt_ls_tight'               => __( 'Letter Spacing Tight', 'tekton' ),
+			'dt_ls_normal'              => __( 'Letter Spacing Normal', 'tekton' ),
+			'dt_ls_wide'                => __( 'Letter Spacing Wide', 'tekton' ),
+
+			// Design Tokens — spacing
+			'dt_sp_xs'                  => __( 'XS', 'tekton' ),
+			'dt_sp_sm'                  => __( 'SM', 'tekton' ),
+			'dt_sp_md'                  => __( 'MD', 'tekton' ),
+			'dt_sp_lg'                  => __( 'LG', 'tekton' ),
+			'dt_sp_xl'                  => __( 'XL', 'tekton' ),
+			'dt_sp_2xl'                 => __( '2XL', 'tekton' ),
+			'dt_sp_3xl'                 => __( '3XL', 'tekton' ),
+			'dt_section_padding'        => __( 'Section Padding', 'tekton' ),
+			'dt_content_gap'            => __( 'Content Gap', 'tekton' ),
+			'dt_max_width'              => __( 'Max Width', 'tekton' ),
+
+			// Design Tokens — radii
+			'dt_rad_sm'                 => __( 'SM', 'tekton' ),
+			'dt_rad_md'                 => __( 'MD', 'tekton' ),
+			'dt_rad_lg'                 => __( 'LG', 'tekton' ),
+			'dt_rad_xl'                 => __( 'XL', 'tekton' ),
+			'dt_rad_full'               => __( 'Full', 'tekton' ),
+
+			// Design Tokens — shadows
+			'dt_sh_sm'                  => __( 'SM', 'tekton' ),
+			'dt_sh_md'                  => __( 'MD', 'tekton' ),
+			'dt_sh_lg'                  => __( 'LG', 'tekton' ),
+			'dt_sh_xl'                  => __( 'XL', 'tekton' ),
 		];
 	}
 }

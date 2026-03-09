@@ -151,6 +151,7 @@ export function createEditorStore(pageStore, getBridge) {
     updateStyle,
     updateProp,
     updateContent,
+    markDirty,
     commitChanges,
     destroy,
   };

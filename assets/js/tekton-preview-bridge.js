@@ -392,6 +392,9 @@
       case 'tekton:updateStyle':
         handleStyleUpdate(payload);
         break;
+      case 'tekton:updateTokens':
+        handleTokensUpdate(payload.tokens);
+        break;
       case 'tekton:updateContent':
         handleContentUpdate(payload);
         break;
@@ -444,6 +447,53 @@
         selectLabel.style.top = Math.max(0, rect.top) + 'px';
         selectLabel.style.left = rect.left + 'px';
       });
+    }
+  }
+
+  function handleTokensUpdate(tokens) {
+    if (!tokens || typeof tokens !== 'object') return;
+    var root = document.documentElement;
+    var prefixes = {
+      colors: '--tekton-',
+      fonts: '--tekton-font-',
+      typography: '--tekton-',
+      spacing: '--tekton-spacing-',
+      radii: '--tekton-radius-',
+      shadows: '--tekton-shadow-',
+    };
+    for (var category in tokens) {
+      var prefix = prefixes[category];
+      if (!prefix) continue;
+      for (var key in tokens[category]) {
+        root.style.setProperty(prefix + key, tokens[category][key]);
+      }
+    }
+    // Update Google Fonts if font names changed
+    if (tokens.fonts) {
+      var families = [];
+      var systemFonts = ['system-ui', 'inherit', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy'];
+      for (var fontKey in tokens.fonts) {
+        var fontVal = tokens.fonts[fontKey];
+        // Strip fallback (e.g. "Playfair Display, sans-serif" -> "Playfair Display")
+        var family = fontVal.split(',')[0].trim().replace(/['"]/g, '');
+        if (family && systemFonts.indexOf(family.toLowerCase()) === -1) {
+          families.push(family.replace(/ /g, '+') + ':wght@300;400;500;600;700;800;900');
+        }
+      }
+      if (families.length > 0) {
+        var linkId = 'tekton-preview-google-fonts';
+        var existing = document.getElementById(linkId);
+        var href = 'https://fonts.googleapis.com/css2?family=' + families.join('&family=') + '&display=swap';
+        if (existing) {
+          existing.href = href;
+        } else {
+          var link = document.createElement('link');
+          link.id = linkId;
+          link.rel = 'stylesheet';
+          link.href = href;
+          document.head.appendChild(link);
+        }
+      }
     }
   }
 

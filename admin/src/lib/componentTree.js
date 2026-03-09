@@ -161,9 +161,94 @@ export function flattenTree(components, depth = 0) {
 }
 
 /**
+ * Component types that can contain children.
+ */
+const CONTAINER_TYPES = new Set([
+  'section', 'container', 'div', 'grid', 'flex-row', 'flex-column', 'post-loop',
+]);
+
+/**
+ * Check if a component type can contain children.
+ * @param {string} type
+ * @returns {boolean}
+ */
+export function isContainerType(type) {
+  return CONTAINER_TYPES.has(type);
+}
+
+/**
+ * Remove a component by ID from the tree.
+ * @param {Array} components
+ * @param {string} id
+ * @returns {Array}
+ */
+export function removeById(components, id) {
+  const result = [];
+  for (const comp of components) {
+    if (comp.id === id) continue;
+    if (comp.children?.length) {
+      const newChildren = removeById(comp.children, id);
+      if (newChildren !== comp.children) {
+        result.push({ ...comp, children: newChildren });
+        continue;
+      }
+    }
+    result.push(comp);
+  }
+  return result;
+}
+
+/**
+ * Insert a component at a specific position.
+ * If parentId is null, inserts at root level at the given index.
+ * If parentId is specified, inserts as child of that parent at the given index.
+ * @param {Array} components
+ * @param {object} component
+ * @param {string|null} parentId
+ * @param {number} index
+ * @returns {Array}
+ */
+export function insertAt(components, component, parentId, index) {
+  if (parentId === null) {
+    const result = [...components];
+    result.splice(index, 0, component);
+    return result;
+  }
+  return components.map(comp => {
+    if (comp.id === parentId) {
+      const children = [...(comp.children || [])];
+      children.splice(index, 0, component);
+      return { ...comp, children };
+    }
+    if (comp.children?.length) {
+      const newChildren = insertAt(comp.children, component, parentId, index);
+      if (newChildren !== comp.children) {
+        return { ...comp, children: newChildren };
+      }
+    }
+    return comp;
+  });
+}
+
+/**
+ * Move a component from its current position to a new position.
+ * @param {Array} components
+ * @param {string} componentId - ID of component to move
+ * @param {string|null} targetParentId - null for root level
+ * @param {number} targetIndex - index within target's children
+ * @returns {Array}
+ */
+export function moveComponent(components, componentId, targetParentId, targetIndex) {
+  const comp = findById(components, componentId);
+  if (!comp) return components;
+  const removed = removeById(components, componentId);
+  return insertAt(removed, comp, targetParentId, targetIndex);
+}
+
+/**
  * Derive a human-readable label from a component.
  */
-function getComponentLabel(comp) {
+export function getComponentLabel(comp) {
   const content = comp.props?.content;
   if (content) {
     const text = typeof content === 'object' ? (content.fallback || content.field || '') : content;

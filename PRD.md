@@ -782,9 +782,9 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 
 ### Missing — Phase 3 (Editing, Versions & Plugin Mode)
 
-- [ ] **Inline editor** — `InlineEditor.svelte`, `tekton-inline-editor.js`, `tekton-preview-bridge.js` (PostMessage bridge for iframe click-to-edit)
-- [ ] **Property panel** — `PropertyPanel.svelte` (side panel for colors/spacing/visibility)
-- [ ] **Component tree drag-and-drop** — tree view exists but is read-only
+- [x] **Inline editor** — `InlineEditor.svelte`, `tekton-inline-editor.js`, `tekton-preview-bridge.js` (PostMessage bridge for iframe click-to-edit)
+- [x] **Property panel** — `PropertyPanel.svelte` (side panel for colors/spacing/visibility)
+- [x] **Component tree drag-and-drop** — recursive tree with collapsible parents, drag-and-drop reordering, nesting into containers, guide lines
 - [ ] **Plugin Generator** — `class-tekton-plugin-generator.php` (generate micro-plugins to `wp-content/plugins/tekton-{slug}/`)
 - [ ] **Plugin Mode UI** — `PluginModePanel.svelte`, plugins store
 - [ ] **Design tokens panel** — `GlobalStylesPanel.svelte`

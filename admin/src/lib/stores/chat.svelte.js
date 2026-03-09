@@ -32,7 +32,10 @@ export function createChatStore() {
             timestamp: Date.now(),
           });
           currentStream = '';
-          return event.structure || null;
+          return {
+            structure: event.structure || null,
+            designTokens: event.design_tokens || null,
+          };
         } else if (event.type === 'error') {
           messages.push({
             role: 'assistant',

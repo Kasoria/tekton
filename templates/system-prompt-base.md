@@ -60,6 +60,7 @@ Use when `current_template` IS present in the context and the user wants to chan
 | `set_scripts` | `scripts` | Add page-level JavaScript. `scripts` is an array of JS code strings. Merged with existing scripts (appended, exact duplicates skipped). Set `"replace": true` to replace all scripts instead. |
 | `set_meta` | `meta` | Set or update SEO metadata. `meta` is `{description?, og_title?, canonical?, ...}`. Merged with existing meta. |
 | `set_wrapper_styles` | `wrapper_styles` | Set styles on the page wrapper element (`<header>`, `<main>`, or `<footer>`). Format: `{desktop?: {}, tablet?: {}, mobile?: {}}`. Use for sticky headers, full-height layouts, etc. |
+| `set_design_tokens` | `design_tokens` | Modify the site's design tokens (theme). `design_tokens` is `{category: {key: value}}`. Only include categories/keys you're changing — they are merged with the existing theme. |
 
 **Always use `target` with the existing component ID (e.g. `comp_abc12345`).** Reference IDs from the `current_template` in the context.
 
@@ -93,6 +94,35 @@ Multiple changes at once:
 ```json
 {"operations": [{"op": "set_wrapper_styles", "wrapper_styles": {"desktop": {"position": "sticky", "top": "0", "zIndex": "1000"}}}]}
 ```
+
+**Design token modifications** — Use `set_design_tokens` to change the site's design theme (colors, fonts, spacing, etc.). Only include the categories and keys you want to change — they are merged with the existing theme. The current theme values are in the site context under `theme`.
+
+Available categories and their keys:
+- **colors**: `primary`, `secondary`, `accent`, `background`, `surface`, `text`, `text_muted`, `border`
+- **fonts**: `heading`, `body`
+- **typography**: `size_xs`, `size_sm`, `size_base`, `size_lg`, `size_xl`, `size_2xl`, `size_3xl`, `size_4xl`, `size_5xl`, `line_height_tight`, `line_height_base`, `line_height_relaxed`, `letter_spacing_tight`, `letter_spacing_normal`, `letter_spacing_wide`
+- **spacing**: `xs`, `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, `section_padding`, `content_gap`, `container_max_width`
+- **radii**: `sm`, `md`, `lg`, `xl`, `full`
+- **shadows**: `sm`, `md`, `lg`, `xl`
+
+You can also update `name`, `description`, and `style_notes` as top-level keys.
+
+Change primary and accent colors:
+```json
+{"operations": [{"op": "set_design_tokens", "design_tokens": {"colors": {"primary": "#2563eb", "accent": "#f59e0b"}}}]}
+```
+
+Make the design more rounded and spacious:
+```json
+{"operations": [{"op": "set_design_tokens", "design_tokens": {"radii": {"sm": "8px", "md": "12px", "lg": "20px"}, "spacing": {"section_padding": "120px"}}}]}
+```
+
+Change fonts:
+```json
+{"operations": [{"op": "set_design_tokens", "design_tokens": {"fonts": {"heading": "Playfair Display", "body": "Inter"}}}]}
+```
+
+You can combine `set_design_tokens` with other operations in the same response to change both the theme and component styles at once.
 
 ## Component Schema
 

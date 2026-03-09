@@ -109,13 +109,17 @@ class Tekton_Context_Builder {
 			if ( ! empty( $theme['style_notes'] ) ) {
 				$lines[] = "Style: {$theme['style_notes']}";
 			}
-			if ( ! empty( $theme['colors'] ) ) {
-				$c = $theme['colors'];
-				$lines[] = "Colors: primary={$c['primary']}, secondary={$c['secondary']}, accent={$c['accent']}, bg={$c['background']}";
-			}
-			if ( ! empty( $theme['fonts'] ) ) {
-				$f = $theme['fonts'];
-				$lines[] = "Fonts: heading={$f['heading']}, body={$f['body']}";
+			// Show all category values so the AI can reference current state for partial updates.
+			$theme_categories = [ 'colors', 'fonts', 'typography', 'spacing', 'radii', 'shadows' ];
+			foreach ( $theme_categories as $cat ) {
+				if ( ! empty( $theme[ $cat ] ) && is_array( $theme[ $cat ] ) ) {
+					$pairs = [];
+					foreach ( $theme[ $cat ] as $k => $v ) {
+						$pairs[] = "{$k}={$v}";
+					}
+					$label = ucfirst( $cat );
+					$lines[] = "{$label}: " . implode( ', ', $pairs );
+				}
 			}
 		}
 

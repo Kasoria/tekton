@@ -240,7 +240,7 @@ class Tekton_REST_Settings {
 
 		update_option( 'tekton_theme', wp_json_encode( $theme ) );
 
-		$tokens = $this->derive_design_tokens( $theme );
+		$tokens = self::derive_design_tokens( $theme );
 		update_option( 'tekton_design_tokens', wp_json_encode( $tokens ) );
 
 		update_option( 'tekton_onboarding_complete', true );
@@ -319,7 +319,7 @@ class Tekton_REST_Settings {
 	 * @param  array<string, mixed> $theme
 	 * @return array<string, string>
 	 */
-	private function derive_design_tokens( array $theme ): array {
+	public static function derive_design_tokens( array $theme ): array {
 		$tokens = [];
 
 		$categories = [ 'colors', 'fonts', 'typography', 'spacing', 'radii', 'shadows' ];
@@ -347,13 +347,13 @@ class Tekton_REST_Settings {
 		}
 
 		if ( ! empty( $theme['colors']['primary'] ) ) {
-			$tokens['colors']['primary-hover'] = $this->darken_hex_color( $theme['colors']['primary'], 15 );
+			$tokens['colors']['primary-hover'] = self::darken_hex_color( $theme['colors']['primary'], 15 );
 		}
 
 		return $tokens;
 	}
 
-	private function darken_hex_color( string $hex, int $percent ): string {
+	public static function darken_hex_color( string $hex, int $percent ): string {
 		$hex = ltrim( $hex, '#' );
 		if ( 3 === strlen( $hex ) ) {
 			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];

@@ -6,11 +6,14 @@
   import { createPageStore } from '$lib/stores/page.svelte.js';
   import { createEditorStore } from '$lib/stores/editor.svelte.js';
   import { createBridge } from '$lib/bridge.js';
-  import { flattenTree } from '$lib/componentTree.js';
+  import { flattenTree, isContainerType, findById, getComponentPath } from '$lib/componentTree.js';
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
   import { createThemeStore } from '$lib/stores/theme.svelte.js';
   import PropertyPanel from './PropertyPanel.svelte';
+  import ComponentTreeNode from './ComponentTreeNode.svelte';
+  import DesignTokensPanel from './DesignTokensPanel.svelte';
+  import { designTokensStore } from '$lib/stores/designTokens.svelte.js';
 
   let { onBack, initialTemplateKey = null } = $props();
 
@@ -41,6 +44,8 @@
   let showClearMenu = $state(false);
   let isClearing = $state(false);
   let editMode = $state(false);
+  let drawerWidth = $state(280);
+  let isResizingDrawer = $state(false);
   let viewMode = $state('preview'); // 'preview' | 'code'
   let codeViewTab = $state('structure'); // 'structure' | 'html'
   let codeEditorValue = $state('');
@@ -58,6 +63,7 @@
 
   $effect(() => {
     page.loadStructures();
+    designTokensStore.load();
   });
 
   // When structures load, pick the requested template or fall back to first
@@ -210,13 +216,19 @@
     if (val.startsWith('/fullstack')) type = 'fullstack';
     else if (val.startsWith('/plugin')) type = 'generate_plugin';
 
-    const structure = await chat.sendMessage(val, type, imagesToSend);
-    if (structure) {
-      page.setStructure(structure);
+    const result = await chat.sendMessage(val, type, imagesToSend);
+    if (result?.structure) {
+      page.setStructure(result.structure);
       // Reload sidebar data
       if (currentPage) {
         loadSidebarData(currentPage.template_key);
         page.loadStructures();
+      }
+    }
+    if (result?.designTokens) {
+      designTokensStore.load();
+      if (bridge) {
+        bridge.send('tekton:updateTokens', { tokens: result.designTokens });
       }
     }
   }
@@ -471,6 +483,98 @@
 
   let tree = $derived(flattenTree(page.currentStructure?.components || []));
 
+  // Component tree collapse/drag state
+  let collapsedIds = $state(new Set());
+  let dragState = $state({ draggedId: null, overId: null, position: null });
+
+  function toggleCollapse(id) {
+    const next = new Set(collapsedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    collapsedIds = next;
+  }
+
+  function expandToComponent(id) {
+    const components = page.currentStructure?.components;
+    if (!components) return;
+    const path = getComponentPath(components, id);
+    if (!path || path.length <= 1) return;
+    const next = new Set(collapsedIds);
+    for (let i = 0; i < path.length - 1; i++) next.delete(path[i]);
+    collapsedIds = next;
+  }
+
+  function handleTreeDragStart(id) {
+    dragState = { draggedId: id, overId: null, position: null };
+  }
+
+  function handleTreeDragOver(overId, position) {
+    dragState = { ...dragState, overId, position };
+  }
+
+  function handleTreeDragLeave() {
+    dragState = { ...dragState, overId: null, position: null };
+  }
+
+  function handleTreeDrop(draggedId, targetId, position) {
+    dragState = { draggedId: null, overId: null, position: null };
+    const components = page.currentStructure?.components;
+    if (!components || draggedId === targetId) return;
+
+    // Don't allow dropping into own descendants
+    const path = getComponentPath(components, targetId);
+    if (path && path.includes(draggedId)) return;
+
+    // Figure out parent + index for the drop
+    let targetParentId = null;
+    let targetIndex = 0;
+
+    if (position === 'inside') {
+      // Drop as first child of target (must be container)
+      if (!isContainerType(findById(components, targetId)?.type)) return;
+      targetParentId = targetId;
+      targetIndex = 0;
+    } else {
+      // Drop before/after target — find target's parent
+      const findParent = (comps, id, parent = null) => {
+        for (let i = 0; i < comps.length; i++) {
+          if (comps[i].id === id) return { parentId: parent, index: i };
+          if (comps[i].children?.length) {
+            const found = findParent(comps[i].children, id, comps[i].id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const loc = findParent(components, targetId);
+      if (!loc) return;
+      targetParentId = loc.parentId;
+      targetIndex = position === 'before' ? loc.index : loc.index + 1;
+    }
+
+    page.moveComponent(draggedId, targetParentId, targetIndex);
+    editor.markDirty();
+  }
+
+  function startDrawerResize(e) {
+    e.preventDefault();
+    isResizingDrawer = true;
+    const startX = e.clientX;
+    const startWidth = drawerWidth;
+
+    function onMove(ev) {
+      const delta = startX - ev.clientX;
+      drawerWidth = Math.min(600, Math.max(200, startWidth + delta));
+    }
+    function onUp() {
+      isResizingDrawer = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
   const vw = { desktop: '100%', tablet: '768px', mobile: '375px' };
 
   const sidebarLabels = $derived({
@@ -478,6 +582,7 @@
     versions: t('version_history', 'Version History'),
     fields: t('field_groups', 'Field Groups'),
     plugins: t('generated_plugins', 'Generated Plugins'),
+    design: t('dt_design_tokens', 'Design Tokens'),
   });
 
   // Extract just the natural language part from the streaming text (hide JSON).
@@ -512,7 +617,7 @@
 
 <svelte:window onkeydown={handleGlobalKeydown} />
 
-<div class="tk-builder">
+<div class="tk-builder" style:user-select={isResizingDrawer ? 'none' : null}>
   <!-- Grain -->
   <div
     class="fixed inset-0 pointer-events-none z-[999] opacity-[0.022] mix-blend-overlay"
@@ -682,6 +787,7 @@
           { key: 'versions', label: t('history', 'History') },
           { key: 'fields', label: t('fields', 'Fields') },
           { key: 'plugins', label: t('plugins', 'Plugins') },
+          { key: 'design', label: t('design', 'Design') },
         ] as s}
           <button
             class="px-3 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {sidebar === s.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
@@ -1019,7 +1125,9 @@
     class="tk-drawer-backdrop {sidebar ? 'tk-drawer-open' : ''}"
     onclick={() => (sidebar = null)}
   ></div>
-  <div class="tk-drawer {sidebar ? 'tk-drawer-open' : ''}">
+  <div class="tk-drawer {sidebar ? 'tk-drawer-open' : ''}" style="width: {drawerWidth}px;">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="tk-drawer-resize" onmousedown={startDrawerResize}></div>
     <div class="px-3.5 py-2.5 border-b border-border flex items-center justify-between shrink-0">
       <span class="text-[12px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">{sidebarLabels[sidebar] || ''}</span>
       <button
@@ -1031,23 +1139,46 @@
     <div class="flex-1 overflow-auto p-2">
       <!-- Tree -->
       {#if sidebar === 'tree'}
-        {#if tree.length === 0}
+        {#if !page.currentStructure?.components?.length}
           <div class="text-xs text-muted text-center py-4">{t('no_components_yet', 'No components yet.')}</div>
         {:else}
-          <div class="flex flex-col gap-px">
-            {#each tree as n}
-              <button
-                class="flex items-center gap-[7px] py-1 px-1.5 rounded-[5px] cursor-pointer w-full text-left border {selectedComp === n.id ? 'bg-copper/5 border-copper/10' : 'bg-transparent border-transparent'}"
-                style="padding-left: {6 + n.depth * 16}px;"
-                onclick={() => { selectedComp = n.id; editor.selectComponent(n.id); }}
-              >
-                <span
-                  class="w-4 h-4 rounded-[3px] shrink-0 text-[8px] font-bold font-mono flex items-center justify-center"
-                  style="background: {(TYPE_MAP[n.type]?.hue || '#7a746e')}15; color: {TYPE_MAP[n.type]?.hue || '#7a746e'};"
-                >{TYPE_MAP[n.type]?.letter || '?'}</span>
-                <span class="text-[11.5px] truncate {selectedComp === n.id ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal'}">{n.label}</span>
-                <span class="ml-auto text-[12px] text-muted font-mono shrink-0">{n.type}</span>
-              </button>
+          <div class="flex items-center gap-1 mb-1.5 px-1">
+            <button
+              class="text-[10px] text-muted hover:text-muted-foreground bg-transparent border-none cursor-pointer px-1 py-0.5 rounded"
+              onclick={() => { collapsedIds = new Set(); }}
+            >{t('expand_all', 'Expand all')}</button>
+            <span class="text-dim text-[10px]">·</span>
+            <button
+              class="text-[10px] text-muted hover:text-muted-foreground bg-transparent border-none cursor-pointer px-1 py-0.5 rounded"
+              onclick={() => {
+                const ids = new Set();
+                const collect = (comps) => { for (const c of comps) { if (isContainerType(c.type) && c.children?.length) { ids.add(c.id); collect(c.children); } } };
+                collect(page.currentStructure.components);
+                collapsedIds = ids;
+              }}
+            >{t('collapse_all', 'Collapse all')}</button>
+            <span class="ml-auto text-[10px] text-dim font-mono">{tree.length}</span>
+          </div>
+          <div role="tree" class="flex flex-col">
+            {#each page.currentStructure.components as component (component.id)}
+              <ComponentTreeNode
+                {component}
+                depth={0}
+                selectedId={selectedComp}
+                hoveredId={editor.hoveredComponentId}
+                {collapsedIds}
+                {dragState}
+                typeMap={TYPE_MAP}
+                onSelect={(id) => { selectedComp = id; editor.selectComponent(id); expandToComponent(id); }}
+                onDblClick={(id) => { selectedComp = id; editor.selectComponent(id); editMode = true; sidebar = null; }}
+                onHover={(id) => editor.hoverComponent(id)}
+                onUnhover={() => editor.unhoverComponent()}
+                onToggleCollapse={toggleCollapse}
+                onDragStart={handleTreeDragStart}
+                onDragOver={handleTreeDragOver}
+                onDragLeave={handleTreeDragLeave}
+                onDrop={handleTreeDrop}
+              />
             {/each}
           </div>
         {/if}
@@ -1137,6 +1268,14 @@
           <div class="mb-2">{t('plugins_hint', 'Generated plugins will appear here.')}</div>
           <div class="text-dim">{t('plugins_hint_cmd', 'Use /plugin in the chat to generate one.')}</div>
         </div>
+
+      <!-- Design Tokens -->
+      {:else if sidebar === 'design'}
+        <DesignTokensPanel store={designTokensStore} onTokensChanged={(tokens) => {
+          if (bridge) {
+            bridge.send('tekton:updateTokens', { tokens });
+          }
+        }} />
       {/if}
     </div>
   </div>
@@ -1148,7 +1287,9 @@
       class="tk-drawer-backdrop tk-drawer-open"
       onclick={() => { editor.deselectComponent(); selectedComp = null; }}
     ></div>
-    <div class="tk-drawer tk-drawer-open" style="width: 320px;">
+    <div class="tk-drawer tk-drawer-open" style="width: {drawerWidth}px;">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="tk-drawer-resize" onmousedown={startDrawerResize}></div>
       <PropertyPanel
         {editor}
         {page}
@@ -1316,11 +1457,27 @@
     flex-direction: column;
     overflow: hidden;
     transform: translateX(100%);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
     box-shadow: -8px 0 40px rgba(0, 0, 0, 0);
   }
   .tk-drawer.tk-drawer-open {
     transform: translateX(0);
     box-shadow: -8px 0 40px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Drawer resize handle */
+  .tk-drawer-resize {
+    position: absolute;
+    top: 0;
+    left: -3px;
+    width: 6px;
+    bottom: 0;
+    cursor: col-resize;
+    z-index: 55;
+  }
+  .tk-drawer-resize:hover,
+  .tk-drawer-resize:active {
+    background: var(--copper);
+    opacity: 0.3;
   }
 </style>

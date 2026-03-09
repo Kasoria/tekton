@@ -4,6 +4,7 @@ import {
   updateStylesById,
   updatePropsById,
   replaceContentById,
+  moveComponent as moveComponentInTree,
 } from '../componentTree.js';
 
 export function createPageStore() {
@@ -83,6 +84,18 @@ export function createPageStore() {
   }
 
   /**
+   * Move a component to a new position in the tree.
+   */
+  function moveComponent(componentId, targetParentId, targetIndex) {
+    if (!currentStructure?.components) return;
+    currentStructure = {
+      ...currentStructure,
+      components: moveComponentInTree(currentStructure.components, componentId, targetParentId, targetIndex),
+    };
+    structureVersion++;
+  }
+
+  /**
    * Save the current structure to the backend.
    */
   async function saveCurrentStructure(changeType = 'manual', changeSummary = '', statusOverride = null) {
@@ -115,6 +128,7 @@ export function createPageStore() {
     updateComponentStyles,
     updateComponentProp,
     updateComponentContent,
+    moveComponent,
     saveCurrentStructure,
   };
 }
