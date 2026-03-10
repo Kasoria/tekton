@@ -787,7 +787,7 @@ Opt-in feature. CSS overrides + layout modifications. Menu reorder/rename/hide. 
 - [x] **Component tree drag-and-drop** — recursive tree with collapsible parents, drag-and-drop reordering, nesting into containers, guide lines
 - [ ] **Plugin Generator** — `class-tekton-plugin-generator.php` (generate micro-plugins to `wp-content/plugins/tekton-{slug}/`)
 - [ ] **Plugin Mode UI** — `PluginModePanel.svelte`, plugins store
-- [ ] **Design tokens panel** — `GlobalStylesPanel.svelte`
+- [x] **Design tokens panel** — `GlobalStylesPanel.svelte` (AI-assisted partial theme modification)
 - [ ] **Slash commands** — `/new`, `/fullstack`, `/undo`, `/redo`, `/version`, `/plugin`, `/admin`, `/fields`, `/context`, `/tokens`, `/export`, `/import`, `/help` (UI has 3 command shortcuts but no backend handling)
 - [ ] Undo/redo in chat
 - [ ] Component bridge system (micro-plugins rendering Tekton components)

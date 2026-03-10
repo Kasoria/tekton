@@ -1,6 +1,5 @@
 <script>
   import { untrack } from 'svelte';
-  import { Button } from '$lib/components/ui/button/index.js';
   import { ConfirmDialog } from '$lib/components/ui/dialog/index.js';
   import { createChatStore } from '$lib/stores/chat.svelte.js';
   import { createPageStore } from '$lib/stores/page.svelte.js';
@@ -10,10 +9,14 @@
   import { api } from '$lib/api.js';
   import { t } from '$lib/i18n.svelte.js';
   import { createThemeStore } from '$lib/stores/theme.svelte.js';
-  import PropertyPanel from './PropertyPanel.svelte';
   import ComponentTreeNode from './ComponentTreeNode.svelte';
   import DesignTokensPanel from './DesignTokensPanel.svelte';
   import { designTokensStore } from '$lib/stores/designTokens.svelte.js';
+  import TopToolbar from './builder/TopToolbar.svelte';
+  import ChatPanel from './builder/ChatPanel.svelte';
+  import BuildPanel from './builder/BuildPanel.svelte';
+  import Inspector from './builder/Inspector.svelte';
+  import { TYPE_MAP } from '$lib/elementCategories.js';
 
   let { onBack, initialTemplateKey = null } = $props();
 
@@ -28,7 +31,7 @@
   const editor = createEditorStore(page, () => bridge);
 
   let input = $state('');
-  let showPages = $state(false);
+  let leftMode = $state('ai'); // 'ai' | 'build'
   let viewport = $state('desktop');
   let sidebar = $state(null);
   let selectedComp = $state(null);
@@ -36,13 +39,8 @@
   let versions = $state([]);
   let fieldGroups = $state([]);
   let deleteConfirm = $state({ open: false, key: '' });
-  let newTemplateName = $state('');
-  let showNewTemplate = $state(false);
   let attachedImages = $state([]);
   let imageWarning = $state('');
-  let fileInputEl;
-  let showClearMenu = $state(false);
-  let isClearing = $state(false);
   let editMode = $state(false);
   let drawerWidth = $state(280);
   let isResizingDrawer = $state(false);
@@ -54,9 +52,6 @@
   let codeSaving = $state(false);
 
   const GLOBAL_TEMPLATES = ['header', 'footer'];
-
-  let messagesEnd;
-  let textareaEl;
 
   // Current selected page
   let currentPage = $state(null);
@@ -73,13 +68,6 @@
         ? page.structures.find(s => s.template_key === initialTemplateKey)
         : null;
       selectPage(target || page.structures[0]);
-    }
-  });
-
-  // Auto-scroll messages
-  $effect(() => {
-    if (chat.messages.length || chat.isStreaming) {
-      messagesEnd?.scrollIntoView({ behavior: 'smooth' });
     }
   });
 
@@ -100,7 +88,12 @@
   // Sync edit mode with iframe bridge
   $effect(() => {
     if (!bridge) return;
-    bridge.send(editMode ? 'tekton:enableEditor' : 'tekton:disableEditor');
+    if (editMode) {
+      bridge.send('tekton:enableEditor');
+    } else {
+      bridge.send('tekton:disableEditor');
+      selectedComp = null;
+    }
   });
 
   // Initialize bridge when iframe loads
@@ -153,6 +146,29 @@
       editor.deselectComponent();
       selectedComp = null;
     }
+    // Undo: Ctrl+Z / Cmd+Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      // Don't intercept when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      editor.undo();
+    }
+    // Redo: Ctrl+Shift+Z / Cmd+Shift+Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      editor.redo();
+    }
+    // Delete selected component
+    if ((e.key === 'Delete' || e.key === 'Backspace') && editor.selectedComponentId && !editor.isEditing) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      const id = editor.selectedComponentId;
+      editor.deselectComponent();
+      selectedComp = null;
+      page.deleteComponent(id);
+      editor.markDirty();
+    }
   }
 
   // Cleanup on destroy
@@ -179,7 +195,6 @@
       chat.loadHistory(history);
     });
     loadSidebarData(p.template_key);
-    showPages = false;
   }
 
   async function loadSidebarData(templateKey) {
@@ -266,6 +281,31 @@
     attachedImages = attachedImages.filter((_, i) => i !== index);
   }
 
+  function handlePaste(e) {
+    const items = Array.from(e.clipboardData?.items || []);
+    for (const item of items) {
+      if (!item.type.startsWith('image/')) continue;
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+      if (file.size > 20 * 1024 * 1024) {
+        showImageWarning(t('image_too_large', 'Image too large (max 20 MB)'));
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        attachedImages = [...attachedImages, {
+          data: base64,
+          media_type: file.type,
+          preview: reader.result,
+          name: 'pasted-image',
+        }];
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   async function handlePublish() {
     if (!currentPage || !page.currentStructure) return;
     const result = await page.saveCurrentStructure('publish', 'Published', 'publish');
@@ -341,8 +381,7 @@
     }
   }
 
-  async function createTemplate() {
-    const name = newTemplateName.trim();
+  async function createTemplate(name) {
     if (!name) return;
     const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!key) return;
@@ -355,10 +394,7 @@
       status: 'draft',
     });
 
-    newTemplateName = '';
-    showNewTemplate = false;
     await page.loadStructures();
-
     const created = page.structures.find(s => s.template_key === key);
     if (created) selectPage(created);
   }
@@ -406,80 +442,18 @@
     loadSidebarData(currentPage.template_key);
   }
 
-  function handleKeydown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  }
-
-  function handlePaste(e) {
-    const items = Array.from(e.clipboardData?.items || []);
-    for (const item of items) {
-      if (!item.type.startsWith('image/')) continue;
-      e.preventDefault();
-      const file = item.getAsFile();
-      if (!file) continue;
-      if (file.size > 20 * 1024 * 1024) {
-        showImageWarning(t('image_too_large', 'Image too large (max 20 MB)'));
-        continue;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1];
-        attachedImages = [...attachedImages, {
-          data: base64,
-          media_type: file.type,
-          preview: reader.result,
-          name: 'pasted-image',
-        }];
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
   async function clearChat(withSummary = false) {
     if (!currentPage) return;
-    isClearing = true;
-    showClearMenu = false;
     try {
       if (withSummary) {
         await api.summarizeAndClearChat(currentPage.template_key);
       } else {
         await api.clearChat(currentPage.template_key);
       }
-      // Reload chat history (will be empty or contain just the summary)
       const history = await api.getChatHistory(currentPage.template_key);
       chat.loadHistory(history);
-    } finally {
-      isClearing = false;
-    }
+    } catch { /* ignore */ }
   }
-
-  function autoResize(e) {
-    e.target.style.height = '20px';
-    e.target.style.height = e.target.scrollHeight + 'px';
-  }
-
-  // Component tree from current structure
-  const TYPE_MAP = {
-    section: { letter: 'S', hue: '#c97d3c' },
-    container: { letter: 'C', hue: '#8a7d6b' },
-    div: { letter: 'D', hue: '#6b6b6b' },
-    heading: { letter: 'H', hue: '#b86e4a' },
-    text: { letter: 'T', hue: '#7d8a6b' },
-    button: { letter: 'B', hue: '#c9a43c' },
-    grid: { letter: 'G', hue: '#6b7d8a' },
-    image: { letter: 'I', hue: '#7dab6e' },
-    'flex-row': { letter: 'R', hue: '#8a6b7d' },
-    'flex-column': { letter: 'F', hue: '#6b8a7d' },
-    link: { letter: 'L', hue: '#7d6b8a' },
-    list: { letter: 'Li', hue: '#8a7d6b' },
-    spacer: { letter: '—', hue: '#7a746e' },
-    divider: { letter: '÷', hue: '#7a746e' },
-    video: { letter: 'V', hue: '#6b7d8a' },
-    icon: { letter: 'Ic', hue: '#8a847d' },
-  };
 
   let tree = $derived(flattenTree(page.currentStructure?.components || []));
 
@@ -625,389 +599,75 @@
   ></div>
 
   <!-- TOP BAR -->
-  <header class="tk-topbar">
-    <!-- Left: logo + page selector -->
-    <div class="flex items-center gap-3.5">
-      <div class="flex items-center gap-2">
-        <button class="flex items-center gap-2 bg-transparent border-none cursor-pointer" onclick={onBack} title="Back to Dashboard">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="6" width="20" height="2.2" rx="1" fill="#c97d3c"/>
-            <rect x="5" y="10.5" width="14" height="2.2" rx="1" fill="#c97d3c" opacity="0.55"/>
-            <rect x="8" y="15" width="8" height="2.2" rx="1" fill="#c97d3c" opacity="0.3"/>
-          </svg>
-          <span class="font-heading text-[15px] font-bold tracking-tight">tekton</span>
-        </button>
-      </div>
-      <div class="w-px h-4 bg-border"></div>
-
-      <!-- Page selector -->
-      <div class="relative">
-        <button
-          class="flex items-center gap-[7px] px-2 py-1 bg-transparent border-none rounded-[5px] text-foreground cursor-pointer text-[13px] font-medium font-body"
-          onclick={() => (showPages = !showPages)}
-        >
-          <span class="text-muted text-[12px]">{t('editing', 'editing')}</span>
-          <span>{currentPage?.title || currentPage?.template_key || t('select_page', 'Select page')}</span>
-          {#if currentPage}
-            <span class="w-[5px] h-[5px] rounded-full {currentPage.status === 'publish' ? 'bg-green' : 'bg-gold'}"></span>
-          {/if}
-          <svg width="10" height="10" viewBox="0 0 10 10" class="transition-transform {showPages ? 'rotate-180' : ''}">
-            <path d="M2.5 4L5 6.5L7.5 4" class="stroke-muted" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-        </button>
-
-        {#if showPages}
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div class="fixed inset-0 z-[29]" onclick={() => (showPages = false)}></div>
-          <div class="absolute top-[calc(100%+6px)] -left-1 w-[230px] z-30 bg-card-hover border border-dim rounded-[10px] p-[5px] shadow-[0_16px_48px_var(--color-shadow)]">
-            <!-- Global templates -->
-            {#each page.structures.filter(s => GLOBAL_TEMPLATES.includes(s.template_key)) as p}
-              <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''}">
-                <button
-                  class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"
-                  onclick={() => selectPage(p)}
-                >
-                  <span class="w-[5px] h-[5px] rounded-full bg-copper/60"></span>
-                  <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
-                  <span class="text-[12px] text-muted font-mono ml-auto">{t('global', 'global')}</span>
-                </button>
-              </div>
-            {/each}
-
-            <!-- Separator -->
-            {#if page.structures.some(s => !GLOBAL_TEMPLATES.includes(s.template_key))}
-              <div class="h-px bg-border/30 my-1"></div>
-            {/if}
-
-            <!-- Page templates -->
-            {#each page.structures.filter(s => !GLOBAL_TEMPLATES.includes(s.template_key)) as p}
-              <div class="flex items-center rounded-[5px] {p.template_key === currentPage?.template_key ? 'bg-border/20' : ''} group">
-                <button
-                  class="flex-1 flex items-center gap-[7px] px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[13px] font-body text-foreground bg-transparent"
-                  onclick={() => selectPage(p)}
-                >
-                  <span class="w-[5px] h-[5px] rounded-full {p.status === 'publish' ? 'bg-green' : 'bg-gold'}"></span>
-                  <span class="{p.template_key === currentPage?.template_key ? 'font-semibold' : 'font-normal'}">{p.title || p.template_key}</span>
-                </button>
-                <button
-                  class="opacity-0 group-hover:opacity-100 px-1.5 py-1 border-none bg-transparent text-dim hover:text-gold cursor-pointer text-[12px] transition-opacity"
-                  onclick={(e) => { e.stopPropagation(); requestDeleteTemplate(p.template_key); }}
-                  title="Delete template"
-                >×</button>
-              </div>
-            {/each}
-
-            <!-- New template -->
-            <div class="border-t border-border/30 mt-1 pt-1">
-              {#if showNewTemplate}
-                <div class="flex items-center gap-1 px-1.5">
-                  <input
-                    type="text"
-                    bind:value={newTemplateName}
-                    onkeydown={(e) => { if (e.key === 'Enter') createTemplate(); if (e.key === 'Escape') { showNewTemplate = false; newTemplateName = ''; } }}
-                    placeholder={t('template_name', 'Template name...')}
-                    class="flex-1 px-2 py-[6px] bg-background border border-border/50 rounded-[5px] text-[12px] font-body text-foreground outline-none placeholder:text-dim"
-                    autofocus
-                  />
-                  <button
-                    class="px-2 py-[6px] border-none rounded-[5px] bg-copper text-white text-[12px] font-medium font-body cursor-pointer"
-                    onclick={createTemplate}
-                  >{t('add', 'Add')}</button>
-                </div>
-              {:else}
-                <button
-                  class="flex items-center gap-[7px] w-full px-2.5 py-[7px] border-none rounded-[5px] cursor-pointer text-[12px] font-body text-muted bg-transparent hover:text-foreground transition-colors"
-                  onclick={() => (showNewTemplate = true)}
-                >
-                  <span class="text-[14px] leading-none">+</span>
-                  <span>{t('new_template', 'New template')}</span>
-                </button>
-              {/if}
-            </div>
-          </div>
-        {/if}
-      </div>
-    </div>
-
-    <!-- Center: viewport + sidebar toggles -->
-    <div class="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
-      <!-- View mode toggle -->
-      <div class="flex gap-px bg-card-hover rounded-md p-0.5">
-        {#each [
-          { key: 'preview', label: t('preview', 'Preview') },
-          { key: 'code', label: t('code', 'Code') },
-        ] as v}
-          <button
-            class="px-2.5 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {viewMode === v.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
-            onclick={() => (viewMode = v.key)}
-          >{v.label}</button>
-        {/each}
-      </div>
-
-      <div class="w-px h-4 bg-border"></div>
-
-      <!-- Edit mode toggle -->
-      <button
-        class="px-2.5 py-1 rounded cursor-pointer text-[12px] font-medium font-body transition-all {editMode ? 'bg-copper border border-copper text-white' : 'bg-transparent border border-border text-muted hover:text-foreground hover:border-dim'}"
-        onclick={() => {
-          editMode = !editMode;
-          if (!editMode) {
-            editor.deselectComponent();
-            selectedComp = null;
-          }
-        }}
-        title={editMode ? t('exit_edit_mode', 'Exit edit mode') : t('enter_edit_mode', 'Enter edit mode')}
-      >
-        {editMode ? t('editing_mode', 'Editing') : t('edit', 'Edit')}
-      </button>
-
-      <div class="w-px h-4 bg-border"></div>
-
-      <!-- Viewport -->
-      <div class="flex gap-px bg-card-hover rounded-md p-0.5">
-        {#each [
-          { key: 'desktop', label: '⊞' },
-          { key: 'tablet', label: '▭' },
-          { key: 'mobile', label: '▯' },
-        ] as m}
-          <button
-            class="w-7 h-6 flex items-center justify-center border-none rounded cursor-pointer text-[12px] transition-colors {viewport === m.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
-            onclick={() => (viewport = m.key)}
-            title={m.key}
-          >{m.label}</button>
-        {/each}
-      </div>
-
-      <div class="w-px h-4 bg-border"></div>
-
-      <!-- Sidebar toggles -->
-      <div class="flex gap-px bg-card-hover rounded-md p-0.5">
-        {#each [
-          { key: 'tree', label: t('tree', 'Tree') },
-          { key: 'versions', label: t('history', 'History') },
-          { key: 'fields', label: t('fields', 'Fields') },
-          { key: 'plugins', label: t('plugins', 'Plugins') },
-          { key: 'design', label: t('design', 'Design') },
-        ] as s}
-          <button
-            class="px-3 py-1 border-none rounded cursor-pointer text-[12px] font-medium font-body transition-colors {sidebar === s.key ? 'bg-border/60 text-foreground' : 'bg-transparent text-muted'}"
-            onclick={() => (sidebar = sidebar === s.key ? null : s.key)}
-          >{s.label}</button>
-        {/each}
-      </div>
-    </div>
-
-    <!-- Right: actions -->
-    <div class="flex items-center gap-2">
-      <button
-        class="w-7 h-6 flex items-center justify-center rounded bg-transparent border-none text-muted hover:text-foreground cursor-pointer transition-colors"
-        onclick={() => theme.toggle()}
-        title={theme.mode === 'system' ? 'Theme: System' : theme.mode === 'light' ? 'Theme: Light' : 'Theme: Dark'}
-      >
-        {#if theme.mode === 'system'}
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="15" x2="11" y2="15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        {:else if theme.resolved === 'light'}
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.75 3.75l1.06 1.06M11.19 11.19l1.06 1.06M12.25 3.75l-1.06 1.06M4.81 11.19l-1.06 1.06" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        {:else}
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5a5.5 5.5 0 01-7-7 5.5 5.5 0 107 7z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        {/if}
-      </button>
-      <div class="w-px h-4 bg-border"></div>
-      {#if currentPage}
-        <span class="text-[12px] text-muted-foreground font-mono">v{versions[0]?.version_number || '–'}</span>
-      {/if}
-      {#if currentPage?.preview_url || currentPage?.url}
-        <button
-          class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
-          onclick={handlePreview}
-        >{t('preview_link', 'Preview ↗')}</button>
-      {/if}
-      {#if currentPage?.status === 'publish'}
-        <button
-          class="px-3 py-[5px] bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer text-xs font-body font-medium hover:border-dim transition-colors"
-          onclick={handleUnpublish}
-        >{t('unpublish', 'Unpublish')}</button>
-        <button
-          class="px-3 py-[5px] bg-transparent border border-copper/30 rounded-md text-copper cursor-pointer text-xs font-body font-medium hover:border-copper/60 hover:bg-copper/5 transition-colors"
-          onclick={viewPage}
-        >{t('view_link', 'View ↗')}</button>
-      {:else}
-        <Button onclick={handlePublish}>{t('publish', 'Publish')}</Button>
-      {/if}
-    </div>
-  </header>
+  <TopToolbar
+    {currentPage}
+    structures={page.structures}
+    bind:viewport
+    bind:viewMode
+    bind:editMode
+    bind:sidebar
+    {versions}
+    {theme}
+    {editor}
+    {onBack}
+    onSelectPage={selectPage}
+    onCreateTemplate={createTemplate}
+    onRequestDelete={requestDeleteTemplate}
+    onPublish={handlePublish}
+    onUnpublish={handleUnpublish}
+    onPreview={handlePreview}
+    onViewPage={viewPage}
+  />
 
   <!-- MAIN -->
   <div class="flex flex-1 overflow-hidden">
 
-    <!-- LEFT: CHAT -->
-    <div class="w-[400px] shrink-0 flex flex-col bg-background border-r border-border">
-      <!-- Messages -->
-      <div class="flex-1 overflow-auto p-4 pb-2">
-        <div class="flex flex-col gap-5">
-          {#each chat.messages as m}
-            <div class="flex flex-col gap-[5px]">
-              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 {m.role === 'user' ? 'text-muted' : 'text-copper'}">
-                {m.role === 'user' ? t('you', 'You') : t('tekton', 'Tekton')}
-                {#if m.is_summary}<span class="text-[12px] text-muted-foreground font-normal normal-case tracking-normal ml-1">· {t('summary_of_previous', 'summary of previous session')}</span>{/if}
-              </span>
-              <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 {m.role === 'user' ? 'bg-card-hover text-foreground border-l-2 border-dim' : 'bg-card text-foreground/75 border-l-2 border-copper/20'}">
-                {#if m.images?.length}
-                  <div class="flex gap-1.5 mb-2 flex-wrap">
-                    {#each m.images as img}
-                      <img src={img.preview} alt="" class="w-10 h-10 object-cover rounded-[5px] border border-border/50 opacity-80" />
-                    {/each}
-                  </div>
-                {/if}
-                <div class="whitespace-pre-wrap">{m.content}</div>
-
-                {#if m.structure}
-                  <div class="inline-flex items-center gap-[5px] mt-2.5 px-2.5 py-1 rounded-[5px] bg-green/5 border border-green/10">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.5L4 7.5L8 3" stroke="#7dab6e" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span class="text-[12px] text-green font-medium">{t('preview_updated', 'Preview updated')}</span>
-                  </div>
-                {/if}
-              </div>
-            </div>
-          {/each}
-
-          <!-- Streaming indicator -->
-          {#if chat.isStreaming}
-            <div class="flex flex-col gap-[5px]">
-              <span class="text-[12px] font-semibold uppercase tracking-[1.2px] pl-0.5 text-copper">{t('tekton', 'Tekton')}</span>
-              <div class="rounded-[10px] text-[13.5px] leading-[1.65] px-3.5 py-3 bg-card text-foreground/75 border-l-2 border-copper/20">
-                {#if streamingDisplay()}
-                  <div class="whitespace-pre-wrap">{streamingDisplay()}</div>
-                {/if}
-                {#if isBuildingStructure()}
-                  <div class="flex items-center gap-2.5 {streamingDisplay() ? 'mt-3 pt-3 border-t border-border/30' : ''}">
-                    <div class="tk-cooking flex gap-[3px]">
-                      <span></span><span></span><span></span>
-                    </div>
-                    <span class="text-[12px] text-copper/80 font-medium">{t('generating_structure', 'Generating structure…')}</span>
-                  </div>
-                {:else if !streamingDisplay()}
-                  <div class="flex items-center gap-2">
-                    <div class="tk-ember w-[7px] h-[7px] rounded-full bg-copper shrink-0"></div>
-                    <span class="text-muted">{t('thinking', 'Thinking...')}</span>
-                  </div>
-                {/if}
-              </div>
-            </div>
-          {/if}
-          <div bind:this={messagesEnd}></div>
-        </div>
+    <!-- LEFT PANEL -->
+    <div class="shrink-0 flex flex-col bg-background border-r border-border transition-[width] duration-200" style="width: {leftMode === 'build' ? '280px' : '400px'};">
+      <!-- Mode toggle -->
+      <div class="flex border-b border-border shrink-0">
+        <button
+          class="flex-1 px-3 py-2 border-none cursor-pointer text-[12px] font-semibold font-body transition-colors {leftMode === 'ai' ? 'text-copper bg-copper/5 border-b-2 border-copper' : 'text-muted bg-transparent hover:text-muted-foreground'}"
+          onclick={() => (leftMode = 'ai')}
+        >{t('ai_chat', 'AI Chat')}</button>
+        <button
+          class="flex-1 px-3 py-2 border-none cursor-pointer text-[12px] font-semibold font-body transition-colors {leftMode === 'build' ? 'text-copper bg-copper/5 border-b-2 border-copper' : 'text-muted bg-transparent hover:text-muted-foreground'}"
+          onclick={() => (leftMode = 'build')}
+        >{t('build', 'Build')}</button>
       </div>
 
-      <!-- Input area -->
-      <div class="p-4 pt-2 border-t border-border">
-        <!-- Image warning -->
-        {#if imageWarning}
-          <div class="text-[12px] text-red-400 mb-1.5 px-1">{imageWarning}</div>
-        {/if}
-        <!-- Image thumbnails -->
-        {#if attachedImages.length > 0}
-          <div class="flex gap-1.5 mb-2 flex-wrap">
-            {#each attachedImages as img, i}
-              <div class="relative group">
-                <img
-                  src={img.preview}
-                  alt={img.name}
-                  class="w-12 h-12 object-cover rounded-[6px] border border-border"
-                />
-                <button
-                  class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-border text-dim text-[12px] leading-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
-                  onclick={() => removeImage(i)}
-                >×</button>
-              </div>
-            {/each}
-          </div>
-        {/if}
-
-        <div class="flex gap-2 items-start bg-card rounded-[10px] border border-border px-3 py-2.5 focus-within:border-dim transition-colors">
-          <button
-            onclick={() => fileInputEl?.click()}
-            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 bg-transparent opacity-70 hover:opacity-100"
-            aria-label="Attach image"
-            title="Attach image"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="2" width="12" height="12" rx="2" stroke="#8a847d" stroke-width="1.3"/>
-              <circle cx="5.5" cy="5.5" r="1.2" fill="#8a847d"/>
-              <path d="M2 11l3-3.5 2.5 2.5L10 7.5l4 4.5" stroke="#8a847d" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-          <input
-            bind:this={fileInputEl}
-            type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            multiple
-            onchange={handleImageUpload}
-            class="hidden"
-          />
-          <textarea
-            bind:this={textareaEl}
-            bind:value={input}
-            onkeydown={handleKeydown}
-            oninput={autoResize}
-            onpaste={handlePaste}
-            placeholder={t('describe_prompt', 'Describe what to build or change...')}
-            rows="3"
-            class="flex-1 bg-transparent border-none text-foreground text-[13px] leading-[1.5] resize-none outline-none font-body min-h-[54px] max-h-[150px] placeholder:text-dim"
-          ></textarea>
-          <button
-            onclick={() => send()}
-            disabled={(!input.trim() && attachedImages.length === 0) || chat.isStreaming}
-            class="w-[30px] h-[30px] rounded-[7px] border-none cursor-pointer flex items-center justify-center transition-all shrink-0 {input.trim() || attachedImages.length > 0 ? 'bg-copper opacity-100' : 'bg-transparent opacity-60'}"
-            aria-label="Send message"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 11V3M7 3L4 6M7 3l3 3" stroke={input.trim() || attachedImages.length > 0 ? '#ffffff' : 'var(--color-muted)'} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-        <div class="flex items-center justify-start gap-1.5 mt-1.5 pl-0.5">
-          {#each ['/fullstack', '/plugin', '/undo'] as cmd}
-            <button
-              class="px-[7px] py-[2px] bg-transparent rounded cursor-pointer text-[12px] font-mono transition-colors"
-              style="border: 1px solid var(--color-muted); color: var(--color-muted-foreground);"
-              onclick={() => { input = cmd + ' '; textareaEl?.focus(); }}
-            >{cmd}</button>
-          {/each}
-
-          <!-- Clear chat -->
-          {#if chat.messages.length > 0}
-            <div class="relative ml-auto">
-              <button
-                class="px-[7px] py-[2px] bg-transparent border border-border/50 rounded text-dim cursor-pointer text-[12px] font-body transition-colors hover:text-muted hover:border-dim {isClearing ? 'opacity-50 pointer-events-none' : ''}"
-                onclick={() => (showClearMenu = !showClearMenu)}
-              >{isClearing ? t('clearing', 'Clearing...') : t('clear_chat', 'Clear chat')}</button>
-              {#if showClearMenu}
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="fixed inset-0 z-[29]" onclick={() => (showClearMenu = false)}></div>
-                <div class="absolute bottom-[calc(100%+6px)] right-0 w-[200px] z-30 bg-card-hover border border-dim rounded-[8px] p-1 shadow-[0_12px_40px_var(--color-shadow)]">
-                  <button
-                    class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
-                    onclick={() => clearChat(true)}
-                  >
-                    <span class="text-[12px] text-foreground font-medium">{t('clear_with_summary', 'Clear with summary')}</span>
-                    <span class="text-[12px] text-muted leading-tight mt-0.5">{t('clear_with_summary_desc', 'AI summarizes the conversation, then clears')}</span>
-                  </button>
-                  <button
-                    class="flex flex-col items-start w-full px-2.5 py-2 border-none rounded-[5px] cursor-pointer text-left bg-transparent hover:bg-border/20 transition-colors"
-                    onclick={() => clearChat(false)}
-                  >
-                    <span class="text-[12px] text-foreground font-medium">{t('clear_all', 'Clear all')}</span>
-                    <span class="text-[12px] text-muted leading-tight mt-0.5">{t('clear_all_desc', 'Remove entire chat history')}</span>
-                  </button>
-                </div>
-              {/if}
-            </div>
-          {:else}
-            <span class="ml-auto text-[12px] text-muted">{t('shift_enter_newline', 'shift+enter for newline')}</span>
-          {/if}
-        </div>
-      </div>
+      {#if leftMode === 'ai'}
+        <ChatPanel
+          {chat}
+          bind:input
+          bind:attachedImages
+          {imageWarning}
+          {streamingDisplay}
+          {isBuildingStructure}
+          onSend={() => send()}
+          onImageUpload={handleImageUpload}
+          onRemoveImage={removeImage}
+          onPaste={handlePaste}
+          onClearChat={clearChat}
+        />
+      {:else}
+        <BuildPanel
+          {page}
+          {editor}
+          bind:selectedComp
+          typeMap={TYPE_MAP}
+          bind:collapsedIds
+          bind:dragState
+          onTreeSelect={(id) => { selectedComp = id; editor.selectComponent(id); expandToComponent(id); }}
+          onTreeDblClick={(id) => { selectedComp = id; editor.selectComponent(id); editMode = true; }}
+          onToggleCollapse={toggleCollapse}
+          onTreeDragStart={handleTreeDragStart}
+          onTreeDragOver={handleTreeDragOver}
+          onTreeDragLeave={handleTreeDragLeave}
+          onTreeDrop={handleTreeDrop}
+          onSwitchToAI={(prompt) => { leftMode = 'ai'; input = prompt; send(prompt); }}
+        />
+      {/if}
     </div>
 
     <!-- CENTER: PREVIEW / CODE -->
@@ -1114,6 +774,13 @@
             </div>
           {/if}
         </div>
+      </div>
+    {/if}
+
+    <!-- RIGHT PANEL: INSPECTOR (inline, shown when component selected in edit/build mode) -->
+    {#if (editMode || leftMode === 'build') && editor.selectedComponentId}
+      <div class="shrink-0 border-l border-border bg-card" style="width: 290px;">
+        <Inspector {editor} {page} />
       </div>
     {/if}
 
@@ -1280,24 +947,6 @@
     </div>
   </div>
 
-  <!-- PROPERTY PANEL (slides in from right when component selected, only in edit mode) -->
-  {#if editMode && editor.selectedComponentId && !sidebar}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-      class="tk-drawer-backdrop tk-drawer-open"
-      onclick={() => { editor.deselectComponent(); selectedComp = null; }}
-    ></div>
-    <div class="tk-drawer tk-drawer-open" style="width: {drawerWidth}px;">
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="tk-drawer-resize" onmousedown={startDrawerResize}></div>
-      <PropertyPanel
-        {editor}
-        {page}
-        typeMap={TYPE_MAP}
-        onclose={() => { editor.deselectComponent(); selectedComp = null; }}
-      />
-    </div>
-  {/if}
 
   <ConfirmDialog
     open={deleteConfirm.open}
@@ -1325,19 +974,6 @@
     right: 0;
     bottom: 0;
     z-index: 99999;
-  }
-
-  .tk-topbar {
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-card);
-    flex-shrink: 0;
-    z-index: 20;
-    position: relative;
   }
 
   /* WP style overrides within builder */
@@ -1387,16 +1023,7 @@
     box-shadow: none;
     outline: none;
   }
-  @keyframes ember {
-    0%, 100% { opacity: 0.35; transform: scale(0.85); }
-    50% { opacity: 1; transform: scale(1.15); }
-  }
-
-  :global(.tk-ember) {
-    animation: ember 1.6s ease-in-out infinite;
-  }
-
-  /* Cooking / structure generation indicator */
+  /* Code editor */
   .tk-code-editor {
     font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
     color: var(--color-muted-foreground);
@@ -1407,26 +1034,6 @@
   }
   .tk-code-editor:focus {
     color: var(--color-foreground);
-  }
-
-  .tk-cooking {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-  .tk-cooking span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-copper, #c97d3c);
-    animation: cooking 1.4s ease-in-out infinite;
-  }
-  .tk-cooking span:nth-child(2) { animation-delay: 0.15s; }
-  .tk-cooking span:nth-child(3) { animation-delay: 0.3s; }
-
-  @keyframes cooking {
-    0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
-    40% { opacity: 1; transform: scale(1.1); }
   }
 
   /* Drawer overlay */

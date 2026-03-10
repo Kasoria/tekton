@@ -5,13 +5,18 @@ import {
   updatePropsById,
   replaceContentById,
   moveComponent as moveComponentInTree,
+  removeById,
+  insertAt,
 } from '../componentTree.js';
+import { createHistoryStore } from './history.svelte.js';
 
 export function createPageStore() {
   let structures = $state([]);
   let currentStructure = $state(null);
   let loading = $state(false);
   let structureVersion = $state(0);
+
+  const history = createHistoryStore();
 
   async function loadStructures() {
     loading = true;
@@ -24,6 +29,7 @@ export function createPageStore() {
 
   async function loadStructure(templateKey) {
     loading = true;
+    history.clear();
     try {
       currentStructure = await api.getStructure(templateKey);
       structureVersion++;
@@ -36,14 +42,48 @@ export function createPageStore() {
 
   function setStructure(structure) {
     currentStructure = structure;
+    history.clear();
     structureVersion++;
   }
+
+  // -- History helpers --
+
+  function pushHistory() {
+    if (currentStructure?.components) {
+      history.push(currentStructure.components);
+    }
+  }
+
+  function pushHistoryDebounced() {
+    if (currentStructure?.components) {
+      history.pushDebounced(currentStructure.components);
+    }
+  }
+
+  function undo() {
+    const components = history.undo();
+    if (components && currentStructure) {
+      currentStructure = { ...currentStructure, components };
+      structureVersion++;
+    }
+  }
+
+  function redo() {
+    const components = history.redo();
+    if (components && currentStructure) {
+      currentStructure = { ...currentStructure, components };
+      structureVersion++;
+    }
+  }
+
+  // -- Component mutations --
 
   /**
    * Update a component via an updater function. Does NOT trigger preview re-render.
    */
   function updateComponent(id, updater) {
     if (!currentStructure?.components) return;
+    pushHistoryDebounced();
     currentStructure = {
       ...currentStructure,
       components: updateById(currentStructure.components, id, updater),
@@ -55,6 +95,7 @@ export function createPageStore() {
    */
   function updateComponentStyles(id, breakpoint, styles) {
     if (!currentStructure?.components) return;
+    pushHistoryDebounced();
     currentStructure = {
       ...currentStructure,
       components: updateStylesById(currentStructure.components, id, breakpoint, styles),
@@ -66,6 +107,7 @@ export function createPageStore() {
    */
   function updateComponentProp(id, prop, value) {
     if (!currentStructure?.components) return;
+    pushHistoryDebounced();
     currentStructure = {
       ...currentStructure,
       components: updatePropsById(currentStructure.components, id, { [prop]: value }),
@@ -77,6 +119,7 @@ export function createPageStore() {
    */
   function updateComponentContent(id, prop, value) {
     if (!currentStructure?.components) return;
+    pushHistoryDebounced();
     currentStructure = {
       ...currentStructure,
       components: replaceContentById(currentStructure.components, id, prop, value),
@@ -88,9 +131,36 @@ export function createPageStore() {
    */
   function moveComponent(componentId, targetParentId, targetIndex) {
     if (!currentStructure?.components) return;
+    pushHistory();
     currentStructure = {
       ...currentStructure,
       components: moveComponentInTree(currentStructure.components, componentId, targetParentId, targetIndex),
+    };
+    structureVersion++;
+  }
+
+  /**
+   * Insert a new component into the tree.
+   */
+  function insertComponent(component, parentId, index) {
+    if (!currentStructure?.components) return;
+    pushHistory();
+    currentStructure = {
+      ...currentStructure,
+      components: insertAt(currentStructure.components, component, parentId, index),
+    };
+    structureVersion++;
+  }
+
+  /**
+   * Remove a component from the tree.
+   */
+  function deleteComponent(id) {
+    if (!currentStructure?.components) return;
+    pushHistory();
+    currentStructure = {
+      ...currentStructure,
+      components: removeById(currentStructure.components, id),
     };
     structureVersion++;
   }
@@ -121,6 +191,8 @@ export function createPageStore() {
     get currentStructure() { return currentStructure; },
     get loading() { return loading; },
     get structureVersion() { return structureVersion; },
+    get canUndo() { return history.canUndo; },
+    get canRedo() { return history.canRedo; },
     loadStructures,
     loadStructure,
     setStructure,
@@ -129,6 +201,10 @@ export function createPageStore() {
     updateComponentProp,
     updateComponentContent,
     moveComponent,
+    insertComponent,
+    deleteComponent,
+    undo,
+    redo,
     saveCurrentStructure,
   };
 }

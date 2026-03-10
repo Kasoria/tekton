@@ -211,13 +211,15 @@ export function removeById(components, id) {
 export function insertAt(components, component, parentId, index) {
   if (parentId === null) {
     const result = [...components];
-    result.splice(index, 0, component);
+    if (index < 0) result.push(component);
+    else result.splice(index, 0, component);
     return result;
   }
   return components.map(comp => {
     if (comp.id === parentId) {
       const children = [...(comp.children || [])];
-      children.splice(index, 0, component);
+      if (index < 0) children.push(component);
+      else children.splice(index, 0, component);
       return { ...comp, children };
     }
     if (comp.children?.length) {

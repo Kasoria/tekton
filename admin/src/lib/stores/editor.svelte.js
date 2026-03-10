@@ -141,6 +141,8 @@ export function createEditorStore(pageStore, getBridge) {
     get dirty() { return dirty; },
     get selectedComponent() { return selectedComponent; },
     get selectedStyles() { return selectedStyles; },
+    get canUndo() { return pageStore.canUndo; },
+    get canRedo() { return pageStore.canRedo; },
     selectComponent,
     deselectComponent,
     hoverComponent,
@@ -153,6 +155,8 @@ export function createEditorStore(pageStore, getBridge) {
     updateContent,
     markDirty,
     commitChanges,
+    undo() { pageStore.undo(); },
+    redo() { pageStore.redo(); },
     destroy,
   };
 }
