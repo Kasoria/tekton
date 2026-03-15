@@ -29,13 +29,13 @@
   let showNewTemplate = $state(false);
   let newTemplateName = $state('');
 
-  function handleCreate() {
+  async function handleCreate() {
     const name = newTemplateName.trim();
     if (!name) return;
-    onCreateTemplate?.(name);
     newTemplateName = '';
     showNewTemplate = false;
     showPages = false;
+    await onCreateTemplate?.(name);
   }
 
   function handleSelectPage(p) {

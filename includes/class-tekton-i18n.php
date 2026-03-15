@@ -480,6 +480,100 @@ class Tekton_I18n {
 			'pp_tablet'                 => __( 'Tablet', 'tekton' ),
 			'pp_mobile'                 => __( 'Mobile', 'tekton' ),
 
+			// Inspector tabs
+			'tab_content'               => __( 'Content', 'tekton' ),
+			'tab_style'                 => __( 'Style', 'tekton' ),
+			'tab_settings'              => __( 'Settings', 'tekton' ),
+			'no_selection'              => __( 'No component selected', 'tekton' ),
+			'select_hint'               => __( 'Click a component in the preview or the structure tree to inspect and edit its properties.', 'tekton' ),
+
+			// Style Tab — Typography
+			'font_family'               => __( 'Font Family', 'tekton' ),
+			'font_size'                 => __( 'Size', 'tekton' ),
+			'font_weight'               => __( 'Weight', 'tekton' ),
+			'line_height'               => __( 'Line Height', 'tekton' ),
+			'letter_spacing'            => __( 'Spacing', 'tekton' ),
+			'text_align'                => __( 'Align', 'tekton' ),
+			'transform'                 => __( 'Transform', 'tekton' ),
+			'decoration'                => __( 'Decoration', 'tekton' ),
+
+			// Style Tab — Colors
+			'text_color'                => __( 'Text Color', 'tekton' ),
+			'background'                => __( 'Background', 'tekton' ),
+			'bg_image'                  => __( 'Background Image', 'tekton' ),
+			'bg_size'                   => __( 'BG Size', 'tekton' ),
+			'bg_position'               => __( 'BG Position', 'tekton' ),
+
+			// Style Tab — Spacing
+			'gap'                       => __( 'Gap', 'tekton' ),
+
+			// Style Tab — Size & Layout
+			'size_layout'               => __( 'Size & Layout', 'tekton' ),
+			'width'                     => __( 'Width', 'tekton' ),
+			'height'                    => __( 'Height', 'tekton' ),
+			'min_w'                     => __( 'Min W', 'tekton' ),
+			'max_w'                     => __( 'Max W', 'tekton' ),
+			'min_h'                     => __( 'Min H', 'tekton' ),
+			'max_h'                     => __( 'Max H', 'tekton' ),
+			'display'                   => __( 'Display', 'tekton' ),
+			'direction'                 => __( 'Direction', 'tekton' ),
+			'wrap'                      => __( 'Wrap', 'tekton' ),
+			'justify'                   => __( 'Justify', 'tekton' ),
+			'align_items'               => __( 'Align', 'tekton' ),
+			'grid_cols'                 => __( 'Grid Columns', 'tekton' ),
+			'grid_rows'                 => __( 'Grid Rows', 'tekton' ),
+			'overflow'                  => __( 'Overflow', 'tekton' ),
+
+			// Style Tab — Borders
+			'borders'                   => __( 'Borders', 'tekton' ),
+			'border_width'              => __( 'Width', 'tekton' ),
+			'border_style'              => __( 'Style', 'tekton' ),
+			'border_color'              => __( 'Color', 'tekton' ),
+			'border_radius'             => __( 'Radius', 'tekton' ),
+
+			// Style Tab — Effects
+			'effects'                   => __( 'Effects', 'tekton' ),
+			'opacity'                   => __( 'Opacity', 'tekton' ),
+			'box_shadow'                => __( 'Box Shadow', 'tekton' ),
+			'transition'                => __( 'Transition', 'tekton' ),
+			'cursor'                    => __( 'Cursor', 'tekton' ),
+
+			// Style Tab — Position
+			'position_type'             => __( 'Type', 'tekton' ),
+			'z_index'                   => __( 'Z-Index', 'tekton' ),
+			'top'                       => __( 'Top', 'tekton' ),
+			'right'                     => __( 'Right', 'tekton' ),
+			'bottom'                    => __( 'Bottom', 'tekton' ),
+			'left'                      => __( 'Left', 'tekton' ),
+
+			// Settings Tab
+			'component_id'              => __( 'Component ID', 'tekton' ),
+			'device_visibility'         => __( 'Device Visibility', 'tekton' ),
+			'show_on_desktop'           => __( 'Show on Desktop', 'tekton' ),
+			'show_on_tablet'            => __( 'Show on Tablet', 'tekton' ),
+			'show_on_mobile'            => __( 'Show on Mobile', 'tekton' ),
+			'visibility_condition'      => __( 'Visibility Condition', 'tekton' ),
+			'always_visible'            => __( 'Always visible', 'tekton' ),
+			'logged_in_only'            => __( 'Logged-in users only', 'tekton' ),
+			'logged_out_only'           => __( 'Logged-out users only', 'tekton' ),
+			'admins_only'               => __( 'Administrators only', 'tekton' ),
+			'editors_up'                => __( 'Editors and above', 'tekton' ),
+			'html_tag'                  => __( 'HTML Tag', 'tekton' ),
+			'custom_css'                => __( 'Custom CSS', 'tekton' ),
+			'custom_css_hint'           => __( 'Use %self% to target this element', 'tekton' ),
+			'accessibility'             => __( 'Accessibility', 'tekton' ),
+			'aria_label'                => __( 'ARIA Label', 'tekton' ),
+			'aria_label_placeholder'    => __( 'Accessible label...', 'tekton' ),
+			'aria_role'                 => __( 'Role', 'tekton' ),
+
+			// Content Tab
+			'enter_content'             => __( 'Enter content...', 'tekton' ),
+			'make_dynamic'              => __( '+ Make dynamic', 'tekton' ),
+			'heading_level'             => __( 'Heading Level', 'tekton' ),
+			'link_url'                  => __( 'Link URL', 'tekton' ),
+			'target'                    => __( 'Target', 'tekton' ),
+			'css_classes'               => __( 'CSS Classes', 'tekton' ),
+
 			// Builder edit mode
 			'editing_mode'              => __( 'Editing', 'tekton' ),
 			'enter_edit_mode'           => __( 'Enter edit mode', 'tekton' ),

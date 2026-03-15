@@ -44,6 +44,10 @@
   let editMode = $state(false);
   let drawerWidth = $state(280);
   let isResizingDrawer = $state(false);
+  let leftPanelWidth = $state(400);
+  let isResizingLeft = $state(false);
+  let inspectorWidth = $state(290);
+  let isResizingInspector = $state(false);
   let viewMode = $state('preview'); // 'preview' | 'code'
   let codeViewTab = $state('structure'); // 'structure' | 'html'
   let codeEditorValue = $state('');
@@ -383,20 +387,24 @@
 
   async function createTemplate(name) {
     if (!name) return;
-    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const key = name.toLowerCase().replace(/[^a-z0-9\u00C0-\u024F]+/g, '-').replace(/^-|-$/g, '');
     if (!key) return;
 
-    await api.saveStructure({
-      template_key: key,
-      title: name,
-      components: [],
-      styles: [],
-      status: 'draft',
-    });
+    try {
+      await api.saveStructure({
+        template_key: key,
+        title: name,
+        components: [],
+        styles: [],
+        status: 'draft',
+      });
 
-    await page.loadStructures();
-    const created = page.structures.find(s => s.template_key === key);
-    if (created) selectPage(created);
+      await page.loadStructures();
+      const created = page.structures.find(s => s.template_key === key);
+      if (created) selectPage(created);
+    } catch (err) {
+      console.error('[Tekton] Failed to create template:', err);
+    }
   }
 
   function requestDeleteTemplate(templateKey) {
@@ -530,6 +538,8 @@
     editor.markDirty();
   }
 
+  let isResizingAny = $derived(isResizingDrawer || isResizingLeft || isResizingInspector);
+
   function startDrawerResize(e) {
     e.preventDefault();
     isResizingDrawer = true;
@@ -542,6 +552,44 @@
     }
     function onUp() {
       isResizingDrawer = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  function startLeftResize(e) {
+    e.preventDefault();
+    isResizingLeft = true;
+    const startX = e.clientX;
+    const startWidth = leftPanelWidth;
+
+    function onMove(ev) {
+      const delta = ev.clientX - startX;
+      leftPanelWidth = Math.min(700, Math.max(260, startWidth + delta));
+    }
+    function onUp() {
+      isResizingLeft = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  function startInspectorResize(e) {
+    e.preventDefault();
+    isResizingInspector = true;
+    const startX = e.clientX;
+    const startWidth = inspectorWidth;
+
+    function onMove(ev) {
+      const delta = startX - ev.clientX;
+      inspectorWidth = Math.min(500, Math.max(220, startWidth + delta));
+    }
+    function onUp() {
+      isResizingInspector = false;
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     }
@@ -591,7 +639,7 @@
 
 <svelte:window onkeydown={handleGlobalKeydown} />
 
-<div class="tk-builder" style:user-select={isResizingDrawer ? 'none' : null}>
+<div class="tk-builder" style:user-select={isResizingAny ? 'none' : null}>
   <!-- Grain -->
   <div
     class="fixed inset-0 pointer-events-none z-[999] opacity-[0.022] mix-blend-overlay"
@@ -623,7 +671,10 @@
   <div class="flex flex-1 overflow-hidden">
 
     <!-- LEFT PANEL -->
-    <div class="shrink-0 flex flex-col bg-background border-r border-border transition-[width] duration-200" style="width: {leftMode === 'build' ? '280px' : '400px'};">
+    <div class="shrink-0 flex flex-col bg-background border-r border-border relative" style="width: {leftPanelWidth}px;">
+      <!-- Resize handle -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="tk-resize-handle tk-resize-right" onmousedown={startLeftResize}></div>
       <!-- Mode toggle -->
       <div class="flex border-b border-border shrink-0">
         <button
@@ -669,6 +720,11 @@
         />
       {/if}
     </div>
+
+    <!-- Resize overlay: blocks iframe from stealing mouse events during drag -->
+    {#if isResizingAny}
+      <div class="fixed inset-0 z-50" style="cursor: col-resize;"></div>
+    {/if}
 
     <!-- CENTER: PREVIEW / CODE -->
     {#if viewMode === 'code'}
@@ -779,7 +835,9 @@
 
     <!-- RIGHT PANEL: INSPECTOR (inline, shown when component selected in edit/build mode) -->
     {#if (editMode || leftMode === 'build') && editor.selectedComponentId}
-      <div class="shrink-0 border-l border-border bg-card" style="width: 290px;">
+      <div class="shrink-0 border-l border-border bg-card relative" style="width: {inspectorWidth}px;">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="tk-resize-handle tk-resize-left" onmousedown={startInspectorResize}></div>
         <Inspector {editor} {page} />
       </div>
     {/if}
@@ -1070,6 +1128,27 @@
   .tk-drawer.tk-drawer-open {
     transform: translateX(0);
     box-shadow: -8px 0 40px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Panel resize handles */
+  .tk-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 10;
+  }
+  .tk-resize-handle:hover,
+  .tk-resize-handle:active {
+    background: var(--copper);
+    opacity: 0.3;
+  }
+  .tk-resize-right {
+    right: -3px;
+  }
+  .tk-resize-left {
+    left: -3px;
   }
 
   /* Drawer resize handle */

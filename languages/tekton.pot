@@ -1191,3 +1191,265 @@ msgstr ""
 
 msgid "Exit edit mode"
 msgstr ""
+
+# Design Tokens panel
+msgid "Design"
+msgstr ""
+
+msgid "Design Tokens"
+msgstr ""
+
+msgid "Heading"
+msgstr ""
+
+msgid "Body"
+msgstr ""
+
+msgid "Border Radii"
+msgstr ""
+
+msgid "Shadows"
+msgstr ""
+
+msgid "Style Notes"
+msgstr ""
+
+msgid "Describe the visual style..."
+msgstr ""
+
+msgid "Saved"
+msgstr ""
+
+msgid "The quick brown fox jumps over the lazy dog"
+msgstr ""
+
+msgid "Fonts"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Secondary"
+msgstr ""
+
+msgid "Accent"
+msgstr ""
+
+msgid "Surface"
+msgstr ""
+
+msgid "Text Muted"
+msgstr ""
+
+msgid "Size XS"
+msgstr ""
+
+msgid "Size SM"
+msgstr ""
+
+msgid "Size Base"
+msgstr ""
+
+msgid "Size LG"
+msgstr ""
+
+msgid "Size XL"
+msgstr ""
+
+msgid "Size 2XL"
+msgstr ""
+
+msgid "Size 3XL"
+msgstr ""
+
+msgid "Size 4XL"
+msgstr ""
+
+msgid "Size 5XL"
+msgstr ""
+
+msgid "Line Height Tight"
+msgstr ""
+
+msgid "Line Height Base"
+msgstr ""
+
+msgid "Line Height Relaxed"
+msgstr ""
+
+msgid "Letter Spacing Tight"
+msgstr ""
+
+msgid "Letter Spacing Normal"
+msgstr ""
+
+msgid "Letter Spacing Wide"
+msgstr ""
+
+msgid "Section Padding"
+msgstr ""
+
+msgid "Content Gap"
+msgstr ""
+
+msgid "Expand all"
+msgstr ""
+
+msgid "Collapse all"
+msgstr ""
+
+# Inspector tabs
+msgid "Style"
+msgstr ""
+
+msgid "No component selected"
+msgstr ""
+
+msgid "Click a component in the preview or the structure tree to inspect and edit its properties."
+msgstr ""
+
+# Style Tab — Typography
+msgid "Font Family"
+msgstr ""
+
+msgid "Transform"
+msgstr ""
+
+msgid "Decoration"
+msgstr ""
+
+# Style Tab — Colors
+msgid "Text Color"
+msgstr ""
+
+msgid "Background Image"
+msgstr ""
+
+msgid "BG Size"
+msgstr ""
+
+msgid "BG Position"
+msgstr ""
+
+# Style Tab — Size & Layout
+msgid "Min W"
+msgstr ""
+
+msgid "Max W"
+msgstr ""
+
+msgid "Min H"
+msgstr ""
+
+msgid "Max H"
+msgstr ""
+
+msgid "Direction"
+msgstr ""
+
+msgid "Wrap"
+msgstr ""
+
+msgid "Justify"
+msgstr ""
+
+msgid "Grid Columns"
+msgstr ""
+
+msgid "Grid Rows"
+msgstr ""
+
+# Style Tab — Borders
+msgid "Borders"
+msgstr ""
+
+# Style Tab — Effects
+msgid "Effects"
+msgstr ""
+
+msgid "Box Shadow"
+msgstr ""
+
+msgid "Transition"
+msgstr ""
+
+msgid "Cursor"
+msgstr ""
+
+# Style Tab — Position
+msgid "Type"
+msgstr ""
+
+msgid "Z-Index"
+msgstr ""
+
+# Settings Tab
+msgid "Component ID"
+msgstr ""
+
+msgid "Device Visibility"
+msgstr ""
+
+msgid "Show on Desktop"
+msgstr ""
+
+msgid "Show on Tablet"
+msgstr ""
+
+msgid "Show on Mobile"
+msgstr ""
+
+msgid "Visibility Condition"
+msgstr ""
+
+msgid "Always visible"
+msgstr ""
+
+msgid "Logged-in users only"
+msgstr ""
+
+msgid "Logged-out users only"
+msgstr ""
+
+msgid "Administrators only"
+msgstr ""
+
+msgid "Editors and above"
+msgstr ""
+
+msgid "HTML Tag"
+msgstr ""
+
+msgid "Custom CSS"
+msgstr ""
+
+msgid "Use %self% to target this element"
+msgstr ""
+
+msgid "Accessibility"
+msgstr ""
+
+msgid "ARIA Label"
+msgstr ""
+
+msgid "Accessible label..."
+msgstr ""
+
+msgid "Role"
+msgstr ""
+
+# Content Tab
+msgid "Enter content..."
+msgstr ""
+
+msgid "+ Make dynamic"
+msgstr ""
+
+msgid "Heading Level"
+msgstr ""
+
+msgid "CSS Classes"
+msgstr ""

@@ -1366,3 +1366,156 @@ msgstr "Alle aufklappen"
 
 msgid "Collapse all"
 msgstr "Alle zuklappen"
+
+# Inspector tabs
+msgid "Style"
+msgstr "Stil"
+
+msgid "No component selected"
+msgstr "Keine Komponente ausgewählt"
+
+msgid "Click a component in the preview or the structure tree to inspect and edit its properties."
+msgstr "Klicke auf eine Komponente in der Vorschau oder im Strukturbaum, um ihre Eigenschaften zu bearbeiten."
+
+# Style Tab — Typography
+msgid "Font Family"
+msgstr "Schriftfamilie"
+
+msgid "Transform"
+msgstr "Transformation"
+
+msgid "Decoration"
+msgstr "Dekoration"
+
+# Style Tab — Colors
+msgid "Text Color"
+msgstr "Textfarbe"
+
+msgid "Background Image"
+msgstr "Hintergrundbild"
+
+msgid "BG Size"
+msgstr "HG-Größe"
+
+msgid "BG Position"
+msgstr "HG-Position"
+
+# Style Tab — Size & Layout
+msgid "Min W"
+msgstr "Min. B"
+
+msgid "Max W"
+msgstr "Max. B"
+
+msgid "Min H"
+msgstr "Min. H"
+
+msgid "Max H"
+msgstr "Max. H"
+
+msgid "Direction"
+msgstr "Richtung"
+
+msgid "Wrap"
+msgstr "Umbruch"
+
+msgid "Justify"
+msgstr "Ausrichten"
+
+msgid "Grid Columns"
+msgstr "Rasterspalten"
+
+msgid "Grid Rows"
+msgstr "Rasterzeilen"
+
+# Style Tab — Borders
+msgid "Borders"
+msgstr "Rahmen"
+
+# Style Tab — Effects
+msgid "Effects"
+msgstr "Effekte"
+
+msgid "Box Shadow"
+msgstr "Schatten"
+
+msgid "Transition"
+msgstr "Übergang"
+
+msgid "Cursor"
+msgstr "Mauszeiger"
+
+# Style Tab — Position
+msgid "Type"
+msgstr "Typ"
+
+msgid "Z-Index"
+msgstr "Z-Index"
+
+# Settings Tab
+msgid "Component ID"
+msgstr "Komponenten-ID"
+
+msgid "Device Visibility"
+msgstr "Gerätesichtbarkeit"
+
+msgid "Show on Desktop"
+msgstr "Auf Desktop anzeigen"
+
+msgid "Show on Tablet"
+msgstr "Auf Tablet anzeigen"
+
+msgid "Show on Mobile"
+msgstr "Auf Mobilgerät anzeigen"
+
+msgid "Visibility Condition"
+msgstr "Sichtbarkeitsbedingung"
+
+msgid "Always visible"
+msgstr "Immer sichtbar"
+
+msgid "Logged-in users only"
+msgstr "Nur angemeldete Benutzer"
+
+msgid "Logged-out users only"
+msgstr "Nur abgemeldete Benutzer"
+
+msgid "Administrators only"
+msgstr "Nur Administratoren"
+
+msgid "Editors and above"
+msgstr "Redakteure und höher"
+
+msgid "HTML Tag"
+msgstr "HTML-Tag"
+
+msgid "Custom CSS"
+msgstr "Eigenes CSS"
+
+msgid "Use %self% to target this element"
+msgstr "Verwende %self% um dieses Element anzusprechen"
+
+msgid "Accessibility"
+msgstr "Barrierefreiheit"
+
+msgid "ARIA Label"
+msgstr "ARIA-Bezeichnung"
+
+msgid "Accessible label..."
+msgstr "Barrierefreie Bezeichnung..."
+
+msgid "Role"
+msgstr "Rolle"
+
+# Content Tab
+msgid "Enter content..."
+msgstr "Inhalt eingeben..."
+
+msgid "+ Make dynamic"
+msgstr "+ Dynamisch machen"
+
+msgid "Heading Level"
+msgstr "Überschriftenebene"
+
+msgid "CSS Classes"
+msgstr "CSS-Klassen"
